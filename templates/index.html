@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Solo Queue Challenge</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: white;
+            margin: 0;
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .contenedor {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .jugador {
+            background: #1f2937;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+        }
+
+        .nombre {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .riot {
+            color: #9ca3af;
+            margin-top: 5px;
+        }
+
+        .estado {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .online {
+            color: #22c55e;
+        }
+
+        .partida {
+            color: #f59e0b;
+        }
+
+        .offline {
+            color: #9ca3af;
+        }
+
+        .actualizacion {
+            text-align: center;
+            color: #6b7280;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="contenedor">
+
+        <h1>🏆 Solo Queue Challenge</h1>
+
+        <div id="jugadores">
+            Cargando jugadores...
+        </div>
+
+        <div class="actualizacion">
+            🔄 Actualizando automáticamente...
+        </div>
+
+    </div>
+
+
+    <script>
+
+        function cargarJugadores() {
+
+            fetch("/api/jugadores")
+                .then(respuesta => respuesta.json())
+                .then(jugadores => {
+
+                    const contenedor = document.getElementById("jugadores");
+
+                    contenedor.innerHTML = "";
+
+                    for (const nombre in jugadores) {
+
+                        const jugador = jugadores[nombre];
+
+                        let estadoTexto = "⚪ OFFLINE";
+                        let claseEstado = "offline";
+
+                        if (jugador.estado === "online") {
+                            estadoTexto = "🟢 ONLINE";
+                            claseEstado = "online";
+                        }
+
+                        if (jugador.estado === "in_game") {
+                            estadoTexto = "🎮 EN PARTIDA";
+                            claseEstado = "partida";
+                        }
+
+                        contenedor.innerHTML += `
+                            <div class="jugador">
+
+                                <div class="nombre">
+                                    ${nombre}
+                                </div>
+
+                                <div class="riot">
+                                    Riot ID:
+                                    ${jugador.riot_id}#${jugador.riot_tag}
+                                </div>
+
+                                <div class="estado ${claseEstado}">
+                                    ${estadoTexto}
+                                </div>
+
+                            </div>
+                        `;
+                    }
+
+                })
+                .catch(error => {
+
+                    console.error("Error:", error);
+
+                });
+        }
+
+
+        // Cargar inmediatamente
+        cargarJugadores();
+
+
+        // Actualizar cada 10 segundos
+        setInterval(cargarJugadores, 10000);
+
+    </script>
+
+</body>
+
+</html>
