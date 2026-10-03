@@ -40,14 +40,14 @@ def api_jugadores():
     for nombre, jugador in jugadores.items():
 
         puuid = jugador.get("puuid")
+        
+        riot_id = jugador.get("riot_id", "")
+        riot_tag = jugador.get("riot_tag", "")
 
-        # Por defecto
         estado = "offline"
 
-        # Si tiene PUUID, consultamos Riot
-        if puuid:
-
-            if jugador_en_partida(puuid):
+        if riot_id and riot_tag:
+            if jugador_en_partida(riot_id, riot_tag):
                 estado = "in_game"
 
         resultado[nombre] = {

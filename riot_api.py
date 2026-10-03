@@ -10,6 +10,25 @@ HEADERS = {
 }
 
 
+def obtener_puuid_por_riot_id(game_name, tag_line):
+    url = (
+        f"https://americas.api.riotgames.com"
+        f"/riot/account/v1/accounts/by-riot-id/{game_name}/{tag_line}"
+    )
+
+    respuesta = requests.get(url, headers=HEADERS)
+
+    if respuesta.status_code == 200:
+        datos = respuesta.json()
+        return datos["puuid"]
+
+    print("Error al obtener PUUID por Riot ID.")
+    print("Código:", respuesta.status_code)
+    print("Respuesta:", respuesta.text)
+
+    return None
+
+
 def obtener_summoner_id(puuid):
     url = (
         f"https://la2.api.riotgames.com"
@@ -78,7 +97,12 @@ def obtener_detalle_partida(match_id):
     return None
 
 
-def jugador_en_partida(puuid):
+def jugador_en_partida(game_name, tag_line):
+    puuid = obtener_puuid_por_riot_id(game_name, tag_line)
+
+    if not puuid:
+        return False
+
     summoner_id = obtener_summoner_id(puuid)
 
     if not summoner_id:
