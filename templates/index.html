@@ -8,7 +8,7 @@
     <title>Solo Queue Challenge</title>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@400;500;600;700;800&family=Press+Start+2P&family=Rajdhani:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Rajdhani', sans-serif;
             background: #111827;
@@ -16,7 +16,7 @@
             margin: 0;
             padding: 30px;
         }
-        
+
         .encabezado h1 {
             font-size: 38px;
             font-weight: 700;
@@ -487,6 +487,44 @@
         .ranking,
         .streamer-proximamente {
             background: #35151C !important;
+        }
+        /* =========================
+        FUENTES ESPECIALES
+        ========================= */
+
+        /* Título principal */
+        .encabezado h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 42px;
+            letter-spacing: 1px;
+        }
+
+        /* Streamers */
+        .streamers h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* Nombres de jugadores */
+        .nombre {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+
+            animation: nombreFlotando 3s ease-in-out infinite;
+        }
+
+        /* Movimiento muy sutil */
+        @keyframes nombreFlotando {
+
+            0%, 100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-2px);
+            }
+
         }
     </style>
 </head>
