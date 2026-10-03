@@ -288,151 +288,122 @@
 
 
         /* =========================================================
-           MENÚ LATERAL
+        MENU LATERAL OCULTO
         ========================================================= */
 
         .menu-lateral {
-
             position: fixed;
-
-            left: 0;
+            left: -250px;
             top: 0;
-
-            width: 32px;
-            height: 100vh;
-
-            background: transparent;
-
-            border: none;
-
-            z-index: 2000;
-
-            transition: width 0.3s ease;
-
-            overflow: hidden;
-
-        }
-
-
-        .menu-lateral:hover {
-
             width: 250px;
-
+            height: 100vh;
+            background: var(--rojo-oscuro);
+            border-right: 1px solid var(--bordo);
+            z-index: 2000;
+            transition: left 0.3s ease;
+            overflow: visible;
         }
 
+        /* Al pasar por la pestaña, aparece el menú */
+        .menu-lateral:hover {
+            left: 0;
+        }
+
+
+        /* =========================================================
+        PESTAÑA / FLECHA
+        ========================================================= */
 
         .menu-flecha {
-
-            position: absolute;
+            position: fixed;
 
             left: 0;
             top: 50%;
 
-            transform:
-                translateY(-50%);
+            transform: translateY(-50%);
 
-            width: 32px;
-            height: 60px;
+            width: 55px;
+            height: 38px;
 
             display: flex;
-
             align-items: center;
             justify-content: center;
 
-            color: var(--bordo);
+            color: var(--blanco);
+            background: var(--bordo);
 
-            font-size: 30px;
+            border: 1px solid var(--rubí);
+            border-left: none;
 
+            border-radius: 0 8px 8px 0;
+
+            font-size: 28px;
             font-weight: bold;
 
-            opacity: 0.9;
+            cursor: pointer;
+
+            z-index: 2001;
 
             transition:
-                transform 0.3s ease,
-                color 0.2s ease;
+                left 0.3s ease,
+                background 0.2s ease;
+        }
 
+        .menu-flecha:hover {
+            background: var(--rubí);
         }
 
 
-        .menu-lateral:hover .menu-flecha {
-
-            transform:
-                translateY(-50%)
-                translateX(-5px);
-
-            color: var(--rubí);
-
-        }
-
+        /* =========================================================
+        CONTENIDO DEL MENU
+        ========================================================= */
 
         .menu-titulo {
-
             width: 250px;
             height: 65px;
 
             display: flex;
-
             align-items: center;
 
             padding-left: 20px;
 
             color: var(--blanco);
-
             background: var(--rojo-oscuro);
 
             font-size: 19px;
-
             font-weight: bold;
 
-            border-bottom:
-                1px solid var(--bordo);
-
+            border-bottom: 1px solid var(--bordo);
         }
 
-
         .menu-contenido {
-
             width: 250px;
-
             padding: 15px 10px;
 
             background: var(--rojo-oscuro);
 
-            min-height:
-                calc(100vh - 65px);
-
+            min-height: calc(100vh - 65px);
         }
 
-
         .menu-contenido a {
-
             display: block;
 
             padding: 14px 15px;
-
             margin-bottom: 6px;
 
             color: var(--blanco);
-
             text-decoration: none;
 
             border-radius: 7px;
 
             font-size: 17px;
-
             white-space: nowrap;
 
-            transition:
-                background 0.2s ease;
-
+            transition: background 0.2s ease;
         }
 
-
         .menu-contenido a:hover {
-
-            background:
-                var(--bordo-oscuro);
-
+            background: var(--bordo-oscuro);
         }
 
 
@@ -570,30 +541,21 @@
 
 
         .jugador::before {
-
-            content:
-                "VER HISTORIAL →";
+            content: "VER HISTORIAL →";
 
             position: absolute;
 
-            right:
-                calc(100% + 15px);
+            left: calc(100% + 15px);
+            right: auto;
 
             top: 50%;
 
-            transform:
-                translateY(-50%)
-                translateX(-10px);
+            transform: translateY(-50%) translateX(-10px);
 
-            color:
-                var(--bordo);
+            color: var(--bordo);
 
-            font-family:
-                'Rajdhani',
-                sans-serif;
-
+            font-family: 'Rajdhani', sans-serif;
             font-size: 15px;
-
             font-weight: 700;
 
             white-space: nowrap;
@@ -605,18 +567,14 @@
                 transform 0.2s ease;
 
             pointer-events: none;
-
         }
 
-
         .jugador:hover::before {
-
             opacity: 1;
 
             transform:
                 translateY(-50%)
                 translateX(0);
-
         }
 
 
@@ -926,17 +884,13 @@
 
         <!-- ================= MENÚ ================= -->
 
-        <div class="menu-lateral">
+            <div class="menu-lateral">
 
-            <div class="menu-flecha">
-                →
-            </div>
+                <div class="menu-titulo">
+                    ☰ MENÚ
+                </div>
 
-            <div class="menu-titulo">
-                ☰ MENÚ
-            </div>
-
-            <div class="menu-contenido">
+                <div class="menu-contenido">
 
                 <a href="#">
                     📝 Registrarse
@@ -1654,6 +1608,10 @@
 
 
     </script>
+
+    <div class="menu-flecha">
+        →
+    </div>
 
 </body>
 
