@@ -8,7 +8,8 @@ from riot_api import (
     jugador_en_partida,
     obtener_puuid_por_riot_id,
     actualizar_partidas_jugador,
-    obtener_rango
+    obtener_rango,
+    obtener_ultimo_codigo_http
 )
 
 
@@ -93,7 +94,21 @@ def actualizar_datos_riot():
             {}
         )
 
+        rate_limit = False
+
         for nombre, jugador in jugadores.items():
+
+            if rate_limit:
+                print(
+                    "Riot API está aplicando rate limit."
+                )
+
+                print(
+                    "Se detiene la actualización "
+                    "hasta el próximo ciclo."
+                )
+
+                break
 
             riot_id = jugador.get(
                 "riot_id"
@@ -111,7 +126,7 @@ def actualizar_datos_riot():
             )
 
             # =================================================
-            # PUUID
+            # PUUID GUARDADO
             # =================================================
 
             puuid = jugador.get(
@@ -125,7 +140,19 @@ def actualizar_datos_riot():
                     riot_tag
                 )
 
+                codigo = obtener_ultimo_codigo_http()
+
+                if codigo == 429:
+
+                    print(
+                        "RATE LIMIT al obtener PUUID."
+                    )
+
+                    rate_limit = True
+                    break
+
                 if puuid:
+
                     jugador["puuid"] = puuid
 
             if not puuid:
@@ -145,42 +172,100 @@ def actualizar_datos_riot():
                 10
             )
 
+            codigo = obtener_ultimo_codigo_http()
+
             # =================================================
-            # RENOVAR PUUID SI FALLÓ
+            # RATE LIMIT
             # =================================================
 
-            if partidas is None:
+            if codigo == 429:
 
                 print(
-                    f"PUUID rechazado para {nombre}."
+                    f"RATE LIMIT detectado al actualizar "
+                    f"{nombre}."
                 )
 
                 print(
-                    "Obteniendo PUUID nuevo mediante Riot ID..."
+                    "NO se renovará el PUUID."
                 )
 
-                nuevo_puuid = obtener_puuid_por_riot_id(
-                    riot_id,
-                    riot_tag
+                print(
+                    "Se conservan los datos actuales."
                 )
+
+                rate_limit = True
+                break
+
+            # =================================================
+            # PUUID INVÁLIDO
+            # =================================================
+
+            if partidas is None and codigo == 400:
+
+                print(
+                    f"PUUID posiblemente inválido "
+                    f"para {nombre}."
+                )
+
+                print(
+                    "Intentando obtener PUUID nuevo..."
+                )
+
+                nuevo_puuid = (
+                    obtener_puuid_por_riot_id(
+                        riot_id,
+                        riot_tag
+                    )
+                )
+
+                codigo_puuid = (
+                    obtener_ultimo_codigo_http()
+                )
+
+                # Si volvemos a recibir 429,
+                # detenemos el ciclo.
+                if codigo_puuid == 429:
+
+                    print(
+                        "RATE LIMIT al renovar PUUID."
+                    )
+
+                    rate_limit = True
+                    break
 
                 if nuevo_puuid:
 
-                    if nuevo_puuid != puuid:
-
-                        print(
-                            f"PUUID cambiado para {nombre}."
-                        )
-
                     puuid = nuevo_puuid
 
-                    jugador["puuid"] = nuevo_puuid
-
-                    # Volvemos a intentar historial.
-                    partidas = actualizar_partidas_jugador(
-                        puuid,
-                        10
+                    jugador["puuid"] = (
+                        nuevo_puuid
                     )
+
+                    print(
+                        f"PUUID renovado para {nombre}."
+                    )
+
+                    # Reintentar historial.
+                    partidas = (
+                        actualizar_partidas_jugador(
+                            puuid,
+                            10
+                        )
+                    )
+
+                    codigo = (
+                        obtener_ultimo_codigo_http()
+                    )
+
+                    if codigo == 429:
+
+                        print(
+                            "RATE LIMIT durante "
+                            "el segundo intento."
+                        )
+
+                        rate_limit = True
+                        break
 
                 else:
 
@@ -214,7 +299,30 @@ def actualizar_datos_riot():
                 puuid
             )
 
-            # Si el rango funciona, lo guardamos.
+            codigo = obtener_ultimo_codigo_http()
+
+            # =================================================
+            # RATE LIMIT EN RANGO
+            # =================================================
+
+            if codigo == 429:
+
+                print(
+                    f"RATE LIMIT al obtener rango "
+                    f"de {nombre}."
+                )
+
+                print(
+                    "Se conserva el rango anterior."
+                )
+
+                rate_limit = True
+                break
+
+            # =================================================
+            # RANGO CORRECTO
+            # =================================================
+
             if rango is not None:
 
                 jugador["rango"] = rango
@@ -249,9 +357,33 @@ def actualizar_datos_riot():
 
         ultima_actualizacion = time.time()
 
-        print(
-            "DATOS ACTUALIZADOS CORRECTAMENTE"
-        )
+        if rate_limit:
+
+            print(
+                "==================================="
+            )
+
+            print(
+                "ACTUALIZACIÓN INTERRUMPIDA POR RATE LIMIT"
+            )
+
+            print(
+                "Los datos existentes fueron conservados."
+            )
+
+            print(
+                "Se volverá a intentar en el próximo ciclo."
+            )
+
+            print(
+                "==================================="
+            )
+
+        else:
+
+            print(
+                "DATOS ACTUALIZADOS CORRECTAMENTE"
+            )
 
     except Exception as error:
 

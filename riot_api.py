@@ -9,6 +9,18 @@ HEADERS = {
     "X-Riot-Token": API_KEY
 }
 
+# Guarda el último código HTTP recibido.
+ULTIMO_CODIGO_HTTP = None
+
+
+def guardar_codigo_http(codigo):
+    global ULTIMO_CODIGO_HTTP
+    ULTIMO_CODIGO_HTTP = codigo
+
+
+def obtener_ultimo_codigo_http():
+    return ULTIMO_CODIGO_HTTP
+
 
 # =========================================================
 # CUENTA RIOT
@@ -24,6 +36,10 @@ def obtener_puuid_por_riot_id(game_name, tag_line):
     respuesta = requests.get(
         url,
         headers=HEADERS
+    )
+
+    guardar_codigo_http(
+        respuesta.status_code
     )
 
     if respuesta.status_code == 200:
@@ -55,6 +71,10 @@ def obtener_summoner_id(puuid, game_name=None):
         headers=HEADERS
     )
 
+    guardar_codigo_http(
+        respuesta.status_code
+    )
+
     if respuesta.status_code == 200:
 
         datos = respuesta.json()
@@ -75,6 +95,10 @@ def obtener_summoner_id(puuid, game_name=None):
         respuesta = requests.get(
             url,
             headers=HEADERS
+        )
+
+        guardar_codigo_http(
+            respuesta.status_code
         )
 
         print("RESPUESTA BY NAME:")
@@ -116,6 +140,10 @@ def obtener_partidas(puuid, cantidad=20):
         params=parametros
     )
 
+    guardar_codigo_http(
+        respuesta.status_code
+    )
+
     if respuesta.status_code == 200:
 
         return respuesta.json()
@@ -123,11 +151,6 @@ def obtener_partidas(puuid, cantidad=20):
     print("Error al obtener partidas.")
     print("Código:", respuesta.status_code)
     print("Respuesta:", respuesta.text)
-
-    # IMPORTANTE:
-    # None significa que Riot rechazó la consulta.
-    # [] significa que la consulta funcionó pero
-    # no existen partidas.
 
     return None
 
@@ -142,6 +165,10 @@ def obtener_detalle_partida(match_id):
     respuesta = requests.get(
         url,
         headers=HEADERS
+    )
+
+    guardar_codigo_http(
+        respuesta.status_code
     )
 
     if respuesta.status_code == 200:
@@ -177,6 +204,10 @@ def jugador_en_partida(game_name, tag_line):
     respuesta = requests.get(
         url,
         headers=HEADERS
+    )
+
+    guardar_codigo_http(
+        respuesta.status_code
     )
 
     print("RESPUESTA SPECTATOR:")
@@ -216,6 +247,10 @@ def obtener_rango(puuid):
     respuesta = requests.get(
         url,
         headers=HEADERS
+    )
+
+    guardar_codigo_http(
+        respuesta.status_code
     )
 
     print("RESPUESTA RANKING:")
@@ -264,14 +299,11 @@ def actualizar_partidas_jugador(puuid, cantidad=10):
         cantidad
     )
 
-    # IMPORTANTE:
-    # Si Riot rechazó el PUUID, devolvemos None
-    # para que servidor.py pueda renovarlo.
-
+    # None puede significar error de API.
     if partidas is None:
         return None
 
-    # Si Riot respondió correctamente pero no hay partidas.
+    # La API respondió correctamente pero no hay partidas.
     if not partidas:
         return []
 
