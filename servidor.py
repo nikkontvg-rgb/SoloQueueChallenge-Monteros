@@ -7,6 +7,7 @@ import threading
 from riot_api import (
     jugador_en_partida,
     obtener_puuid_por_riot_id,
+    obtener_summoner_por_puuid,
     actualizar_partidas_jugador,
     obtener_rango,
     obtener_ultimo_codigo_http
@@ -18,10 +19,14 @@ app = Flask(__name__)
 ARCHIVO = "datos.json"
 
 INTERVALO_ACTUALIZACION = 10 * 60
+INTERVALO_ESTADO = 15
 
 ultima_actualizacion = 0
 
 bloqueo_actualizacion = threading.Lock()
+
+cache_estados = {}
+bloqueo_estados = threading.Lock()
 
 
 # =========================================================
@@ -71,9 +76,7 @@ def actualizar_datos_riot():
     if ahora - ultima_actualizacion < INTERVALO_ACTUALIZACION:
         return
 
-    if not bloqueo_actualizacion.acquire(
-        blocking=False
-    ):
+    if not bloqueo_actualizacion.acquire(blocking=False):
         return
 
     try:
@@ -98,40 +101,19 @@ def actualizar_datos_riot():
 
         for nombre, jugador in jugadores.items():
 
-            if rate_limit:
-                print(
-                    "Riot API está aplicando rate limit."
-                )
-
-                print(
-                    "Se detiene la actualización "
-                    "hasta el próximo ciclo."
-                )
-
-                break
-
-            riot_id = jugador.get(
-                "riot_id"
-            )
-
-            riot_tag = jugador.get(
-                "riot_tag"
-            )
+            riot_id = jugador.get("riot_id")
+            riot_tag = jugador.get("riot_tag")
 
             if not riot_id or not riot_tag:
                 continue
 
-            print(
-                f"Actualizando: {nombre}"
-            )
+            print(f"Actualizando: {nombre}")
 
             # =================================================
-            # PUUID GUARDADO
+            # PUUID
             # =================================================
 
-            puuid = jugador.get(
-                "puuid"
-            )
+            puuid = jugador.get("puuid")
 
             if not puuid:
 
@@ -143,16 +125,11 @@ def actualizar_datos_riot():
                 codigo = obtener_ultimo_codigo_http()
 
                 if codigo == 429:
-
-                    print(
-                        "RATE LIMIT al obtener PUUID."
-                    )
-
+                    print("RATE LIMIT al obtener PUUID.")
                     rate_limit = True
                     break
 
                 if puuid:
-
                     jugador["puuid"] = puuid
 
             if not puuid:
@@ -174,56 +151,36 @@ def actualizar_datos_riot():
 
             codigo = obtener_ultimo_codigo_http()
 
-            # =================================================
-            # RATE LIMIT
-            # =================================================
-
             if codigo == 429:
 
                 print(
-                    f"RATE LIMIT detectado al actualizar "
-                    f"{nombre}."
-                )
-
-                print(
-                    "NO se renovará el PUUID."
-                )
-
-                print(
-                    "Se conservan los datos actuales."
+                    f"RATE LIMIT al actualizar {nombre}."
                 )
 
                 rate_limit = True
                 break
 
             # =================================================
-            # PUUID INVÁLIDO
+            # PUUID INVALIDO
             # =================================================
 
             if partidas is None and codigo == 400:
 
                 print(
-                    f"PUUID posiblemente inválido "
-                    f"para {nombre}."
+                    f"PUUID rechazado para {nombre}."
                 )
 
                 print(
-                    "Intentando obtener PUUID nuevo..."
+                    "Intentando renovar PUUID mediante Riot ID..."
                 )
 
-                nuevo_puuid = (
-                    obtener_puuid_por_riot_id(
-                        riot_id,
-                        riot_tag
-                    )
+                nuevo_puuid = obtener_puuid_por_riot_id(
+                    riot_id,
+                    riot_tag
                 )
 
-                codigo_puuid = (
-                    obtener_ultimo_codigo_http()
-                )
+                codigo_puuid = obtener_ultimo_codigo_http()
 
-                # Si volvemos a recibir 429,
-                # detenemos el ciclo.
                 if codigo_puuid == 429:
 
                     print(
@@ -237,93 +194,95 @@ def actualizar_datos_riot():
 
                     puuid = nuevo_puuid
 
-                    jugador["puuid"] = (
-                        nuevo_puuid
-                    )
+                    jugador["puuid"] = nuevo_puuid
 
                     print(
                         f"PUUID renovado para {nombre}."
                     )
 
-                    # Reintentar historial.
-                    partidas = (
-                        actualizar_partidas_jugador(
-                            puuid,
-                            10
-                        )
+                    partidas = actualizar_partidas_jugador(
+                        puuid,
+                        10
                     )
 
-                    codigo = (
-                        obtener_ultimo_codigo_http()
-                    )
+                    codigo = obtener_ultimo_codigo_http()
 
                     if codigo == 429:
 
                         print(
-                            "RATE LIMIT durante "
-                            "el segundo intento."
+                            "RATE LIMIT durante el segundo intento."
                         )
 
                         rate_limit = True
                         break
 
-                else:
-
-                    print(
-                        f"No se pudo renovar PUUID "
-                        f"de {nombre}."
-                    )
-
             # =================================================
-            # GUARDAR HISTORIAL
+            # HISTORIAL
             # =================================================
 
             if partidas is not None:
 
-                jugador["partidas_riot"] = (
-                    partidas[:10]
-                )
+                if partidas:
 
-            else:
+                    jugador["partidas_riot"] = (
+                        partidas[:10]
+                    )
 
-                print(
-                    f"No se pudo actualizar historial "
-                    f"de {nombre}."
-                )
+                elif "partidas_riot" not in jugador:
+
+                    jugador["partidas_riot"] = []
 
             # =================================================
             # RANGO
             # =================================================
 
-            rango = obtener_rango(
-                puuid
-            )
+            rango_anterior = jugador.get("rango")
+
+            rango = obtener_rango(puuid)
 
             codigo = obtener_ultimo_codigo_http()
-
-            # =================================================
-            # RATE LIMIT EN RANGO
-            # =================================================
 
             if codigo == 429:
 
                 print(
-                    f"RATE LIMIT al obtener rango "
-                    f"de {nombre}."
+                    f"RATE LIMIT al obtener rango de {nombre}."
+                )
+
+                rate_limit = True
+                break
+
+            if rango is None:
+
+                print(
+                    f"No se pudo actualizar rango de {nombre}."
                 )
 
                 print(
                     "Se conserva el rango anterior."
                 )
 
-                rate_limit = True
-                break
+            elif rango.get("tier") == "UNRANKED":
 
-            # =================================================
-            # RANGO CORRECTO
-            # =================================================
+                if rango_anterior and rango_anterior.get("tier") not in (
+                    None,
+                    "",
+                    "UNRANKED"
+                ):
 
-            if rango is not None:
+                    print(
+                        f"Riot devolvió UNRANKED para {nombre}, "
+                        "pero existe un rango válido anterior."
+                    )
+
+                    print(
+                        "Se conserva el rango anterior."
+                    )
+
+                else:
+
+                    jugador["rango"] = rango
+
+            else:
 
                 jugador["rango"] = rango
 
@@ -332,17 +291,6 @@ def actualizar_datos_riot():
                     f"{rango.get('tier')} "
                     f"{rango.get('rank')} "
                     f"{rango.get('lp')} LP"
-                )
-
-            else:
-
-                print(
-                    f"No se pudo actualizar rango "
-                    f"de {nombre}."
-                )
-
-                print(
-                    "Se conserva el rango anterior."
                 )
 
         # =====================================================
@@ -359,25 +307,11 @@ def actualizar_datos_riot():
 
         if rate_limit:
 
-            print(
-                "==================================="
-            )
-
-            print(
-                "ACTUALIZACIÓN INTERRUMPIDA POR RATE LIMIT"
-            )
-
-            print(
-                "Los datos existentes fueron conservados."
-            )
-
-            print(
-                "Se volverá a intentar en el próximo ciclo."
-            )
-
-            print(
-                "==================================="
-            )
+            print("===================================")
+            print("ACTUALIZACIÓN DETENIDA POR RATE LIMIT")
+            print("Los datos anteriores fueron conservados.")
+            print("Se reintentará en el próximo ciclo.")
+            print("===================================")
 
         else:
 
@@ -396,6 +330,110 @@ def actualizar_datos_riot():
     finally:
 
         bloqueo_actualizacion.release()
+
+
+# =========================================================
+# ESTADO DE PARTIDA
+# =========================================================
+
+def obtener_estado_jugador(nombre, jugador):
+
+    ahora = time.time()
+
+    with bloqueo_estados:
+
+        estado_guardado = cache_estados.get(nombre)
+
+        if estado_guardado:
+
+            tiempo_cache = estado_guardado.get(
+                "timestamp",
+                0
+            )
+
+            if ahora - tiempo_cache < INTERVALO_ESTADO:
+
+                return {
+                    "estado": estado_guardado.get(
+                        "estado",
+                        "offline"
+                    ),
+                    "game_start_time":
+                        estado_guardado.get(
+                            "game_start_time"
+                        )
+                }
+
+    puuid = jugador.get("puuid")
+
+    if not puuid:
+
+        return {
+            "estado": "offline",
+            "game_start_time": None
+        }
+
+    partida = jugador_en_partida(
+        puuid
+    )
+
+    codigo = obtener_ultimo_codigo_http()
+
+    if codigo == 429:
+
+        print(
+            f"RATE LIMIT consultando estado de {nombre}."
+        )
+
+        with bloqueo_estados:
+
+            anterior = cache_estados.get(nombre)
+
+            if anterior:
+
+                return {
+                    "estado": anterior.get(
+                        "estado",
+                        "offline"
+                    ),
+                    "game_start_time":
+                        anterior.get(
+                            "game_start_time"
+                        )
+                }
+
+        return {
+            "estado": "offline",
+            "game_start_time": None
+        }
+
+    if partida:
+
+        estado = {
+            "estado": "in_game",
+            "game_start_time":
+                partida.get(
+                    "game_start_time"
+                ),
+            "timestamp": ahora
+        }
+
+    else:
+
+        estado = {
+            "estado": "offline",
+            "game_start_time": None,
+            "timestamp": ahora
+        }
+
+    with bloqueo_estados:
+        cache_estados[nombre] = estado
+
+    return {
+        "estado": estado["estado"],
+        "game_start_time":
+            estado["game_start_time"]
+    }
 
 
 # =========================================================
@@ -448,30 +486,10 @@ def api_jugadores():
             ""
         )
 
-        estado = "offline"
-
-        game_start_time = None
-
-        if riot_id and riot_tag:
-
-            partida = jugador_en_partida(
-                riot_id,
-                riot_tag
-            )
-
-            if partida:
-
-                estado = "in_game"
-
-                game_start_time = (
-                    partida.get(
-                        "game_start_time"
-                    )
-                )
-
-        # =====================================================
-        # ULTIMA PARTIDA
-        # =====================================================
+        estado_info = obtener_estado_jugador(
+            nombre,
+            jugador
+        )
 
         partidas = jugador.get(
             "partidas_riot",
@@ -494,10 +512,16 @@ def api_jugadores():
 
             "riot_tag": riot_tag,
 
-            "estado": estado,
+            "estado":
+                estado_info.get(
+                    "estado",
+                    "offline"
+                ),
 
             "game_start_time":
-                game_start_time,
+                estado_info.get(
+                    "game_start_time"
+                ),
 
             "ultima_partida":
                 ultima_partida,
