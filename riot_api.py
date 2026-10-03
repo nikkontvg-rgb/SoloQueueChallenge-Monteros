@@ -29,7 +29,8 @@ def obtener_puuid_por_riot_id(game_name, tag_line):
     return None
 
 
-def obtener_summoner_id(puuid):
+def obtener_summoner_id(puuid, game_name=None):
+    # Primer intento: buscar por PUUID
     url = (
         f"https://la2.api.riotgames.com"
         f"/lol/summoner/v4/summoners/by-puuid/{puuid}"
@@ -43,16 +44,29 @@ def obtener_summoner_id(puuid):
         print("RESPUESTA SUMMONER API:")
         print(datos)
 
-        if "id" in datos:
+        if datos.get("id"):
             return datos["id"]
 
-        print("La respuesta no contiene el campo 'id'.")
-        return None
+    # Segundo intento: buscar por nombre
+    if game_name:
+        url = (
+            f"https://la2.api.riotgames.com"
+            f"/lol/summoner/v4/summoners/by-name/{game_name}"
+        )
 
-    print("Error al obtener Summoner ID.")
-    print("Código:", respuesta.status_code)
-    print("Respuesta:", respuesta.text)
+        respuesta = requests.get(url, headers=HEADERS)
 
+        print("RESPUESTA BY NAME:")
+        print(respuesta.status_code)
+        print(respuesta.text)
+
+        if respuesta.status_code == 200:
+            datos = respuesta.json()
+
+            if datos.get("id"):
+                return datos["id"]
+
+    print("No se pudo obtener el Summoner ID.")
     return None
 
 
@@ -111,7 +125,7 @@ def jugador_en_partida(game_name, tag_line):
     if not puuid:
         return False
 
-    summoner_id = obtener_summoner_id(puuid)
+    summoner_id = obtener_summoner_id(puuid, game_name)
 
     if not summoner_id:
         return False
