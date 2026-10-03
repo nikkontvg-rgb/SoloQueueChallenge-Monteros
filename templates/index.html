@@ -291,27 +291,37 @@
         MENU LATERAL OCULTO
         ========================================================= */
 
+        /* =========================================================
+        MENU LATERAL
+        ========================================================= */
+
         .menu-lateral {
             position: fixed;
+
             left: -250px;
             top: 0;
+
             width: 250px;
             height: 100vh;
+
             background: var(--rojo-oscuro);
+
             border-right: 1px solid var(--bordo);
-            z-index: 2000;
+
+            z-index: 3000;
+
             transition: left 0.3s ease;
-            overflow: visible;
+
+            overflow-y: auto;
         }
 
-        /* Al pasar por la pestaña, aparece el menú */
-        .menu-lateral:hover {
+        .menu-lateral.abierto {
             left: 0;
         }
 
 
         /* =========================================================
-        PESTAÑA / FLECHA
+        FLECHA
         ========================================================= */
 
         .menu-flecha {
@@ -322,15 +332,15 @@
 
             transform: translateY(-50%);
 
-            width: 55px;
+            width: 58px;
             height: 38px;
 
             display: flex;
             align-items: center;
             justify-content: center;
 
-            color: var(--blanco);
             background: var(--bordo);
+            color: var(--blanco);
 
             border: 1px solid var(--rubí);
             border-left: none;
@@ -342,7 +352,7 @@
 
             cursor: pointer;
 
-            z-index: 2001;
+            z-index: 3001;
 
             transition:
                 left 0.3s ease,
@@ -353,9 +363,13 @@
             background: var(--rubí);
         }
 
+        .menu-flecha.abierto {
+            left: 250px;
+        }
+
 
         /* =========================================================
-        CONTENIDO DEL MENU
+        TITULO
         ========================================================= */
 
         .menu-titulo {
@@ -376,8 +390,14 @@
             border-bottom: 1px solid var(--bordo);
         }
 
+
+        /* =========================================================
+        CONTENIDO
+        ========================================================= */
+
         .menu-contenido {
             width: 250px;
+
             padding: 15px 10px;
 
             background: var(--rojo-oscuro);
@@ -389,23 +409,54 @@
             display: block;
 
             padding: 14px 15px;
+
             margin-bottom: 6px;
 
             color: var(--blanco);
+
             text-decoration: none;
 
             border-radius: 7px;
 
             font-size: 17px;
+
             white-space: nowrap;
 
-            transition: background 0.2s ease;
+            transition:
+                background 0.2s ease;
         }
 
         .menu-contenido a:hover {
             background: var(--bordo-oscuro);
         }
 
+
+        /* =========================================================
+        OSCURECER EL FONDO
+        ========================================================= */
+
+        .menu-overlay {
+            position: fixed;
+
+            inset: 0;
+
+            background: rgba(0, 0, 0, 0.35);
+
+            z-index: 2999;
+
+            opacity: 0;
+
+            visibility: hidden;
+
+            transition:
+                opacity 0.3s ease,
+                visibility 0.3s ease;
+        }
+
+        .menu-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
 
         /* =========================================================
            STREAMERS
@@ -884,13 +935,13 @@
 
         <!-- ================= MENÚ ================= -->
 
-            <div class="menu-lateral">
+        <div class="menu-lateral" id="menuLateral">
 
-                <div class="menu-titulo">
-                    ☰ MENÚ
-                </div>
+            <div class="menu-titulo">
+                ☰ MENÚ
+            </div>
 
-                <div class="menu-contenido">
+            <div class="menu-contenido">
 
                 <a href="#">
                     📝 Registrarse
@@ -911,6 +962,12 @@
             </div>
 
         </div>
+
+        <div class="menu-flecha" id="menuFlecha">
+            →
+        </div>
+
+        <div class="menu-overlay" id="menuOverlay"></div>
 
 
         <!-- ================= STREAMERS ================= -->
