@@ -125,17 +125,16 @@ def jugador_en_partida(game_name, tag_line):
     if not puuid:
         return False
 
-    summoner_id = obtener_summoner_id(puuid, game_name)
-
-    if not summoner_id:
-        return False
-
     url = (
         f"https://la2.api.riotgames.com"
-        f"/lol/spectator/v5/active-games/by-summoner/{summoner_id}"
+        f"/lol/spectator/v5/active-games/by-summoner/{puuid}"
     )
 
     respuesta = requests.get(url, headers=HEADERS)
+
+    print("RESPUESTA SPECTATOR:")
+    print(respuesta.status_code)
+    print(respuesta.text)
 
     if respuesta.status_code == 200:
         return True
