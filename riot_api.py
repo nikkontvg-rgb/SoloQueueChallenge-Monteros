@@ -39,7 +39,15 @@ def obtener_summoner_id(puuid):
 
     if respuesta.status_code == 200:
         datos = respuesta.json()
-        return datos["id"]
+
+        print("RESPUESTA SUMMONER API:")
+        print(datos)
+
+        if "id" in datos:
+            return datos["id"]
+
+        print("La respuesta no contiene el campo 'id'.")
+        return None
 
     print("Error al obtener Summoner ID.")
     print("Código:", respuesta.status_code)
