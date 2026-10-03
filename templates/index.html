@@ -12,7 +12,7 @@
         body {
             font-family: 'Rajdhani', sans-serif;
             background: #111827;
-            color: white;
+            color: rgba(255, 255, 255, 0.493);
             margin: 0;
             padding: 30px;
         }
@@ -478,9 +478,54 @@
         }
 
         body {
-            background: #f1f1f1 !important;
-            color: #333333;
+            background: #e8e5df !important;
+            color: #292929;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: -50%;
+            z-index: -1;
+            pointer-events: none;
+
+            background:
+                radial-gradient(
+                    circle at 20% 30%,
+                    rgba(90, 30, 42, 0.07),
+                    transparent 35%
+                ),
+                radial-gradient(
+                    circle at 80% 70%,
+                    rgba(90, 30, 42, 0.05),
+                    transparent 40%
+                ),
+                linear-gradient(
+                    120deg,
+                    #e8e5df,
+                    #dedbd4,
+                    #efede8,
+                    #e3e0d9
+                );
+
+            background-size: 160% 160%;
+            animation: ac2Background 18s ease-in-out infinite alternate;
+        }
+
+        @keyframes ac2Background {
+            0% {
+                transform: translate(0%, 0%) scale(1);
+            }
+
+            50% {
+                transform: translate(-3%, 2%) scale(1.04);
+            }
+
+            100% {
+                transform: translate(3%, -2%) scale(1.02);
+            }
         }
 
         .jugador,
