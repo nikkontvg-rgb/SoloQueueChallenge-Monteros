@@ -1,21 +1,29 @@
-```html
 <!DOCTYPE html>
+
 <html lang="es">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Solo Queue Challenge</title>
 
     <style>
+
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@400;500;600;700;800&family=Press+Start+2P&family=Rajdhani:wght@400;500;600;700&display=swap');
+
 
         /* =========================================================
            VARIABLES
         ========================================================= */
 
         :root {
+
             --fondo: #e8e5df;
             --fondo-claro: #efede8;
 
@@ -27,9 +35,11 @@
             --rojo-brillante: #d63b5c;
 
             --blanco: #ffffff;
+
             --gris-oscuro: #292929;
             --gris: #7d7d7d;
             --gris-claro: #d2d2d2;
+
         }
 
 
@@ -46,32 +56,45 @@
         }
 
         body {
+
             font-family: 'Rajdhani', sans-serif;
+
             color: var(--gris-oscuro);
+
             margin: 0;
+
             padding: 30px;
+
             min-height: 100vh;
+
             position: relative;
+
             overflow-x: hidden;
+
         }
 
 
         /* =========================================================
-        FONDO ANIMADO
+           FONDO ANIMADO
         ========================================================= */
 
         body::before {
+
             content: "";
+
             position: fixed;
+
             inset: -50%;
+
             width: 200%;
             height: 200%;
 
             pointer-events: none;
+
             z-index: 0;
 
             background:
-                /* Líneas diagonales */
+
                 repeating-linear-gradient(
                     125deg,
                     transparent 0px,
@@ -82,7 +105,6 @@
                     transparent 180px
                 ),
 
-                /* Rectángulos horizontales */
                 linear-gradient(
                     90deg,
                     transparent 0%,
@@ -100,20 +122,26 @@
                 500px 500px,
                 700px 700px;
 
-            animation: movimientoGeometrico 20s linear infinite;
+            animation:
+                movimientoGeometrico 20s linear infinite;
+
         }
 
 
         body::after {
+
             content: "";
 
             position: fixed;
+
             inset: 0;
 
             pointer-events: none;
+
             z-index: 0;
 
             background:
+
                 linear-gradient(
                     90deg,
                     transparent 0%,
@@ -134,49 +162,62 @@
                 420px 420px,
                 420px 420px;
 
-            animation: movimientoLineas 28s linear infinite;
+            animation:
+                movimientoLineas 28s linear infinite;
+
         }
 
 
-        /* Movimiento principal */
         @keyframes movimientoGeometrico {
 
             0% {
-                transform: translate(-2%, -2%) rotate(0deg);
+                transform:
+                    translate(-2%, -2%)
+                    rotate(0deg);
             }
 
             25% {
-                transform: translate(1%, -4%) rotate(0.5deg);
+                transform:
+                    translate(1%, -4%)
+                    rotate(0.5deg);
             }
 
             50% {
-                transform: translate(4%, 0%) rotate(0deg);
+                transform:
+                    translate(4%, 0%)
+                    rotate(0deg);
             }
 
             75% {
-                transform: translate(1%, 4%) rotate(-0.5deg);
+                transform:
+                    translate(1%, 4%)
+                    rotate(-0.5deg);
             }
 
             100% {
-                transform: translate(-2%, -2%) rotate(0deg);
+                transform:
+                    translate(-2%, -2%)
+                    rotate(0deg);
             }
 
         }
 
 
-        /* Movimiento secundario */
         @keyframes movimientoLineas {
 
             0% {
-                transform: translate(0%, 0%);
+                transform:
+                    translate(0%, 0%);
             }
 
             50% {
-                transform: translate(-4%, 3%);
+                transform:
+                    translate(-4%, 3%);
             }
 
             100% {
-                transform: translate(0%, 0%);
+                transform:
+                    translate(0%, 0%);
             }
 
         }
@@ -187,10 +228,15 @@
         ========================================================= */
 
         .contenedor {
+
             max-width: 900px;
+
             margin: auto;
+
             position: relative;
+
             z-index: 1;
+
         }
 
 
@@ -199,26 +245,45 @@
         ========================================================= */
 
         .encabezado {
+
             text-align: center;
+
             margin-bottom: 25px;
+
         }
+
 
         .encabezado h1 {
+
             font-family: 'Bebas Neue', sans-serif;
+
             font-size: 42px;
+
             font-weight: 700;
+
             letter-spacing: 1px;
+
             color: var(--rojo-oscuro);
+
             margin: 0 0 10px;
+
         }
 
+
         .descripcion {
+
             max-width: 750px;
+
             margin: 0 auto;
+
             font-size: 21px;
+
             font-weight: 400;
+
             line-height: 1.5;
+
             color: #555555;
+
         }
 
 
@@ -227,66 +292,147 @@
         ========================================================= */
 
         .menu-lateral {
+
             position: fixed;
+
             left: 0;
             top: 0;
 
-            width: 65px;
+            width: 32px;
             height: 100vh;
 
-            background: var(--rojo-oscuro);
-            border-right: 2px solid var(--bordo);
+            background: transparent;
+
+            border: none;
 
             z-index: 2000;
 
             transition: width 0.3s ease;
+
             overflow: hidden;
+
         }
+
 
         .menu-lateral:hover {
+
             width: 250px;
+
         }
 
+
+        .menu-flecha {
+
+            position: absolute;
+
+            left: 0;
+            top: 50%;
+
+            transform:
+                translateY(-50%);
+
+            width: 32px;
+            height: 60px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            color: var(--bordo);
+
+            font-size: 30px;
+
+            font-weight: bold;
+
+            opacity: 0.9;
+
+            transition:
+                transform 0.3s ease,
+                color 0.2s ease;
+
+        }
+
+
+        .menu-lateral:hover .menu-flecha {
+
+            transform:
+                translateY(-50%)
+                translateX(-5px);
+
+            color: var(--rubí);
+
+        }
+
+
         .menu-titulo {
+
             width: 250px;
             height: 65px;
 
             display: flex;
+
             align-items: center;
 
             padding-left: 20px;
 
             color: var(--blanco);
+
+            background: var(--rojo-oscuro);
+
             font-size: 19px;
+
             font-weight: bold;
 
-            border-bottom: 1px solid var(--bordo);
+            border-bottom:
+                1px solid var(--bordo);
+
         }
+
 
         .menu-contenido {
+
             width: 250px;
+
             padding: 15px 10px;
+
+            background: var(--rojo-oscuro);
+
+            min-height:
+                calc(100vh - 65px);
+
         }
 
+
         .menu-contenido a {
+
             display: block;
 
             padding: 14px 15px;
+
             margin-bottom: 6px;
 
             color: var(--blanco);
+
             text-decoration: none;
 
             border-radius: 7px;
 
             font-size: 17px;
+
             white-space: nowrap;
 
-            transition: background 0.2s ease;
+            transition:
+                background 0.2s ease;
+
         }
 
+
         .menu-contenido a:hover {
-            background: var(--bordo-oscuro);
+
+            background:
+                var(--bordo-oscuro);
+
         }
 
 
@@ -295,46 +441,93 @@
         ========================================================= */
 
         .streamers {
-            margin: 35px auto;
+
+            margin:
+                55px auto 90px;
+
             max-width: 900px;
+
         }
 
+
         .streamers h2 {
+
             text-align: center;
 
             font-family: 'Orbitron', sans-serif;
+
             font-size: 28px;
+
             font-weight: 600;
+
             letter-spacing: 1px;
 
             margin-bottom: 18px;
+
             color: var(--rojo-oscuro);
+
         }
+
 
         .streamer-proximamente {
-            background: var(--rojo-oscuro);
-            border: 1px solid var(--bordo);
+
+            background:
+                var(--rojo-oscuro);
+
+            border:
+                1px solid var(--bordo);
+
             border-radius: 12px;
 
-            padding: 30px;
+            min-height: 330px;
+
+            padding: 60px 30px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
             text-align: center;
+
         }
+
 
         .streamer-proximamente .icono {
+
             font-size: 42px;
+
             margin-bottom: 10px;
+
         }
+
 
         .streamer-proximamente h3 {
+
             margin: 5px 0;
+
             font-size: 23px;
-            color: var(--rubí-claro);
+
+            color:
+                var(--rubí-claro);
+
         }
 
+
         .streamer-proximamente p {
+
             margin: 0;
-            color: var(--gris-claro);
+
+            color:
+                var(--gris-claro);
+
             font-size: 17px;
+
+            max-width: 650px;
+
         }
 
 
@@ -343,64 +536,167 @@
         ========================================================= */
 
         .jugador {
-            background: var(--rojo-oscuro);
 
-            border: 1px solid var(--bordo-oscuro);
+            position: relative;
+
+            background:
+                var(--rojo-oscuro);
+
+            border:
+                1px solid var(--bordo-oscuro);
+
             border-radius: 12px;
 
             padding: 20px;
+
             margin-bottom: 15px;
 
-            transition: border-color 0.2s ease;
+            transition:
+                border-color 0.2s ease,
+                transform 0.2s ease;
+
         }
+
 
         .jugador:hover {
-            border-color: var(--rubí);
+
+            border-color:
+                var(--rubí);
+
+            transform:
+                translateX(4px);
+
         }
+
+
+        .jugador::before {
+
+            content:
+                "VER HISTORIAL →";
+
+            position: absolute;
+
+            right:
+                calc(100% + 15px);
+
+            top: 50%;
+
+            transform:
+                translateY(-50%)
+                translateX(-10px);
+
+            color:
+                var(--bordo);
+
+            font-family:
+                'Rajdhani',
+                sans-serif;
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            white-space: nowrap;
+
+            opacity: 0;
+
+            transition:
+                opacity 0.2s ease,
+                transform 0.2s ease;
+
+            pointer-events: none;
+
+        }
+
+
+        .jugador:hover::before {
+
+            opacity: 1;
+
+            transform:
+                translateY(-50%)
+                translateX(0);
+
+        }
+
 
         .nombre {
-            font-family: 'Press Start 2P', cursive;
+
+            font-family:
+                'Press Start 2P',
+                cursive;
+
             font-size: 16px;
+
             font-weight: bold;
 
-            color: var(--blanco);
+            color:
+                var(--blanco);
 
-            animation: nombreFlotando 1s ease-in-out infinite;
+            animation:
+                nombreFlotando 1s ease-in-out infinite;
+
         }
 
+
         @keyframes nombreFlotando {
+
             0%,
             100% {
-                transform: translateY(0);
+                transform:
+                    translateY(0);
             }
 
             50% {
-                transform: translateY(-2px);
+                transform:
+                    translateY(-2px);
             }
+
         }
+
 
         .riot {
-            color: var(--gris-claro);
+
+            color:
+                var(--gris-claro);
+
             margin-top: 5px;
+
         }
 
+
         .estado {
+
             margin-top: 15px;
 
             font-weight: bold;
+
             font-size: 18px;
+
         }
+
 
         .online {
-            color: #22c55e;
+
+            color:
+                #22c55e;
+
         }
+
 
         .partida {
-            color: var(--rojo-brillante);
+
+            color:
+                var(--rojo-brillante);
+
         }
 
+
         .offline {
-            color: var(--gris);
+
+            color:
+                var(--gris);
+
         }
 
 
@@ -409,12 +705,16 @@
         ========================================================= */
 
         .contador {
+
             margin-top: 8px;
 
-            color: var(--rubí-claro);
+            color:
+                var(--rubí-claro);
 
             font-size: 16px;
+
             font-weight: bold;
+
         }
 
 
@@ -423,11 +723,16 @@
         ========================================================= */
 
         .actualizacion {
+
             text-align: center;
 
-            color: var(--gris);
+            color:
+                var(--gris);
 
-            margin-top: 30px;
+            margin-top: 45px;
+
+            margin-bottom: 55px;
+
         }
 
 
@@ -436,72 +741,114 @@
         ========================================================= */
 
         .ranking {
-            margin-top: 30px;
+
+            margin-top: 0;
+
             padding: 20px;
 
-            background: rgba(53, 21, 28, 0.95);
+            background:
+                rgba(53, 21, 28, 0.95);
 
-            border: 1px solid var(--bordo-oscuro);
+            border:
+                1px solid var(--bordo-oscuro);
+
             border-radius: 12px;
+
         }
 
+
         .ranking h2 {
+
             margin-top: 0;
+
             margin-bottom: 20px;
 
             text-align: center;
 
-            color: var(--blanco);
+            color:
+                var(--blanco);
+
         }
 
+
         .ranking-item {
+
             display: flex;
+
             align-items: center;
 
             gap: 12px;
 
             padding: 12px;
+
             margin-bottom: 8px;
 
-            background: #421b24;
+            background:
+                #421b24;
 
-            border: 1px solid var(--bordo-oscuro);
+            border:
+                1px solid var(--bordo-oscuro);
+
             border-radius: 8px;
 
-            transition: border-color 0.2s ease;
+            transition:
+                border-color 0.2s ease;
+
         }
+
 
         .ranking-item:hover {
-            border-color: var(--rubí);
+
+            border-color:
+                var(--rubí);
+
         }
 
+
         .ranking-posicion {
+
             width: 35px;
 
             font-size: 20px;
+
             font-weight: bold;
 
             text-align: center;
+
         }
 
+
         .ranking-nombre {
+
             flex: 1;
 
             font-weight: bold;
-            color: var(--blanco);
+
+            color:
+                var(--blanco);
+
         }
+
 
         .ranking-rango {
+
             font-weight: bold;
-            color: var(--rubí-claro);
+
+            color:
+                var(--rubí-claro);
+
         }
 
+
         .ranking-lp {
+
             min-width: 70px;
 
             text-align: right;
 
-            color: var(--gris-claro);
+            color:
+                var(--gris-claro);
+
         }
 
 
@@ -512,7 +859,8 @@
         @media (max-width: 700px) {
 
             body {
-                padding: 20px 15px;
+                padding:
+                    20px 15px;
             }
 
             .encabezado h1 {
@@ -521,6 +869,10 @@
 
             .descripcion {
                 font-size: 18px;
+            }
+
+            .streamer-proximamente {
+                min-height: 280px;
             }
 
             .ranking-item {
@@ -535,14 +887,23 @@
                 min-width: 55px;
                 font-size: 14px;
             }
+
+            .jugador::before {
+                display: none;
+            }
+
         }
+
     </style>
+
 </head>
 
 
 <body>
 
+
     <div class="contenedor">
+
 
         <!-- ================= ENCABEZADO ================= -->
 
@@ -553,9 +914,11 @@
             </h1>
 
             <div class="descripcion">
+
                 Un desafío de Solo Queue donde los jugadores del Sur Tucumano
                 compiten para demostrar quién puede alcanzar el mejor rendimiento
                 y posicionarse en lo más alto del ranking en 30 días.
+
             </div>
 
         </div>
@@ -564,6 +927,10 @@
         <!-- ================= MENÚ ================= -->
 
         <div class="menu-lateral">
+
+            <div class="menu-flecha">
+                →
+            </div>
 
             <div class="menu-titulo">
                 ☰ MENÚ
@@ -646,6 +1013,7 @@
 
         </div>
 
+
     </div>
 
 
@@ -655,84 +1023,261 @@
 
     <script>
 
+
         let tiemposPartida = {};
 
 
+        // =========================================================
+        // FORMATEAR TIEMPO
+        // =========================================================
+
         function formatearTiempo(segundos) {
 
-            const minutos = Math.floor(segundos / 60);
+            const minutos =
+                Math.floor(segundos / 60);
 
-            const segundosRestantes = segundos % 60;
+            const segundosRestantes =
+                segundos % 60;
 
             return `${minutos}:${segundosRestantes
                 .toString()
                 .padStart(2, "0")}`;
+
         }
 
+
+        // =========================================================
+        // CONVERTIR FECHA DE ÚLTIMA PARTIDA
+        // =========================================================
+
+        function fechaUltimaPartida(jugador) {
+
+            if (!jugador.ultima_partida) {
+                return 0;
+            }
+
+            const fecha =
+                jugador.ultima_partida
+                    .replace(" ", "T");
+
+            const tiempo =
+                new Date(fecha).getTime();
+
+            return Number.isNaN(tiempo)
+                ? 0
+                : tiempo;
+
+        }
+
+
+        // =========================================================
+        // CARGAR JUGADORES
+        // =========================================================
 
         function cargarJugadores() {
 
             fetch("/api/jugadores")
 
-                .then(respuesta => respuesta.json())
+                .then(respuesta =>
+                    respuesta.json()
+                )
 
                 .then(jugadores => {
 
+
                     const contenedor =
-                        document.getElementById("jugadores");
+                        document.getElementById(
+                            "jugadores"
+                        );
+
 
                     contenedor.innerHTML = "";
 
 
-                    /* ================= JUGADORES ================= */
+                    // =================================================
+                    // ORDEN DE JUGADORES
+                    // =================================================
 
-                    for (const nombre in jugadores) {
+                    const ordenEstado = {
 
-                        const jugador = jugadores[nombre];
+                        "in_game": 1,
 
-                        let estadoTexto = "⚪ OFFLINE";
-                        let claseEstado = "offline";
-                        let contador = "";
+                        "online": 2,
+
+                        "offline": 3
+
+                    };
 
 
-                        if (jugador.estado === "online") {
+                    const jugadoresOrdenados =
+                        Object.entries(jugadores);
 
-                            estadoTexto = "🟢 ONLINE";
-                            claseEstado = "online";
+
+                    jugadoresOrdenados.sort(
+                        ([nombreA, jugadorA],
+                         [nombreB, jugadorB]) => {
+
+
+                            const estadoA =
+                                ordenEstado[
+                                    jugadorA.estado
+                                ] || 3;
+
+
+                            const estadoB =
+                                ordenEstado[
+                                    jugadorB.estado
+                                ] || 3;
+
+
+                            // -----------------------------------------
+                            // PRIMERO: ESTADO
+                            // -----------------------------------------
+
+                            if (
+                                estadoA !== estadoB
+                            ) {
+
+                                return (
+                                    estadoA -
+                                    estadoB
+                                );
+
+                            }
+
+
+                            // -----------------------------------------
+                            // OFFLINE:
+                            // MÁS RECIENTE PRIMERO
+                            // -----------------------------------------
+
+                            if (
+                                jugadorA.estado ===
+                                "offline"
+                            ) {
+
+                                const fechaA =
+                                    fechaUltimaPartida(
+                                        jugadorA
+                                    );
+
+                                const fechaB =
+                                    fechaUltimaPartida(
+                                        jugadorB
+                                    );
+
+
+                                if (
+                                    fechaA !==
+                                    fechaB
+                                ) {
+
+                                    return (
+                                        fechaB -
+                                        fechaA
+                                    );
+
+                                }
+
+                            }
+
+
+                            return 0;
+
+                        }
+                    );
+
+
+                    // =================================================
+                    // MOSTRAR JUGADORES
+                    // =================================================
+
+                    for (
+                        const [nombre, jugador]
+                        of jugadoresOrdenados
+                    ) {
+
+
+                        let estadoTexto =
+                            "⚪ OFFLINE";
+
+
+                        let claseEstado =
+                            "offline";
+
+
+                        let contador =
+                            "";
+
+
+                        // -----------------------------------------
+                        // ONLINE
+                        // -----------------------------------------
+
+                        if (
+                            jugador.estado ===
+                            "online"
+                        ) {
+
+                            estadoTexto =
+                                "🟢 ONLINE";
+
+                            claseEstado =
+                                "online";
 
                         }
 
 
-                        if (jugador.estado === "in_game") {
+                        // -----------------------------------------
+                        // EN PARTIDA
+                        // -----------------------------------------
 
-                            estadoTexto = "🎮 EN PARTIDA";
-                            claseEstado = "partida";
+                        if (
+                            jugador.estado ===
+                            "in_game"
+                        ) {
+
+                            estadoTexto =
+                                "🎮 EN PARTIDA";
+
+                            claseEstado =
+                                "partida";
 
 
-                            if (jugador.game_start_time) {
+                            if (
+                                jugador.game_start_time
+                            ) {
 
                                 tiemposPartida[nombre] =
                                     jugador.game_start_time;
 
 
-                                const segundos = Math.max(
-                                    0,
-                                    Math.floor(
-                                        (Date.now() -
-                                            jugador.game_start_time) / 1000
-                                    )
-                                );
+                                const segundos =
+                                    Math.max(
+                                        0,
+                                        Math.floor(
+                                            (
+                                                Date.now() -
+                                                jugador.game_start_time
+                                            ) / 1000
+                                        )
+                                    );
 
 
                                 contador = `
 
                                     <div class="contador">
 
-                                        ⏱️ ${formatearTiempo(segundos)}
+                                        ⏱️ ${
+                                            formatearTiempo(
+                                                segundos
+                                            )
+                                        }
 
                                     </div>
 
                                 `;
+
                             }
 
                         } else {
@@ -742,13 +1287,20 @@
                         }
 
 
+                        // -----------------------------------------
+                        // TARJETA
+                        // -----------------------------------------
+
                         contenedor.innerHTML += `
 
                             <div class="jugador">
 
                                 <div class="nombre">
+
                                     ${nombre}
+
                                 </div>
+
 
                                 <div class="riot">
 
@@ -757,24 +1309,31 @@
 
                                 </div>
 
+
                                 <div class="estado ${claseEstado}">
 
                                     ${estadoTexto}
 
                                 </div>
 
+
                                 ${contador}
 
                             </div>
 
                         `;
+
                     }
 
 
-                    /* ================= RANKING ================= */
+                    // =================================================
+                    // RANKING
+                    // =================================================
 
                     const ranking =
-                        document.getElementById("ranking");
+                        document.getElementById(
+                            "ranking"
+                        );
 
 
                     const ordenTier = {
@@ -808,56 +1367,81 @@
                         Object.entries(jugadores);
 
 
-                    jugadoresRanking.sort((a, b) => {
-
-                        const rangoA = a[1].rango;
-                        const rangoB = b[1].rango;
+                    jugadoresRanking.sort(
+                        (a, b) => {
 
 
-                        const tierA =
-                            rangoA?.tier || "UNRANKED";
-
-                        const tierB =
-                            rangoB?.tier || "UNRANKED";
+                            const rangoA =
+                                a[1].rango;
 
 
-                        if (
-                            ordenTier[tierA] !==
-                            ordenTier[tierB]
-                        ) {
+                            const rangoB =
+                                b[1].rango;
+
+
+                            const tierA =
+                                rangoA?.tier ||
+                                "UNRANKED";
+
+
+                            const tierB =
+                                rangoB?.tier ||
+                                "UNRANKED";
+
+
+                            if (
+                                ordenTier[tierA] !==
+                                ordenTier[tierB]
+                            ) {
+
+                                return (
+                                    ordenTier[tierB] -
+                                    ordenTier[tierA]
+                                );
+
+                            }
+
+
+                            const divisionA =
+                                ordenDivision[
+                                    rangoA?.rank
+                                ] || 0;
+
+
+                            const divisionB =
+                                ordenDivision[
+                                    rangoB?.rank
+                                ] || 0;
+
+
+                            if (
+                                divisionA !==
+                                divisionB
+                            ) {
+
+                                return (
+                                    divisionB -
+                                    divisionA
+                                );
+
+                            }
+
+
+                            const lpA =
+                                rangoA?.lp || 0;
+
+
+                            const lpB =
+                                rangoB?.lp || 0;
+
 
                             return (
-                                ordenTier[tierB] -
-                                ordenTier[tierA]
+                                lpB -
+                                lpA
                             );
 
                         }
-
-
-                        const divisionA =
-                            ordenDivision[rangoA?.rank] || 0;
-
-                        const divisionB =
-                            ordenDivision[rangoB?.rank] || 0;
-
-
-                        if (divisionA !== divisionB) {
-
-                            return divisionB - divisionA;
-
-                        }
-
-
-                        const lpA =
-                            rangoA?.lp || 0;
-
-                        const lpB =
-                            rangoB?.lp || 0;
-
-
-                        return lpB - lpA;
-
-                    });
+                    );
 
 
                     ranking.innerHTML = "";
@@ -866,20 +1450,28 @@
                     jugadoresRanking.forEach(
                         ([nombre, jugador], index) => {
 
-                            const rango = jugador.rango;
 
-                            let textoRango = "UNRANKED";
+                            const rango =
+                                jugador.rango;
+
+
+                            let textoRango =
+                                "UNRANKED";
+
+
                             let lp = "";
 
 
                             if (
                                 rango &&
                                 rango.tier &&
-                                rango.tier !== "UNRANKED"
+                                rango.tier !==
+                                    "UNRANKED"
                             ) {
 
                                 textoRango =
                                     `${rango.tier} ${rango.rank}`;
+
 
                                 lp =
                                     `${rango.lp} LP`;
@@ -893,15 +1485,22 @@
 
                             if (index === 0) {
 
-                                posicion = "🥇";
+                                posicion =
+                                    "🥇";
 
-                            } else if (index === 1) {
+                            } else if (
+                                index === 1
+                            ) {
 
-                                posicion = "🥈";
+                                posicion =
+                                    "🥈";
 
-                            } else if (index === 2) {
+                            } else if (
+                                index === 2
+                            ) {
 
-                                posicion = "🥉";
+                                posicion =
+                                    "🥉";
 
                             }
 
@@ -911,19 +1510,30 @@
                                 <div class="ranking-item">
 
                                     <div class="ranking-posicion">
+
                                         ${posicion}
+
                                     </div>
+
 
                                     <div class="ranking-nombre">
+
                                         ${nombre}
+
                                     </div>
+
 
                                     <div class="ranking-rango">
+
                                         ${textoRango}
+
                                     </div>
 
+
                                     <div class="ranking-lp">
+
                                         ${lp}
+
                                     </div>
 
                                 </div>
@@ -935,25 +1545,29 @@
 
                 })
 
+
                 .catch(error => {
 
-                    console.error("Error:", error);
+                    console.error(
+                        "Error:",
+                        error
+                    );
 
                 });
 
         }
 
 
-        /* =========================================================
-           CARGA INICIAL
-        ========================================================= */
+        // =========================================================
+        // CARGA INICIAL
+        // =========================================================
 
         cargarJugadores();
 
 
-        /* =========================================================
-           ACTUALIZAR ESTADO DE RIOT CADA 15 SEGUNDOS
-        ========================================================= */
+        // =========================================================
+        // ACTUALIZAR ESTADO CADA 15 SEGUNDOS
+        // =========================================================
 
         setInterval(
             cargarJugadores,
@@ -961,63 +1575,86 @@
         );
 
 
-        /* =========================================================
-           ACTUALIZAR CONTADORES CADA SEGUNDO
-        ========================================================= */
+        // =========================================================
+        // ACTUALIZAR CONTADORES CADA SEGUNDO
+        // =========================================================
 
         setInterval(() => {
 
+
             const elementos =
-                document.querySelectorAll(".contador");
+                document.querySelectorAll(
+                    ".contador"
+                );
 
 
-            elementos.forEach(elemento => {
-
-                const jugadorElemento =
-                    elemento.closest(".jugador");
+            elementos.forEach(
+                elemento => {
 
 
-                if (!jugadorElemento) {
-                    return;
+                    const jugadorElemento =
+                        elemento.closest(
+                            ".jugador"
+                        );
+
+
+                    if (!jugadorElemento) {
+                        return;
+                    }
+
+
+                    const nombreElemento =
+                        jugadorElemento.querySelector(
+                            ".nombre"
+                        );
+
+
+                    if (!nombreElemento) {
+                        return;
+                    }
+
+
+                    const nombre =
+                        nombreElemento
+                            .textContent
+                            .trim();
+
+
+                    if (
+                        tiemposPartida[nombre]
+                    ) {
+
+
+                        const segundos =
+                            Math.max(
+                                0,
+                                Math.floor(
+                                    (
+                                        Date.now() -
+                                        tiemposPartida[nombre]
+                                    ) / 1000
+                                )
+                            );
+
+
+                        elemento.textContent =
+                            `⏱️ ${
+                                formatearTiempo(
+                                    segundos
+                                )
+                            }`;
+
+                    }
+
                 }
 
-
-                const nombreElemento =
-                    jugadorElemento.querySelector(".nombre");
-
-
-                if (!nombreElemento) {
-                    return;
-                }
-
-
-                const nombre =
-                    nombreElemento.textContent.trim();
-
-
-                if (tiemposPartida[nombre]) {
-
-                    const segundos = Math.max(
-                        0,
-                        Math.floor(
-                            (Date.now() -
-                                tiemposPartida[nombre]) / 1000
-                        )
-                    );
-
-
-                    elemento.textContent =
-                        `⏱️ ${formatearTiempo(segundos)}`;
-
-                }
-
-            });
+            );
 
         }, 1000);
+
 
     </script>
 
 </body>
 
 </html>
-```

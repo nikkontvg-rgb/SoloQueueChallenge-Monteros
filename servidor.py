@@ -16,6 +16,7 @@ app = Flask(__name__)
 
 ARCHIVO = "datos.json"
 
+# Riot se actualiza como máximo cada 10 minutos
 INTERVALO_ACTUALIZACION = 10 * 60
 
 ultima_actualizacion = 0
@@ -23,11 +24,21 @@ ultima_actualizacion = 0
 bloqueo_actualizacion = threading.Lock()
 
 
+# =========================================================
+# DATOS
+# =========================================================
+
 def cargar_datos():
+
     if not os.path.exists(ARCHIVO):
         return {"jugadores": {}}
 
-    with open(ARCHIVO, "r", encoding="utf-8") as archivo:
+    with open(
+        ARCHIVO,
+        "r",
+        encoding="utf-8"
+    ) as archivo:
+
         return json.load(archivo)
 
 
@@ -47,6 +58,10 @@ def guardar_datos(datos):
         )
 
 
+# =========================================================
+# ACTUALIZACIÓN DE RIOT
+# =========================================================
+
 def actualizar_datos_riot():
 
     global ultima_actualizacion
@@ -61,6 +76,8 @@ def actualizar_datos_riot():
 
     try:
 
+        # Volvemos a comprobar el tiempo después de obtener
+        # el bloqueo para evitar actualizaciones duplicadas.
         ahora = time.time()
 
         if ahora - ultima_actualizacion < INTERVALO_ACTUALIZACION:
@@ -75,8 +92,8 @@ def actualizar_datos_riot():
 
         for nombre, jugador in jugadores.items():
 
-            riot_id = jugador.get("riot_id", "")
-            riot_tag = jugador.get("riot_tag", "")
+            riot_id = jugador.get("riot_id")
+            riot_tag = jugador.get("riot_tag")
 
             if not riot_id or not riot_tag:
                 continue
@@ -84,7 +101,7 @@ def actualizar_datos_riot():
             print(f"Actualizando: {nombre}")
 
             # --------------------------------
-            # OBTENER PUUID
+            # PUUID
             # --------------------------------
 
             puuid = jugador.get("puuid")
@@ -100,11 +117,15 @@ def actualizar_datos_riot():
                     jugador["puuid"] = puuid
 
             if not puuid:
-                print(f"No se pudo obtener PUUID de {nombre}")
+
+                print(
+                    f"No se pudo obtener PUUID de {nombre}"
+                )
+
                 continue
 
             # --------------------------------
-            # ACTUALIZAR HISTORIAL
+            # HISTORIAL
             # --------------------------------
 
             partidas = actualizar_partidas_jugador(
@@ -113,17 +134,15 @@ def actualizar_datos_riot():
             )
 
             if partidas:
-
                 jugador["partidas_riot"] = partidas[:10]
 
             # --------------------------------
-            # ACTUALIZAR RANGO
+            # RANGO
             # --------------------------------
 
             rango = obtener_rango(puuid)
 
             if rango:
-
                 jugador["rango"] = rango
 
         # --------------------------------
@@ -150,6 +169,10 @@ def actualizar_datos_riot():
         bloqueo_actualizacion.release()
 
 
+# =========================================================
+# PÁGINA PRINCIPAL
+# =========================================================
+
 @app.route("/")
 def inicio():
 
@@ -166,12 +189,15 @@ def inicio():
     )
 
 
+# =========================================================
+# API DE JUGADORES
+# =========================================================
+
 @app.route("/api/jugadores")
 def api_jugadores():
 
-    # Actualizar historial y ranking
-    # como máximo una vez cada 10 minutos
-
+    # Actualiza historial y ranking como máximo
+    # una vez cada 10 minutos.
     actualizar_datos_riot()
 
     datos = cargar_datos()
@@ -195,8 +221,18 @@ def api_jugadores():
             ""
         )
 
-        estado = "offline"
+        # -------------------------------------------------
+        # ESTADO
+        # -------------------------------------------------
+        #
+        # Actualmente Riot solamente nos permite detectar
+        # si está dentro de una partida.
+        #
+        # El estado "online" quedará preparado para la
+        # futura aplicación externa.
+        # -------------------------------------------------
 
+        estado = "offline"
         game_start_time = None
 
         if riot_id and riot_tag:
@@ -214,6 +250,27 @@ def api_jugadores():
                     "game_start_time"
                 )
 
+        # -------------------------------------------------
+        # ÚLTIMA PARTIDA
+        # -------------------------------------------------
+
+        partidas = jugador.get(
+            "partidas_riot",
+            []
+        )
+
+        ultima_partida = None
+
+        if partidas:
+
+            ultima_partida = partidas[0].get(
+                "fecha"
+            )
+
+        # -------------------------------------------------
+        # RESULTADO
+        # -------------------------------------------------
+
         resultado[nombre] = {
 
             "riot_id": riot_id,
@@ -224,18 +281,21 @@ def api_jugadores():
 
             "game_start_time": game_start_time,
 
+            "ultima_partida": ultima_partida,
+
             "rango": jugador.get(
                 "rango"
             ),
 
-            "partidas_riot": jugador.get(
-                "partidas_riot",
-                []
-            )
+            "partidas_riot": partidas
         }
 
     return jsonify(resultado)
 
+
+# =========================================================
+# SERVIDOR
+# =========================================================
 
 if __name__ == "__main__":
 
