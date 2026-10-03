@@ -233,6 +233,164 @@
             color: #9ca3af;
             font-size: 17px;
         }
+        /* =========================================
+        PALETA SOLOQ CHALLENGE - ESMERALDA/BORDÓ
+        ========================================= */
+
+        :root {
+            --fondo: #0b1210;
+            --fondo-secundario: #101a17;
+
+            --esmeralda-oscuro: #123d32;
+            --esmeralda: #176b55;
+            --esmeralda-medio: #20866b;
+            --esmeralda-claro: #2aa982;
+
+            --bordo-oscuro: #3d1723;
+            --bordo: #682638;
+            --bordo-medio: #87334a;
+            --bordo-claro: #a9445d;
+
+            --blanco: #f5f5f5;
+            --gris: #aeb8b4;
+            --gris-oscuro: #68736f;
+        }
+
+        /* Fondo general */
+
+        body {
+            background: var(--fondo);
+            color: var(--blanco);
+        }
+
+        /* Encabezado */
+
+        .encabezado h1 {
+            color: var(--blanco);
+        }
+
+        .descripcion {
+            color: var(--gris);
+        }
+
+        /* Menú */
+
+        .menu-boton {
+            background: var(--esmeralda-oscuro);
+            border: 1px solid var(--esmeralda);
+            color: var(--blanco);
+        }
+
+        .menu-boton:hover {
+            background: var(--esmeralda);
+        }
+
+        .menu-contenido {
+            background: var(--fondo-secundario);
+            border: 1px solid var(--bordo);
+        }
+
+        .menu-contenido a {
+            color: var(--blanco);
+        }
+
+        .menu-contenido a:hover {
+            background: var(--bordo-oscuro);
+        }
+
+        /* Streamers */
+
+        .streamers h2 {
+            color: var(--blanco);
+        }
+
+        .streamer-proximamente {
+            background: var(--fondo-secundario);
+            border: 1px solid var(--bordo);
+        }
+
+        .streamer-proximamente h3 {
+            color: var(--esmeralda-claro);
+        }
+
+        .streamer-proximamente p {
+            color: var(--gris);
+        }
+
+        /* Tarjetas de jugadores */
+
+        .jugador {
+            background: var(--fondo-secundario);
+            border: 1px solid var(--esmeralda-oscuro);
+        }
+
+        .jugador:hover {
+            border-color: var(--esmeralda);
+        }
+
+        /* Nombre del jugador */
+
+        .nombre {
+            color: var(--blanco);
+        }
+
+        /* Riot ID */
+
+        .riot {
+            color: var(--gris);
+        }
+
+        /* Ranking */
+
+        .ranking {
+            background: var(--fondo-secundario);
+            border: 1px solid var(--bordo-oscuro);
+        }
+
+        .ranking h2 {
+            color: var(--blanco);
+        }
+
+        .ranking-item {
+            background: #14201d;
+            border: 1px solid var(--esmeralda-oscuro);
+        }
+
+        .ranking-item:hover {
+            border-color: var(--bordo);
+        }
+
+        .ranking-nombre {
+            color: var(--blanco);
+        }
+
+        .ranking-rango {
+            color: var(--esmeralda-claro);
+        }
+
+        .ranking-lp {
+            color: var(--bordo-claro);
+        }
+
+        /* Contador de partida */
+
+        .contador {
+            color: var(--esmeralda-claro);
+        }
+
+        /* Estados */
+
+        .estado.online {
+            color: var(--esmeralda-claro);
+        }
+
+        .estado.partida {
+            color: var(--bordo-claro);
+        }
+
+        .estado.offline {
+            color: var(--gris);
+        }
     </style>
 </head>
 
@@ -281,7 +439,7 @@
             </div>
 
         </div>
-        
+
         <div class="streamers">
 
             <h2>📺 Streamers en vivo</h2>
