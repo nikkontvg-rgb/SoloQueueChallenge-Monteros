@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
 
@@ -9,126 +10,134 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@400;500;600;700;800&family=Press+Start+2P&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+        /* =========================================================
+           VARIABLES
+        ========================================================= */
+
+        :root {
+            --fondo: #e8e5df;
+            --fondo-claro: #efede8;
+
+            --rojo-oscuro: #35151c;
+            --bordo-oscuro: #541020;
+            --bordo: #70152b;
+            --rubí: #941b3a;
+            --rubí-claro: #b52a4b;
+            --rojo-brillante: #d63b5c;
+
+            --blanco: #ffffff;
+            --gris-oscuro: #292929;
+            --gris: #7d7d7d;
+            --gris-claro: #d2d2d2;
+        }
+
+
+        /* =========================================================
+           BASE
+        ========================================================= */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            background: var(--fondo);
+        }
+
         body {
             font-family: 'Rajdhani', sans-serif;
-            background: #111827;
-            color: rgba(255, 255, 255, 0.493);
+            color: var(--gris-oscuro);
             margin: 0;
             padding: 30px;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        .encabezado h1 {
-            font-size: 38px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
+
+        /* =========================================================
+           FONDO ANIMADO
+        ========================================================= */
+
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            pointer-events: none;
+            z-index: -1;
+            border-radius: 50%;
+            filter: blur(70px);
         }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 40px;
+        /* Mancha superior izquierda */
+        body::before {
+            width: 550px;
+            height: 550px;
+            top: -220px;
+            left: -180px;
+
+            background: rgba(112, 21, 43, 0.10);
+
+            animation: movimientoFondo1 14s ease-in-out infinite alternate;
         }
+
+        /* Mancha inferior derecha */
+        body::after {
+            width: 650px;
+            height: 650px;
+            right: -250px;
+            bottom: -280px;
+
+            background: rgba(112, 21, 43, 0.08);
+
+            animation: movimientoFondo2 18s ease-in-out infinite alternate;
+        }
+
+        @keyframes movimientoFondo1 {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(180px, 100px) scale(1.15);
+            }
+
+            100% {
+                transform: translate(80px, 220px) scale(1.05);
+            }
+        }
+
+        @keyframes movimientoFondo2 {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(-150px, -120px) scale(1.12);
+            }
+
+            100% {
+                transform: translate(-50px, -200px) scale(1.05);
+            }
+        }
+
+
+        /* =========================================================
+           CONTENEDOR
+        ========================================================= */
 
         .contenedor {
             max-width: 900px;
             margin: auto;
+            position: relative;
+            z-index: 1;
         }
 
-        .jugador {
-            background: #1f2937;
-            padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 12px;
-        }
 
-        .nombre {
-            font-size: 22px;
-            font-weight: bold;
-        }
-
-        .riot {
-            color: #9ca3af;
-            margin-top: 5px;
-        }
-
-        .estado {
-            margin-top: 15px;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .online {
-            color: #22c55e;
-        }
-
-        .partida {
-            color: #f59e0b;
-        }
-
-        .offline {
-            color: #9ca3af;
-        }
-
-        .actualizacion {
-            text-align: center;
-            color: #6b7280;
-            margin-top: 30px;
-        }
-
-        .contador {
-            margin-top: 8px;
-            color: #fbbf24;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .ranking {
-            margin-top: 30px;
-            padding: 20px;
-            background: #111827;
-            border-radius: 12px;
-        }
-
-        .ranking h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .ranking-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            background: #1f2937;
-            border-radius: 8px;
-        }
-
-        .ranking-posicion {
-            width: 35px;
-            font-size: 20px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .ranking-nombre {
-            flex: 1;
-            font-weight: bold;
-        }
-
-        .ranking-rango {
-            font-weight: bold;
-        }
-
-        .ranking-lp {
-            min-width: 70px;
-            text-align: right;
-            color: #fbbf24;
-        }
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
-
-        body {
-            font-family: 'Rajdhani', sans-serif;
-        }
+        /* =========================================================
+           ENCABEZADO
+        ========================================================= */
 
         .encabezado {
             text-align: center;
@@ -136,9 +145,12 @@
         }
 
         .encabezado h1 {
-            font-size: 38px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 42px;
             font-weight: 700;
-            margin-bottom: 10px;
+            letter-spacing: 1px;
+            color: var(--rojo-oscuro);
+            margin: 0 0 10px;
         }
 
         .descripcion {
@@ -147,182 +159,34 @@
             font-size: 21px;
             font-weight: 400;
             line-height: 1.5;
-            color: #b8c2d1;
-        }
-
-        .menu-container {
-            display: flex;
-            justify-content: center;
-            margin: 25px 0;
-        }
-
-        .menu {
-            position: relative;
-        }
-
-        .menu-boton {
-            background: #1f2937;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 22px;
-            font-size: 17px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .menu-boton:hover {
-            background: #2d3a4f;
-        }
-
-        .menu-contenido {
-            display: none;
-            position: absolute;
-            top: 48px;
-            left: 50%;
-            transform: translateX(-50%);
-            min-width: 190px;
-            background: #1f2937;
-            border-radius: 8px;
-            padding: 8px;
-            z-index: 1000;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-        }
-
-        .menu-contenido a {
-            display: block;
-            padding: 11px 14px;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-
-        .menu-contenido a:hover {
-            background: #374151;
-        }
-
-        .menu:hover .menu-contenido {
-            display: block;
-        }
-
-        .streamers {
-            margin: 35px auto;
-            max-width: 900px;
-        }
-
-        .streamers h2 {
-            text-align: center;
-            font-size: 28px;
-            margin-bottom: 18px;
-        }
-
-        .streamer-proximamente {
-            background: #1f2937;
-            border: 1px solid #374151;
-            border-radius: 12px;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .streamer-proximamente .icono {
-            font-size: 42px;
-            margin-bottom: 10px;
-        }
-
-        .streamer-proximamente h3 {
-            margin: 5px 0;
-            font-size: 23px;
-        }
-
-        .streamer-proximamente p {
-            margin: 0;
-            color: #9ca3af;
-            font-size: 17px;
-        }
-        /* =========================================
-        PALETA SOLOQ CHALLENGE
-        ROJO / RUBÍ / BORDÓ + BLANCO / GRIS
-        ========================================= */
-
-        :root {
-            /* Fondos */
-            --fondo: #0d090b;
-            --fondo-secundario: #171014;
-            --fondo-tarjeta: #21171b;
-
-            /* Primario */
-            --rojo-oscuro: #3a0b16;
-            --bordo-oscuro: #541020;
-            --bordo: #70152b;
-            --rubí: #941b3a;
-            --rubí-claro: #b52a4b;
-            --rojo-brillante: #d63b5c;
-
-            /* Secundario */
-            --blanco: #ffffff;
-            --blanco-suave: #f1f1f1;
-            --gris-claro: #d2d2d2;
-            --gris: #a8a8a8;
-            --gris-medio: #7d7d7d;
+            color: #555555;
         }
 
 
-        /* =========================
-        FONDO
-        ========================= */
+        /* =========================================================
+           MENÚ LATERAL
+        ========================================================= */
 
-        body {
-            background: var(--fondo);
-            color: var(--blanco);
+        .menu-lateral {
+            position: fixed;
+            left: 0;
+            top: 0;
+
+            width: 65px;
+            height: 100vh;
+
+            background: var(--rojo-oscuro);
+            border-right: 2px solid var(--bordo);
+
+            z-index: 2000;
+
+            transition: width 0.3s ease;
+            overflow: hidden;
         }
-
-
-        /* =========================
-        ENCABEZADO
-        ========================= */
-
-        .encabezado h1 {
-            color: var(--blanco);
-        }
-
-        .descripcion {
-            color: var(--gris-claro);
-        }
-
-
-        /* =========================
-        MENÚ
-        ========================= */
-
-/* =========================
-   MENU LATERAL
-   ========================= */
-
-.menu-lateral {
-    position: fixed;
-    left: 0;
-    top: 0;
-
-    width: 65px;
-    height: 100vh;
-
-    background: #35151C;
-    border-right: 2px solid #70152B;
-
-    z-index: 2000;
-
-    transition: width 0.3s ease;
-    overflow: hidden;
-}
-
-/* Se abre al pasar el mouse */
 
         .menu-lateral:hover {
             width: 250px;
         }
-
-        /* Título del menú */
 
         .menu-titulo {
             width: 250px;
@@ -333,14 +197,12 @@
 
             padding-left: 20px;
 
-            color: white;
+            color: var(--blanco);
             font-size: 19px;
             font-weight: bold;
 
-            border-bottom: 1px solid #70152B;
+            border-bottom: 1px solid var(--bordo);
         }
-
-        /* Opciones */
 
         .menu-contenido {
             width: 250px;
@@ -353,52 +215,84 @@
             padding: 14px 15px;
             margin-bottom: 6px;
 
-            color: white;
+            color: var(--blanco);
             text-decoration: none;
 
             border-radius: 7px;
 
             font-size: 17px;
-
             white-space: nowrap;
 
             transition: background 0.2s ease;
         }
 
         .menu-contenido a:hover {
-            background: #541020;
+            background: var(--bordo-oscuro);
         }
 
 
-        /* =========================
-        STREAMERS
-        ========================= */
+        /* =========================================================
+           STREAMERS
+        ========================================================= */
+
+        .streamers {
+            margin: 35px auto;
+            max-width: 900px;
+        }
 
         .streamers h2 {
-            color: var(--blanco);
+            text-align: center;
+
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 1px;
+
+            margin-bottom: 18px;
+            color: var(--rojo-oscuro);
         }
 
         .streamer-proximamente {
-            background: var(--fondo-tarjeta);
+            background: var(--rojo-oscuro);
             border: 1px solid var(--bordo);
+            border-radius: 12px;
+
+            padding: 30px;
+            text-align: center;
+        }
+
+        .streamer-proximamente .icono {
+            font-size: 42px;
+            margin-bottom: 10px;
         }
 
         .streamer-proximamente h3 {
+            margin: 5px 0;
+            font-size: 23px;
             color: var(--rubí-claro);
         }
 
         .streamer-proximamente p {
+            margin: 0;
             color: var(--gris-claro);
+            font-size: 17px;
         }
 
 
-        /* =========================
-        JUGADORES
-        ========================= */
+        /* =========================================================
+           JUGADORES
+        ========================================================= */
 
         .jugador {
-            background: var(--fondo-tarjeta);
+            background: var(--rojo-oscuro);
+
             border: 1px solid var(--bordo-oscuro);
+            border-radius: 12px;
+
+            padding: 20px;
+            margin-bottom: 15px;
+
+            transition: border-color 0.2s ease;
         }
 
         .jugador:hover {
@@ -406,217 +300,209 @@
         }
 
         .nombre {
-            color: var(--blanco);
-        }
-
-        .riot {
-            color: var(--gris-claro);
-        }
-
-
-        /* =========================
-        ESTADOS
-        ========================= */
-
-        .estado.online {
-            color: var(--rubí-claro);
-        }
-
-        .estado.partida {
-            color: var(--rojo-brillante);
-        }
-
-        .estado.offline {
-            color: var(--gris);
-        }
-
-
-        /* =========================
-        CONTADOR
-        ========================= */
-
-        .contador {
-            color: var(--rubí-claro);
-        }
-
-
-        /* =========================
-        RANKING
-        ========================= */
-
-        .ranking {
-            background: var(--fondo-secundario);
-            border: 1px solid var(--bordo-oscuro);
-        }
-
-        .ranking h2 {
-            color: var(--blanco);
-        }
-
-        .ranking-item {
-            background: var(--fondo-tarjeta);
-            border: 1px solid var(--bordo-oscuro);
-        }
-
-        .ranking-item:hover {
-            border-color: var(--rubí);
-        }
-
-        .ranking-nombre {
-            color: var(--blanco);
-        }
-
-        .ranking-rango {
-            color: var(--rubí-claro);
-        }
-
-        .ranking-lp {
-            color: var(--blanco-suave);
-        }
-        html {
-            background: #e8e5df !important;
-        }
-
-        body {
-            background: #e8e5df !important;
-            color: #292929;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        body::before {
-            content: "";
-            position: fixed;
-            top: -25%;
-            left: -25%;
-            width: 150%;
-            height: 150%;
-
-            z-index: 0;
-            pointer-events: none;
-
-            background:
-                radial-gradient(
-                    circle at 20% 30%,
-                    rgba(90, 30, 42, 0.10),
-                    transparent 28%
-                ),
-                radial-gradient(
-                    circle at 75% 65%,
-                    rgba(90, 30, 42, 0.07),
-                    transparent 32%
-                ),
-                radial-gradient(
-                    circle at 50% 100%,
-                    rgba(255, 255, 255, 0.35),
-                    transparent 35%
-                );
-
-            animation: movimientoFondo 12s ease-in-out infinite alternate;
-        }
-
-        .contenedor {
-            position: relative;
-            z-index: 1;
-        }
-
-        @keyframes movimientoFondo {
-            0% {
-                transform: translate(-3%, -2%) scale(1);
-            }
-
-            50% {
-                transform: translate(2%, 3%) scale(1.04);
-            }
-
-            100% {
-                transform: translate(-2%, 1%) scale(1.02);
-            }
-        }
-
-        .contenedor {
-            position: relative;
-            z-index: 1;
-        }
-
-        @keyframes ac2Background {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
-        }
-
-        .jugador,
-        .ranking,
-        .streamer-proximamente {
-            background: #35151C !important;
-        }
-        /* =========================
-        FUENTES ESPECIALES
-        ========================= */
-
-        /* Título principal */
-        .encabezado h1 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 42px;
-            letter-spacing: 1px;
-        }
-
-        .encabezado h1 {
-            color: #5A1E2A !important;
-        }
-
-        /* Streamers */
-        .streamers h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        /* Nombres de jugadores */
-        .nombre {
             font-family: 'Press Start 2P', cursive;
             font-size: 16px;
+            font-weight: bold;
 
-            animation: nombreFlotando 1.5s ease-in-out infinite;
+            color: var(--blanco);
+
+            animation: nombreFlotando 1s ease-in-out infinite;
         }
 
-        /* Movimiento muy sutil */
         @keyframes nombreFlotando {
-
-            0%, 100% {
+            0%,
+            100% {
                 transform: translateY(0);
             }
 
             50% {
                 transform: translateY(-2px);
             }
+        }
 
+        .riot {
+            color: var(--gris-claro);
+            margin-top: 5px;
+        }
+
+        .estado {
+            margin-top: 15px;
+
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .online {
+            color: #22c55e;
+        }
+
+        .partida {
+            color: var(--rojo-brillante);
+        }
+
+        .offline {
+            color: var(--gris);
+        }
+
+
+        /* =========================================================
+           CONTADOR
+        ========================================================= */
+
+        .contador {
+            margin-top: 8px;
+
+            color: var(--rubí-claro);
+
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+
+        /* =========================================================
+           ACTUALIZACIÓN
+        ========================================================= */
+
+        .actualizacion {
+            text-align: center;
+
+            color: var(--gris);
+
+            margin-top: 30px;
+        }
+
+
+        /* =========================================================
+           RANKING
+        ========================================================= */
+
+        .ranking {
+            margin-top: 30px;
+            padding: 20px;
+
+            background: rgba(53, 21, 28, 0.95);
+
+            border: 1px solid var(--bordo-oscuro);
+            border-radius: 12px;
+        }
+
+        .ranking h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+
+            text-align: center;
+
+            color: var(--blanco);
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+
+            gap: 12px;
+
+            padding: 12px;
+            margin-bottom: 8px;
+
+            background: #421b24;
+
+            border: 1px solid var(--bordo-oscuro);
+            border-radius: 8px;
+
+            transition: border-color 0.2s ease;
+        }
+
+        .ranking-item:hover {
+            border-color: var(--rubí);
+        }
+
+        .ranking-posicion {
+            width: 35px;
+
+            font-size: 20px;
+            font-weight: bold;
+
+            text-align: center;
+        }
+
+        .ranking-nombre {
+            flex: 1;
+
+            font-weight: bold;
+            color: var(--blanco);
+        }
+
+        .ranking-rango {
+            font-weight: bold;
+            color: var(--rubí-claro);
+        }
+
+        .ranking-lp {
+            min-width: 70px;
+
+            text-align: right;
+
+            color: var(--gris-claro);
+        }
+
+
+        /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+
+        @media (max-width: 700px) {
+
+            body {
+                padding: 20px 15px;
+            }
+
+            .encabezado h1 {
+                font-size: 34px;
+            }
+
+            .descripcion {
+                font-size: 18px;
+            }
+
+            .ranking-item {
+                gap: 7px;
+            }
+
+            .ranking-rango {
+                font-size: 14px;
+            }
+
+            .ranking-lp {
+                min-width: 55px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
+
 
 <body>
 
     <div class="contenedor">
 
+        <!-- ================= ENCABEZADO ================= -->
+
         <div class="encabezado">
 
-            <h1>🏆 Bienvenidos al SoloQ Challenge Monteros</h1>
+            <h1>
+                🏆 Bienvenidos al SoloQ Challenge Monteros
+            </h1>
 
             <div class="descripcion">
                 Un desafío de Solo Queue donde los jugadores del Sur Tucumano
                 compiten para demostrar quién puede alcanzar el mejor rendimiento
-                y posicionarse en lo más alto del ranking en 30 dias
+                y posicionarse en lo más alto del ranking en 30 días.
             </div>
+
         </div>
+
+
+        <!-- ================= MENÚ ================= -->
 
         <div class="menu-lateral">
 
@@ -646,9 +532,14 @@
 
         </div>
 
+
+        <!-- ================= STREAMERS ================= -->
+
         <div class="streamers">
 
-            <h2>📺 Streamers en vivo</h2>
+            <h2>
+                📺 Streamers en vivo
+            </h2>
 
             <div class="streamer-proximamente">
 
@@ -656,7 +547,9 @@
                     🎥
                 </div>
 
-                <h3>Próximamente</h3>
+                <h3>
+                    Próximamente
+                </h3>
 
                 <p>
                     Próximamente podrás ver aquí a los participantes
@@ -666,268 +559,406 @@
             </div>
 
         </div>
+
+
+        <!-- ================= JUGADORES ================= -->
+
         <div id="jugadores">
             Cargando jugadores...
         </div>
+
+
+        <!-- ================= ACTUALIZACIÓN ================= -->
 
         <div class="actualizacion">
             🔄 Actualizando automáticamente...
         </div>
 
+
+        <!-- ================= RANKING ================= -->
+
         <div class="ranking">
-            <h2>🏆 RANKING</h2>
+
+            <h2>
+                🏆 RANKING
+            </h2>
+
             <div id="ranking"></div>
+
         </div>
 
     </div>
 
 
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================= -->
+
     <script>
-    let tiemposPartida = {};
 
-    function formatearTiempo(segundos) {
-        const minutos = Math.floor(segundos / 60);
-        const segundosRestantes = segundos % 60;
+        let tiemposPartida = {};
 
-        return `${minutos}:${segundosRestantes
-            .toString()
-            .padStart(2, "0")}`;
-    }
 
-    function cargarJugadores() {
+        function formatearTiempo(segundos) {
 
-        fetch("/api/jugadores")
-            .then(respuesta => respuesta.json())
-            .then(jugadores => {
+            const minutos = Math.floor(segundos / 60);
 
-                const contenedor =
-                    document.getElementById("jugadores");
+            const segundosRestantes = segundos % 60;
 
-                contenedor.innerHTML = "";
+            return `${minutos}:${segundosRestantes
+                .toString()
+                .padStart(2, "0")}`;
+        }
 
-                for (const nombre in jugadores) {
 
-                    const jugador = jugadores[nombre];
+        function cargarJugadores() {
 
-                    let estadoTexto = "⚪ OFFLINE";
-                    let claseEstado = "offline";
-                    let contador = "";
+            fetch("/api/jugadores")
 
-                    if (jugador.estado === "online") {
-                        estadoTexto = "🟢 ONLINE";
-                        claseEstado = "online";
+                .then(respuesta => respuesta.json())
+
+                .then(jugadores => {
+
+                    const contenedor =
+                        document.getElementById("jugadores");
+
+                    contenedor.innerHTML = "";
+
+
+                    /* ================= JUGADORES ================= */
+
+                    for (const nombre in jugadores) {
+
+                        const jugador = jugadores[nombre];
+
+                        let estadoTexto = "⚪ OFFLINE";
+                        let claseEstado = "offline";
+                        let contador = "";
+
+
+                        if (jugador.estado === "online") {
+
+                            estadoTexto = "🟢 ONLINE";
+                            claseEstado = "online";
+
+                        }
+
+
+                        if (jugador.estado === "in_game") {
+
+                            estadoTexto = "🎮 EN PARTIDA";
+                            claseEstado = "partida";
+
+
+                            if (jugador.game_start_time) {
+
+                                tiemposPartida[nombre] =
+                                    jugador.game_start_time;
+
+
+                                const segundos = Math.max(
+                                    0,
+                                    Math.floor(
+                                        (Date.now() -
+                                            jugador.game_start_time) / 1000
+                                    )
+                                );
+
+
+                                contador = `
+
+                                    <div class="contador">
+
+                                        ⏱️ ${formatearTiempo(segundos)}
+
+                                    </div>
+
+                                `;
+                            }
+
+                        } else {
+
+                            delete tiemposPartida[nombre];
+
+                        }
+
+
+                        contenedor.innerHTML += `
+
+                            <div class="jugador">
+
+                                <div class="nombre">
+                                    ${nombre}
+                                </div>
+
+                                <div class="riot">
+
+                                    Riot ID:
+                                    ${jugador.riot_id}#${jugador.riot_tag}
+
+                                </div>
+
+                                <div class="estado ${claseEstado}">
+
+                                    ${estadoTexto}
+
+                                </div>
+
+                                ${contador}
+
+                            </div>
+
+                        `;
                     }
 
-                    if (jugador.estado === "in_game") {
 
-                        estadoTexto = "🎮 EN PARTIDA";
-                        claseEstado = "partida";
+                    /* ================= RANKING ================= */
 
-                        if (jugador.game_start_time) {
+                    const ranking =
+                        document.getElementById("ranking");
 
-                            tiemposPartida[nombre] =
-                                jugador.game_start_time;
 
-                            const segundos = Math.max(
-                                0,
-                                Math.floor(
-                                    (Date.now() -
-                                        jugador.game_start_time) / 1000
-                                )
+                    const ordenTier = {
+
+                        "IRON": 1,
+                        "BRONZE": 2,
+                        "SILVER": 3,
+                        "GOLD": 4,
+                        "PLATINUM": 5,
+                        "EMERALD": 6,
+                        "DIAMOND": 7,
+                        "MASTER": 8,
+                        "GRANDMASTER": 9,
+                        "CHALLENGER": 10,
+                        "UNRANKED": 0
+
+                    };
+
+
+                    const ordenDivision = {
+
+                        "IV": 1,
+                        "III": 2,
+                        "II": 3,
+                        "I": 4
+
+                    };
+
+
+                    const jugadoresRanking =
+                        Object.entries(jugadores);
+
+
+                    jugadoresRanking.sort((a, b) => {
+
+                        const rangoA = a[1].rango;
+                        const rangoB = b[1].rango;
+
+
+                        const tierA =
+                            rangoA?.tier || "UNRANKED";
+
+                        const tierB =
+                            rangoB?.tier || "UNRANKED";
+
+
+                        if (
+                            ordenTier[tierA] !==
+                            ordenTier[tierB]
+                        ) {
+
+                            return (
+                                ordenTier[tierB] -
+                                ordenTier[tierA]
                             );
 
-                            contador = `
-                                <div class="contador">
-                                    ⏱️ ${formatearTiempo(segundos)}
-                                </div>
-                            `;
                         }
-                    } else {
 
-                        delete tiemposPartida[nombre];
 
-                    }
+                        const divisionA =
+                            ordenDivision[rangoA?.rank] || 0;
 
-                    contenedor.innerHTML += `
-                        <div class="jugador">
+                        const divisionB =
+                            ordenDivision[rangoB?.rank] || 0;
 
-                            <div class="nombre">
-                                ${nombre}
-                            </div>
 
-                            <div class="riot">
-                                Riot ID:
-                                ${jugador.riot_id}#${jugador.riot_tag}
-                            </div>
+                        if (divisionA !== divisionB) {
 
-                            <div class="estado ${claseEstado}">
-                                ${estadoTexto}
-                            </div>
+                            return divisionB - divisionA;
 
-                            ${contador}
+                        }
 
-                        </div>
-                    `;
+
+                        const lpA =
+                            rangoA?.lp || 0;
+
+                        const lpB =
+                            rangoB?.lp || 0;
+
+
+                        return lpB - lpA;
+
+                    });
+
+
+                    ranking.innerHTML = "";
+
+
+                    jugadoresRanking.forEach(
+                        ([nombre, jugador], index) => {
+
+                            const rango = jugador.rango;
+
+                            let textoRango = "UNRANKED";
+                            let lp = "";
+
+
+                            if (
+                                rango &&
+                                rango.tier &&
+                                rango.tier !== "UNRANKED"
+                            ) {
+
+                                textoRango =
+                                    `${rango.tier} ${rango.rank}`;
+
+                                lp =
+                                    `${rango.lp} LP`;
+
+                            }
+
+
+                            let posicion =
+                                `${index + 1}°`;
+
+
+                            if (index === 0) {
+
+                                posicion = "🥇";
+
+                            } else if (index === 1) {
+
+                                posicion = "🥈";
+
+                            } else if (index === 2) {
+
+                                posicion = "🥉";
+
+                            }
+
+
+                            ranking.innerHTML += `
+
+                                <div class="ranking-item">
+
+                                    <div class="ranking-posicion">
+                                        ${posicion}
+                                    </div>
+
+                                    <div class="ranking-nombre">
+                                        ${nombre}
+                                    </div>
+
+                                    <div class="ranking-rango">
+                                        ${textoRango}
+                                    </div>
+
+                                    <div class="ranking-lp">
+                                        ${lp}
+                                    </div>
+
+                                </div>
+
+                            `;
+
+                        }
+                    );
+
+                })
+
+                .catch(error => {
+
+                    console.error("Error:", error);
+
+                });
+
+        }
+
+
+        /* =========================================================
+           CARGA INICIAL
+        ========================================================= */
+
+        cargarJugadores();
+
+
+        /* =========================================================
+           ACTUALIZAR ESTADO DE RIOT CADA 15 SEGUNDOS
+        ========================================================= */
+
+        setInterval(
+            cargarJugadores,
+            15000
+        );
+
+
+        /* =========================================================
+           ACTUALIZAR CONTADORES CADA SEGUNDO
+        ========================================================= */
+
+        setInterval(() => {
+
+            const elementos =
+                document.querySelectorAll(".contador");
+
+
+            elementos.forEach(elemento => {
+
+                const jugadorElemento =
+                    elemento.closest(".jugador");
+
+
+                if (!jugadorElemento) {
+                    return;
                 }
-                // =========================
-                // RANKING
-                // =========================
 
-                const ranking = document.getElementById("ranking");
 
-                const ordenTier = {
-                    "IRON": 1,
-                    "BRONZE": 2,
-                    "SILVER": 3,
-                    "GOLD": 4,
-                    "PLATINUM": 5,
-                    "EMERALD": 6,
-                    "DIAMOND": 7,
-                    "MASTER": 8,
-                    "GRANDMASTER": 9,
-                    "CHALLENGER": 10,
-                    "UNRANKED": 0
-                };
+                const nombreElemento =
+                    jugadorElemento.querySelector(".nombre");
 
-                const ordenDivision = {
-                    "IV": 1,
-                    "III": 2,
-                    "II": 3,
-                    "I": 4
-                };
 
-                const jugadoresRanking = Object.entries(jugadores);
+                if (!nombreElemento) {
+                    return;
+                }
 
-                jugadoresRanking.sort((a, b) => {
-                    const rangoA = a[1].rango;
-                    const rangoB = b[1].rango;
 
-                    const tierA = rangoA?.tier || "UNRANKED";
-                    const tierB = rangoB?.tier || "UNRANKED";
+                const nombre =
+                    nombreElemento.textContent.trim();
 
-                    if (ordenTier[tierA] !== ordenTier[tierB]) {
-                        return ordenTier[tierB] - ordenTier[tierA];
-                    }
 
-                    const divisionA = ordenDivision[rangoA?.rank] || 0;
-                    const divisionB = ordenDivision[rangoB?.rank] || 0;
+                if (tiemposPartida[nombre]) {
 
-                    if (divisionA !== divisionB) {
-                        return divisionB - divisionA;
-                    }
+                    const segundos = Math.max(
+                        0,
+                        Math.floor(
+                            (Date.now() -
+                                tiemposPartida[nombre]) / 1000
+                        )
+                    );
 
-                    const lpA = rangoA?.lp || 0;
-                    const lpB = rangoB?.lp || 0;
 
-                    return lpB - lpA;
-                });
+                    elemento.textContent =
+                        `⏱️ ${formatearTiempo(segundos)}`;
 
-                ranking.innerHTML = "";
+                }
 
-                jugadoresRanking.forEach(([nombre, jugador], index) => {
-                    const rango = jugador.rango;
-
-                    let textoRango = "UNRANKED";
-                    let lp = "";
-
-                    if (rango && rango.tier && rango.tier !== "UNRANKED") {
-                        textoRango =
-                            `${rango.tier} ${rango.rank}`;
-
-                        lp =
-                            `${rango.lp} LP`;
-                    }
-
-                    let posicion = `${index + 1}°`;
-
-                    if (index === 0) {
-                        posicion = "🥇";
-                    } else if (index === 1) {
-                        posicion = "🥈";
-                    } else if (index === 2) {
-                        posicion = "🥉";
-                    }
-
-                    ranking.innerHTML += `
-                        <div class="ranking-item">
-                            <div class="ranking-posicion">
-                                ${posicion}
-                            </div>
-
-                            <div class="ranking-nombre">
-                                ${nombre}
-                            </div>
-
-                            <div class="ranking-rango">
-                                ${textoRango}
-                            </div>
-
-                            <div class="ranking-lp">
-                                ${lp}
-                            </div>
-                        </div>
-                    `;
-                });
-            })
-            .catch(error => {
-                console.error("Error:", error);
             });
-    }
 
+        }, 1000);
 
-    // Cargar inmediatamente
-    cargarJugadores();
-
-
-    // Comprobar estado de Riot cada 15 segundos
-    setInterval(cargarJugadores, 15000);
-
-
-    // Actualizar los contadores cada segundo
-    setInterval(() => {
-
-        const elementos =
-            document.querySelectorAll(".contador");
-
-        elementos.forEach(elemento => {
-
-            const jugadorElemento =
-                elemento.closest(".jugador");
-
-            if (!jugadorElemento) {
-                return;
-            }
-
-            const nombreElemento =
-                jugadorElemento.querySelector(".nombre");
-
-            if (!nombreElemento) {
-                return;
-            }
-
-            const nombre =
-                nombreElemento.textContent.trim();
-
-            if (tiemposPartida[nombre]) {
-
-                const segundos = Math.max(
-                    0,
-                    Math.floor(
-                        (Date.now() -
-                            tiemposPartida[nombre]) / 1000
-                    )
-                );
-
-                elemento.textContent =
-                    `⏱️ ${formatearTiempo(segundos)}`;
-            }
-
-        });
-
-    }, 1000);
-
-</script>
+    </script>
 
 </body>
 
 </html>
+```
