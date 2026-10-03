@@ -111,17 +111,12 @@ def actualizar_datos_riot():
             )
 
             # =================================================
-            # OBTENER PUUID NUEVO
+            # PUUID
             # =================================================
 
-            puuid_guardado = jugador.get(
+            puuid = jugador.get(
                 "puuid"
             )
-
-            puuid = puuid_guardado
-
-            # Primero intentamos usar el PUUID guardado.
-            # Si las APIs lo rechazan, más abajo se renueva.
 
             if not puuid:
 
@@ -131,7 +126,6 @@ def actualizar_datos_riot():
                 )
 
                 if puuid:
-
                     jugador["puuid"] = puuid
 
             if not puuid:
@@ -151,49 +145,65 @@ def actualizar_datos_riot():
                 10
             )
 
-            # Si el PUUID guardado es inválido,
-            # Riot suele devolver None.
-            #
-            # En ese caso obtenemos nuevamente el PUUID
-            # directamente mediante Riot ID + TAG.
+            # =================================================
+            # RENOVAR PUUID SI FALLÓ
+            # =================================================
 
             if partidas is None:
 
                 print(
-                    f"PUUID inválido para {nombre}. "
-                    "Renovando PUUID..."
+                    f"PUUID rechazado para {nombre}."
                 )
 
-                nuevo_puuid = (
-                    obtener_puuid_por_riot_id(
-                        riot_id,
-                        riot_tag
-                    )
+                print(
+                    "Obteniendo PUUID nuevo mediante Riot ID..."
+                )
+
+                nuevo_puuid = obtener_puuid_por_riot_id(
+                    riot_id,
+                    riot_tag
                 )
 
                 if nuevo_puuid:
 
+                    if nuevo_puuid != puuid:
+
+                        print(
+                            f"PUUID cambiado para {nombre}."
+                        )
+
                     puuid = nuevo_puuid
 
-                    jugador["puuid"] = (
-                        nuevo_puuid
+                    jugador["puuid"] = nuevo_puuid
+
+                    # Volvemos a intentar historial.
+                    partidas = actualizar_partidas_jugador(
+                        puuid,
+                        10
                     )
+
+                else:
 
                     print(
-                        f"PUUID renovado para {nombre}"
+                        f"No se pudo renovar PUUID "
+                        f"de {nombre}."
                     )
 
-                    partidas = (
-                        actualizar_partidas_jugador(
-                            puuid,
-                            10
-                        )
-                    )
+            # =================================================
+            # GUARDAR HISTORIAL
+            # =================================================
 
-            if partidas:
+            if partidas is not None:
 
                 jugador["partidas_riot"] = (
                     partidas[:10]
+                )
+
+            else:
+
+                print(
+                    f"No se pudo actualizar historial "
+                    f"de {nombre}."
                 )
 
             # =================================================
@@ -204,19 +214,27 @@ def actualizar_datos_riot():
                 puuid
             )
 
-            # Si el rango falla, conservamos
-            # el rango anterior.
-
+            # Si el rango funciona, lo guardamos.
             if rango is not None:
 
                 jugador["rango"] = rango
 
+                print(
+                    f"Rango actualizado para {nombre}: "
+                    f"{rango.get('tier')} "
+                    f"{rango.get('rank')} "
+                    f"{rango.get('lp')} LP"
+                )
+
             else:
 
                 print(
-                    f"No se pudo actualizar "
-                    f"el rango de {nombre}. "
-                    "Se conserva el anterior."
+                    f"No se pudo actualizar rango "
+                    f"de {nombre}."
+                )
+
+                print(
+                    "Se conserva el rango anterior."
                 )
 
         # =====================================================

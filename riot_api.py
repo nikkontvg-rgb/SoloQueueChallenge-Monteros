@@ -124,6 +124,11 @@ def obtener_partidas(puuid, cantidad=20):
     print("Código:", respuesta.status_code)
     print("Respuesta:", respuesta.text)
 
+    # IMPORTANTE:
+    # None significa que Riot rechazó la consulta.
+    # [] significa que la consulta funcionó pero
+    # no existen partidas.
+
     return None
 
 
@@ -233,8 +238,6 @@ def obtener_rango(puuid):
                     "losses": liga.get("losses")
                 }
 
-        # Riot respondió correctamente y no existe
-        # una entrada de Ranked Solo.
         return {
             "tier": "UNRANKED",
             "rank": "",
@@ -261,6 +264,14 @@ def actualizar_partidas_jugador(puuid, cantidad=10):
         cantidad
     )
 
+    # IMPORTANTE:
+    # Si Riot rechazó el PUUID, devolvemos None
+    # para que servidor.py pueda renovarlo.
+
+    if partidas is None:
+        return None
+
+    # Si Riot respondió correctamente pero no hay partidas.
     if not partidas:
         return []
 
