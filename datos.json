@@ -1,62 +1,6 @@
 {
     "fecha": "2026-10-01",
     "jugadores": {
-        "RBL Ace": {
-            "tiempo_usado": 0,
-            "sesion_activa": false,
-            "inicio_sesion": null,
-            "riot_id": "RBL Ace",
-            "riot_tag": "2",
-            "historial": []
-        },
-        "LawCraw": {
-            "tiempo_usado": 0,
-            "sesion_activa": false,
-            "inicio_sesion": null,
-            "riot_id": "",
-            "riot_tag": "",
-            "historial": []
-        },
-        "Alebak": {
-            "tiempo_usado": 0,
-            "sesion_activa": false,
-            "inicio_sesion": null,
-            "riot_id": "",
-            "riot_tag": "",
-            "historial": []
-        },
-        "Parky": {
-            "tiempo_usado": 0,
-            "sesion_activa": false,
-            "inicio_sesion": null,
-            "riot_id": "",
-            "riot_tag": "",
-            "historial": []
-        },
-        "Pato": {
-            "tiempo_usado": 0,
-            "sesion_activa": false,
-            "inicio_sesion": null,
-            "riot_id": "",
-            "riot_tag": "",
-            "historial": []
-        },
-        "Lucas": {
-            "tiempo_usado": 0,
-            "sesion_activa": false,
-            "inicio_sesion": null,
-            "riot_id": "",
-            "riot_tag": "",
-            "historial": []
-        },
-        "Aced": {
-            "riot_id": "FALTApatrocleo",
-            "riot_tag": "AMOR",
-            "tiempo_usado": 0,
-            "sesion_activa": false,
-            "inicio_sesion": null,
-            "historial": []
-        },
         "Law": {
             "riot_id": "LawCraw",
             "riot_tag": "ARG",
@@ -147,15 +91,6 @@
                     "campeon": "Lulu"
                 }
             ]
-        },
-        "Nico": {
-            "riot_id": "RBL Ace",
-            "riot_tag": "ARG",
-            "puuid": "zJq-oxWh3a8x8GTPcJoAl-IvFM6tQGDGfHPisodWKCZzaRYAt0DGThleLNQx7dnXkHUr7hXbduqYDw",
-            "tiempo_usado": 0,
-            "sesion_activa": false,
-            "inicio_sesion": null,
-            "historial": []
         },
         "LukasNegro": {
             "riot_id": "Iron King",

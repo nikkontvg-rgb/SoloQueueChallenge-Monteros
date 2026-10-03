@@ -11,32 +11,6 @@ HEADERS = {
 }
 
 
-def obtener_puuid(game_name, tag_line):
-
-    url = (
-        f"https://{REGION}.api.riotgames.com"
-        f"/riot/account/v1/accounts/by-riot-id/"
-        f"{game_name}/{tag_line}"
-    )
-
-    respuesta = requests.get(url, headers=HEADERS)
-
-    if respuesta.status_code == 200:
-        datos = respuesta.json()
-
-        return {
-            "puuid": datos["puuid"],
-            "game_name": datos["gameName"],
-            "tag_line": datos["tagLine"]
-        }
-
-    print("Error al buscar Riot ID.")
-    print("Código:", respuesta.status_code)
-    print("Respuesta:", respuesta.text)
-
-    return None
-
-
 def obtener_partidas(puuid, cantidad=20):
 
     url = (
@@ -129,15 +103,9 @@ def obtener_summoner_id(puuid):
 
 
 def jugador_en_partida(puuid):
-
-    summoner_id = obtener_summoner_id(puuid)
-
-    if not summoner_id:
-        return False
-
     url = (
         f"https://la2.api.riotgames.com"
-        f"/lol/spectator/v5/active-games/by-summoner/{summoner_id}"
+        f"/lol/spectator/v5/active-games/by-summoner/{puuid}"
     )
 
     respuesta = requests.get(url, headers=HEADERS)
