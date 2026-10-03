@@ -125,7 +125,9 @@ def actualizar_datos_riot():
                 codigo = obtener_ultimo_codigo_http()
 
                 if codigo == 429:
+
                     print("RATE LIMIT al obtener PUUID.")
+
                     rate_limit = True
                     break
 
@@ -374,7 +376,7 @@ def obtener_estado_jugador(nombre, jugador):
         }
 
     # =========================================================
-    # PRIMER INTENTO
+    # CONSULTA
     # =========================================================
 
     print(
@@ -475,10 +477,8 @@ def obtener_estado_jugador(nombre, jugador):
 
             if nuevo_puuid:
 
-                # Guardamos el nuevo PUUID
                 jugador["puuid"] = nuevo_puuid
 
-                # Guardamos también en datos.json
                 datos = cargar_datos()
 
                 jugadores = datos.get(
@@ -501,10 +501,6 @@ def obtener_estado_jugador(nombre, jugador):
                 print(
                     "Volviendo a consultar partida activa..."
                 )
-
-                # =================================================
-                # SEGUNDO INTENTO CON PUUID NUEVO
-                # =================================================
 
                 partida = jugador_en_partida(
                     puuid
