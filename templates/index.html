@@ -95,18 +95,16 @@
 
 
     <script>
-
-    let partidas = {};
-
+    let tiemposPartida = {};
 
     function formatearTiempo(segundos) {
-
         const minutos = Math.floor(segundos / 60);
         const segundosRestantes = segundos % 60;
 
-        return `${minutos}:${segundosRestantes.toString().padStart(2, "0")}`;
+        return `${minutos}:${segundosRestantes
+            .toString()
+            .padStart(2, "0")}`;
     }
-
 
     function cargarJugadores() {
 
@@ -114,12 +112,10 @@
             .then(respuesta => respuesta.json())
             .then(jugadores => {
 
-                const contenedor = document.getElementById("jugadores");
+                const contenedor =
+                    document.getElementById("jugadores");
 
                 contenedor.innerHTML = "";
-
-                const ahora = Date.now();
-
 
                 for (const nombre in jugadores) {
 
@@ -129,49 +125,40 @@
                     let claseEstado = "offline";
                     let contador = "";
 
-
                     if (jugador.estado === "online") {
-
                         estadoTexto = "🟢 ONLINE";
                         claseEstado = "online";
-
                     }
-
 
                     if (jugador.estado === "in_game") {
 
                         estadoTexto = "🎮 EN PARTIDA";
                         claseEstado = "partida";
 
+                        if (jugador.game_start_time) {
 
-                        // Si es una partida nueva
-                        if (!partidas[nombre]) {
+                            tiemposPartida[nombre] =
+                                jugador.game_start_time;
 
-                            partidas[nombre] = {
-                                inicio: ahora - 5000
-                            };
+                            const segundos = Math.max(
+                                0,
+                                Math.floor(
+                                    (Date.now() -
+                                        jugador.game_start_time) / 1000
+                                )
+                            );
 
+                            contador = `
+                                <div class="contador">
+                                    ⏱️ ${formatearTiempo(segundos)}
+                                </div>
+                            `;
                         }
-
-
-                        const segundos = Math.floor(
-                            (ahora - partidas[nombre].inicio) / 1000
-                        );
-
-
-                        contador = `
-                            <div class="contador">
-                                ⏱️ ${formatearTiempo(segundos)}
-                            </div>
-                        `;
-
                     } else {
 
-                        // Si salió de partida
-                        delete partidas[nombre];
+                        delete tiemposPartida[nombre];
 
                     }
-
 
                     contenedor.innerHTML += `
                         <div class="jugador">
@@ -197,14 +184,12 @@
 
             })
             .catch(error => {
-
                 console.error("Error:", error);
-
             });
     }
 
 
-    // Primera carga
+    // Cargar inmediatamente
     cargarJugadores();
 
 
@@ -212,14 +197,16 @@
     setInterval(cargarJugadores, 15000);
 
 
-    // Actualizar el contador cada segundo
+    // Actualizar los contadores cada segundo
     setInterval(() => {
 
-        const elementos = document.querySelectorAll(".contador");
+        const elementos =
+            document.querySelectorAll(".contador");
 
         elementos.forEach(elemento => {
 
-            const jugadorElemento = elemento.closest(".jugador");
+            const jugadorElemento =
+                elemento.closest(".jugador");
 
             if (!jugadorElemento) {
                 return;
@@ -232,12 +219,17 @@
                 return;
             }
 
-            const nombre = nombreElemento.textContent.trim();
+            const nombre =
+                nombreElemento.textContent.trim();
 
-            if (partidas[nombre]) {
+            if (tiemposPartida[nombre]) {
 
-                const segundos = Math.floor(
-                    (Date.now() - partidas[nombre].inicio) / 1000
+                const segundos = Math.max(
+                    0,
+                    Math.floor(
+                        (Date.now() -
+                            tiemposPartida[nombre]) / 1000
+                    )
                 );
 
                 elemento.textContent =
