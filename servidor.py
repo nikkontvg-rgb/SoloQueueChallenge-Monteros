@@ -45,15 +45,22 @@ def api_jugadores():
         riot_tag = jugador.get("riot_tag", "")
 
         estado = "offline"
+        game_start_time = None
 
         if riot_id and riot_tag:
-            if jugador_en_partida(riot_id, riot_tag):
+
+            partida = jugador_en_partida(riot_id, riot_tag)
+
+            if partida:
                 estado = "in_game"
+                game_start_time = partida.get("game_start_time")
+
 
         resultado[nombre] = {
             "riot_id": jugador.get("riot_id", ""),
             "riot_tag": jugador.get("riot_tag", ""),
-            "estado": estado
+            "estado": estado,
+            "game_start_time": game_start_time
         }
 
     return jsonify(resultado)

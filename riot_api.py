@@ -123,7 +123,7 @@ def jugador_en_partida(game_name, tag_line):
     puuid = obtener_puuid_por_riot_id(game_name, tag_line)
 
     if not puuid:
-        return False
+        return None
 
     url = (
         f"https://la2.api.riotgames.com"
@@ -137,13 +137,18 @@ def jugador_en_partida(game_name, tag_line):
     print(respuesta.text)
 
     if respuesta.status_code == 200:
-        return True
+        datos = respuesta.json()
+
+        return {
+            "game_id": datos.get("gameId"),
+            "game_start_time": datos.get("gameStartTime")
+        }
 
     if respuesta.status_code == 404:
-        return False
+        return None
 
     print("Error al consultar partida activa.")
     print("Código:", respuesta.status_code)
     print("Respuesta:", respuesta.text)
 
-    return False
+    return None
