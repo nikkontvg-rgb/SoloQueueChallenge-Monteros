@@ -66,12 +66,14 @@
             color: #6b7280;
             margin-top: 30px;
         }
+
         .contador {
             margin-top: 8px;
             color: #fbbf24;
             font-size: 16px;
             font-weight: bold;
         }
+        
     </style>
 </head>
 
@@ -94,174 +96,159 @@
 
     <script>
 
-        // Guardamos el momento en que detectamos que cada jugador entró en partida
-        const tiemposPartida = {};
-
-        function formatearTiempo(segundos) {
-
-            const minutos = Math.floor(segundos / 60);
-            const segundosRestantes = segundos % 60;
-
-            return `${minutos}:${segundosRestantes.toString().padStart(2, "0")}`;
-        }
+    let partidas = {};
 
 
-        function cargarJugadores() {
+    function formatearTiempo(segundos) {
 
-            fetch("/api/jugadores")
-                .then(respuesta => respuesta.json())
-                .then(jugadores => {
+        const minutos = Math.floor(segundos / 60);
+        const segundosRestantes = segundos % 60;
 
-                    const contenedor = document.getElementById("jugadores");
-
-                    contenedor.innerHTML = "";
-
-                    const ahora = Date.now();
-
-                    for (const nombre in jugadores) {
-
-                        const jugador = jugadores[nombre];
-
-                        let estadoTexto = "⚪ OFFLINE";
-                        let claseEstado = "offline";
-                        let contador = "";
+        return `${minutos}:${segundosRestantes.toString().padStart(2, "0")}`;
+    }
 
 
-                        if (jugador.estado === "online") {
+    function cargarJugadores() {
 
-                            estadoTexto = "🟢 ONLINE";
-                            claseEstado = "online";
+        fetch("/api/jugadores")
+            .then(respuesta => respuesta.json())
+            .then(jugadores => {
 
-                        }
+                const contenedor = document.getElementById("jugadores");
 
+                contenedor.innerHTML = "";
 
-                        if (jugador.estado === "in_game") {
-
-                            estadoTexto = "🎮 EN PARTIDA";
-                            claseEstado = "partida";
-
-
-                            // Si recién detectamos la partida,
-                            // comenzamos el contador en 5 segundos
-                            if (!tiemposPartida[nombre]) {
-                                tiemposPartida[nombre] = ahora - 5000;
-                            }
+                const ahora = Date.now();
 
 
-                            const segundos = Math.floor(
-                                (ahora - tiemposPartida[nombre]) / 1000
-                            );
+                for (const nombre in jugadores) {
+
+                    const jugador = jugadores[nombre];
+
+                    let estadoTexto = "⚪ OFFLINE";
+                    let claseEstado = "offline";
+                    let contador = "";
 
 
-                            contador = `
-                                <div class="contador">
-                                    ⏱️ ${formatearTiempo(segundos)}
-                                </div>
-                            `;
+                    if (jugador.estado === "online") {
 
-                        } else {
+                        estadoTexto = "🟢 ONLINE";
+                        claseEstado = "online";
 
-                            // Si salió de partida, eliminamos su contador
-                            delete tiemposPartida[nombre];
-
-                        }
-
-
-                        contenedor.innerHTML += `
-                            <div class="jugador">
-
-                                <div class="nombre">
-                                    ${nombre}
-                                </div>
-
-                                <div class="riot">
-                                    Riot ID:
-                                    ${jugador.riot_id}#${jugador.riot_tag}
-                                </div>
-
-                                <div class="estado ${claseEstado}">
-                                    ${estadoTexto}
-                                </div>
-
-                                ${contador}
-
-                            </div>
-                        `;
                     }
 
-                })
-                .catch(error => {
 
-                    console.error("Error:", error);
+                    if (jugador.estado === "in_game") {
 
-                });
-        }
+                        estadoTexto = "🎮 EN PARTIDA";
+                        claseEstado = "partida";
 
 
-        // Actualizar inmediatamente
-        cargarJugadores();
+                        // Si es una partida nueva
+                        if (!partidas[nombre]) {
+
+                            partidas[nombre] = {
+                                inicio: ahora - 5000
+                            };
+
+                        }
 
 
-        // Consultar Riot cada 15 segundos
-        setInterval(cargarJugadores, 15000);
+                        const segundos = Math.floor(
+                            (ahora - partidas[nombre].inicio) / 1000
+                        );
 
 
-        // Actualizar los contadores visualmente cada segundo
-        setInterval(() => {
+                        contador = `
+                            <div class="contador">
+                                ⏱️ ${formatearTiempo(segundos)}
+                            </div>
+                        `;
 
-            for (const nombre in tiemposPartida) {
+                    } else {
 
-                const contador = document.querySelector(
-                    `.jugador:has(.nombre)`
+                        // Si salió de partida
+                        delete partidas[nombre];
+
+                    }
+
+
+                    contenedor.innerHTML += `
+                        <div class="jugador">
+
+                            <div class="nombre">
+                                ${nombre}
+                            </div>
+
+                            <div class="riot">
+                                Riot ID:
+                                ${jugador.riot_id}#${jugador.riot_tag}
+                            </div>
+
+                            <div class="estado ${claseEstado}">
+                                ${estadoTexto}
+                            </div>
+
+                            ${contador}
+
+                        </div>
+                    `;
+                }
+
+            })
+            .catch(error => {
+
+                console.error("Error:", error);
+
+            });
+    }
+
+
+    // Primera carga
+    cargarJugadores();
+
+
+    // Comprobar estado de Riot cada 15 segundos
+    setInterval(cargarJugadores, 15000);
+
+
+    // Actualizar el contador cada segundo
+    setInterval(() => {
+
+        const elementos = document.querySelectorAll(".contador");
+
+        elementos.forEach(elemento => {
+
+            const jugadorElemento = elemento.closest(".jugador");
+
+            if (!jugadorElemento) {
+                return;
+            }
+
+            const nombreElemento =
+                jugadorElemento.querySelector(".nombre");
+
+            if (!nombreElemento) {
+                return;
+            }
+
+            const nombre = nombreElemento.textContent.trim();
+
+            if (partidas[nombre]) {
+
+                const segundos = Math.floor(
+                    (Date.now() - partidas[nombre].inicio) / 1000
                 );
 
+                elemento.textContent =
+                    `⏱️ ${formatearTiempo(segundos)}`;
             }
 
-            // Volvemos a cargar la información visual
-            // sin consultar Riot
-            const elementos = document.querySelectorAll(".contador");
+        });
 
-            for (const elemento of elementos) {
+    }, 1000);
 
-                const jugadorElemento = elemento.closest(".jugador");
-
-                if (!jugadorElemento) {
-                    continue;
-                }
-
-                const nombreElemento =
-                    jugadorElemento.querySelector(".nombre");
-
-                if (!nombreElemento) {
-                    continue;
-                }
-
-                const nombre = nombreElemento.textContent.trim();
-
-                if (tiemposPartida[nombre]) {
-
-                    const segundos = Math.floor(
-                        (Date.now() - tiemposPartida[nombre]) / 1000
-                    );
-
-                    elemento.textContent =
-                        `⏱️ ${formatearTiempo(segundos)}`;
-                }
-            }
-
-        }, 1000);
-
-    </script>
-
-
-        // Cargar inmediatamente
-        cargarJugadores();
-
-
-        // Actualizar cada 15 segundos
-        setInterval(cargarJugadores, 15000);
-
-    </script>
+</script>
 
 </body>
 
