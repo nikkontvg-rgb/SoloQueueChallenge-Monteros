@@ -87,10 +87,57 @@ def obtener_detalle_partida(match_id):
 
     return None
 
-def jugador_en_partida(puuid):
+
+def obtener_summoner_id(puuid):
+
     url = (
         f"https://la2.api.riotgames.com"
-        f"/lol/spectator/v5/active-games/by-summoner/{puuid}"
+        f"/lol/summoner/v4/summoners/by-puuid/{puuid}"
+    )
+
+    respuesta = requests.get(url, headers=HEADERS)
+
+    if respuesta.status_code == 200:
+        datos = respuesta.json()
+        return datos["id"]
+
+    print("Error al obtener Summoner ID.")
+    print("Código:", respuesta.status_code)
+    print("Respuesta:", respuesta.text)
+
+    return None
+
+
+def obtener_summoner_id(puuid):
+
+    url = (
+        f"https://la2.api.riotgames.com"
+        f"/lol/summoner/v4/summoners/by-puuid/{puuid}"
+    )
+
+    respuesta = requests.get(url, headers=HEADERS)
+
+    if respuesta.status_code == 200:
+        datos = respuesta.json()
+        return datos["id"]
+
+    print("Error al obtener Summoner ID.")
+    print("Código:", respuesta.status_code)
+    print("Respuesta:", respuesta.text)
+
+    return None
+
+
+def jugador_en_partida(puuid):
+
+    summoner_id = obtener_summoner_id(puuid)
+
+    if not summoner_id:
+        return False
+
+    url = (
+        f"https://la2.api.riotgames.com"
+        f"/lol/spectator/v5/active-games/by-summoner/{summoner_id}"
     )
 
     respuesta = requests.get(url, headers=HEADERS)
