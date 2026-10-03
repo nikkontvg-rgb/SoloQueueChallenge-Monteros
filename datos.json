@@ -1,6 +1,10 @@
 {
     "fecha": "2026-10-01",
     "jugadores": {
+        "Nico": {
+            "riot_id": "RBL Ace",
+            "riot_tag": "ARG"
+        },
         "Law": {
             "riot_id": "LawCraw",
             "riot_tag": "ARG",
