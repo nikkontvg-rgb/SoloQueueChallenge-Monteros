@@ -474,7 +474,7 @@
             color: var(--blanco-suave);
         }
         html {
-            background: #42151F !important;
+            background: #e8e5df !important;
         }
 
         body {
@@ -487,8 +487,8 @@
         body::before {
             content: "";
             position: fixed;
-            inset: -50%;
-            z-index: -1;
+            inset: 0;
+            z-index: 0;
             pointer-events: none;
 
             background:
@@ -514,17 +514,22 @@
             animation: ac2Background 18s ease-in-out infinite alternate;
         }
 
+        .contenedor {
+            position: relative;
+            z-index: 1;
+        }
+
         @keyframes ac2Background {
             0% {
-                transform: translate(0%, 0%) scale(1);
+                background-position: 0% 50%;
             }
 
             50% {
-                transform: translate(-3%, 2%) scale(1.04);
+                background-position: 100% 50%;
             }
 
             100% {
-                transform: translate(3%, -2%) scale(1.02);
+                background-position: 0% 50%;
             }
         }
 
@@ -542,6 +547,10 @@
             font-family: 'Bebas Neue', sans-serif;
             font-size: 42px;
             letter-spacing: 1px;
+        }
+
+        .encabezado h1 {
+            color: #5A1E2A !important;
         }
 
         /* Streamers */
