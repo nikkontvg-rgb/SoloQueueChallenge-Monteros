@@ -8,12 +8,19 @@
     <title>Solo Queue Challenge</title>
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Rajdhani', sans-serif;
             background: #111827;
             color: white;
             margin: 0;
             padding: 30px;
+        }
+        
+        .encabezado h1 {
+            font-size: 38px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
 
         h1 {
@@ -288,29 +295,78 @@
         MENÚ
         ========================= */
 
-        .menu-boton {
-            background: var(--bordo-oscuro);
-            border: 1px solid var(--bordo);
-            color: var(--blanco);
+/* =========================
+   MENU LATERAL
+   ========================= */
+
+.menu-lateral {
+    position: fixed;
+    left: 0;
+    top: 0;
+
+    width: 65px;
+    height: 100vh;
+
+    background: #35151C;
+    border-right: 2px solid #70152B;
+
+    z-index: 2000;
+
+    transition: width 0.3s ease;
+    overflow: hidden;
+}
+
+/* Se abre al pasar el mouse */
+
+        .menu-lateral:hover {
+            width: 250px;
         }
 
-        .menu-boton:hover {
-            background: var(--rubí);
-            border-color: var(--rubí-claro);
+        /* Título del menú */
+
+        .menu-titulo {
+            width: 250px;
+            height: 65px;
+
+            display: flex;
+            align-items: center;
+
+            padding-left: 20px;
+
+            color: white;
+            font-size: 19px;
+            font-weight: bold;
+
+            border-bottom: 1px solid #70152B;
         }
+
+        /* Opciones */
 
         .menu-contenido {
-            background: var(--fondo-secundario);
-            border: 1px solid var(--bordo);
+            width: 250px;
+            padding: 15px 10px;
         }
 
         .menu-contenido a {
-            color: var(--blanco-suave);
+            display: block;
+
+            padding: 14px 15px;
+            margin-bottom: 6px;
+
+            color: white;
+            text-decoration: none;
+
+            border-radius: 7px;
+
+            font-size: 17px;
+
+            white-space: nowrap;
+
+            transition: background 0.2s ease;
         }
 
         .menu-contenido a:hover {
-            background: var(--bordo-oscuro);
-            color: var(--blanco);
+            background: #541020;
         }
 
 
@@ -449,33 +505,30 @@
                 y posicionarse en lo más alto del ranking en 30 dias
             </div>
         </div>
-        <div class="menu-container">
 
-               <div class="menu">
+        <div class="menu-lateral">
 
-                <button class="menu-boton">
-                    ☰ MENÚ
-                </button>
+            <div class="menu-titulo">
+                ☰ MENÚ
+            </div>
 
-                <div class="menu-contenido">
+            <div class="menu-contenido">
 
-                    <a href="#">
-                        📝 Registrarse
-                     </a>
+                <a href="#">
+                    📝 Registrarse
+                </a>
 
-                    <a href="#">
-                        📰 Noticias
-                    </a>
+                <a href="#">
+                    📰 Noticias
+                </a>
 
-                    <a href="#jugadores">
-                        👥 Jugadores
-                    </a>
+                <a href="#jugadores">
+                    👥 Jugadores
+                </a>
 
-                    <a href="#ranking">
-                        🏆 Ranking
-                    </a>
-
-                </div>
+                <a href="#ranking">
+                    🏆 Ranking
+                </a>
 
             </div>
 
