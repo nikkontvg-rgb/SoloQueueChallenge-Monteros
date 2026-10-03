@@ -117,7 +117,122 @@
             text-align: right;
             color: #fbbf24;
         }
-        
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .encabezado {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .encabezado h1 {
+            font-size: 38px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .descripcion {
+            max-width: 750px;
+            margin: 0 auto;
+            font-size: 21px;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #b8c2d1;
+        }
+
+        .menu-container {
+            display: flex;
+            justify-content: center;
+            margin: 25px 0;
+        }
+
+        .menu {
+            position: relative;
+        }
+
+        .menu-boton {
+            background: #1f2937;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 22px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .menu-boton:hover {
+            background: #2d3a4f;
+        }
+
+        .menu-contenido {
+            display: none;
+            position: absolute;
+            top: 48px;
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 190px;
+            background: #1f2937;
+            border-radius: 8px;
+            padding: 8px;
+            z-index: 1000;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .menu-contenido a {
+            display: block;
+            padding: 11px 14px;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .menu-contenido a:hover {
+            background: #374151;
+        }
+
+        .menu:hover .menu-contenido {
+            display: block;
+        }
+
+        .streamers {
+            margin: 35px auto;
+            max-width: 900px;
+        }
+
+        .streamers h2 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 18px;
+        }
+
+        .streamer-proximamente {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .streamer-proximamente .icono {
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+
+        .streamer-proximamente h3 {
+            margin: 5px 0;
+            font-size: 23px;
+        }
+
+        .streamer-proximamente p {
+            margin: 0;
+            color: #9ca3af;
+            font-size: 17px;
+        }
     </style>
 </head>
 
@@ -125,8 +240,68 @@
 
     <div class="contenedor">
 
-        <h1>🏆 Solo Queue Challenge</h1>
+        <div class="encabezado">
 
+            <h1>🏆 Bienvenidos al SoloQ Challenge Monteros</h1>
+
+            <div class="descripcion">
+                Un desafío de Solo Queue donde los jugadores del Sur Tucumano
+                compiten para demostrar quién puede alcanzar el mejor rendimiento
+                y posicionarse en lo más alto del ranking en 30 dias
+            </div>
+        </div>
+        <div class="menu-container">
+
+               <div class="menu">
+
+                <button class="menu-boton">
+                    ☰ MENÚ
+                </button>
+
+                <div class="menu-contenido">
+
+                    <a href="#">
+                        📝 Registrarse
+                     </a>
+
+                    <a href="#">
+                        📰 Noticias
+                    </a>
+
+                    <a href="#jugadores">
+                        👥 Jugadores
+                    </a>
+
+                    <a href="#ranking">
+                        🏆 Ranking
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+        
+        <div class="streamers">
+
+            <h2>📺 Streamers en vivo</h2>
+
+            <div class="streamer-proximamente">
+
+                <div class="icono">
+                    🎥
+                </div>
+
+                <h3>Próximamente</h3>
+
+                <p>
+                    Próximamente podrás ver aquí a los participantes
+                    que estén transmitiendo sus partidas en Twitch o Kick.
+                </p>
+
+            </div>
+
+        </div>
         <div id="jugadores">
             Cargando jugadores...
         </div>
