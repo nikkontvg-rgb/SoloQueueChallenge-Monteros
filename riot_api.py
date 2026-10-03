@@ -230,6 +230,58 @@ def jugador_en_partida(puuid):
 
     return None
 
+# =========================================================
+# RANGO
+# =========================================================
+
+def obtener_rango(puuid):
+
+    url = (
+        f"https://la2.api.riotgames.com"
+        f"/lol/league/v4/entries/by-puuid/{puuid}"
+    )
+
+    respuesta = requests.get(
+        url,
+        headers=HEADERS
+    )
+
+    guardar_codigo_http(respuesta.status_code)
+
+    print("RESPUESTA RANKING:")
+    print(respuesta.status_code)
+    print(respuesta.text)
+
+    if respuesta.status_code == 200:
+
+        datos = respuesta.json()
+
+        for liga in datos:
+
+            if liga.get("queueType") == "RANKED_SOLO_5x5":
+
+                return {
+                    "tier": liga.get("tier"),
+                    "rank": liga.get("rank"),
+                    "lp": liga.get("leaguePoints"),
+                    "wins": liga.get("wins"),
+                    "losses": liga.get("losses")
+                }
+
+        return {
+            "tier": "UNRANKED",
+            "rank": "",
+            "lp": 0,
+            "wins": 0,
+            "losses": 0
+        }
+
+    print("Error al obtener rango.")
+    print("Código:", respuesta.status_code)
+    print("Respuesta:", respuesta.text)
+
+    return None
+
 
 # =========================================================
 # ACTUALIZAR HISTORIAL
