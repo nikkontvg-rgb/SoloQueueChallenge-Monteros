@@ -73,6 +73,50 @@
             font-size: 16px;
             font-weight: bold;
         }
+        .ranking {
+            margin-top: 30px;
+            padding: 20px;
+            background: #111827;
+            border-radius: 12px;
+        }
+
+        .ranking h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #1f2937;
+            border-radius: 8px;
+        }
+
+        .ranking-posicion {
+            width: 35px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .ranking-nombre {
+            flex: 1;
+            font-weight: bold;
+        }
+
+        .ranking-rango {
+            font-weight: bold;
+        }
+
+        .ranking-lp {
+            min-width: 70px;
+            text-align: right;
+            color: #fbbf24;
+        }
         
     </style>
 </head>
@@ -89,6 +133,11 @@
 
         <div class="actualizacion">
             🔄 Actualizando automáticamente...
+        </div>
+
+        <div class="ranking">
+            <h2>🏆 RANKING</h2>
+            <div id="ranking"></div>
         </div>
 
     </div>
@@ -181,7 +230,105 @@
                         </div>
                     `;
                 }
+                // =========================
+                // RANKING
+                // =========================
 
+                const ranking = document.getElementById("ranking");
+
+                const ordenTier = {
+                    "IRON": 1,
+                    "BRONZE": 2,
+                    "SILVER": 3,
+                    "GOLD": 4,
+                    "PLATINUM": 5,
+                    "EMERALD": 6,
+                    "DIAMOND": 7,
+                    "MASTER": 8,
+                    "GRANDMASTER": 9,
+                    "CHALLENGER": 10,
+                    "UNRANKED": 0
+                };
+
+                const ordenDivision = {
+                    "IV": 1,
+                    "III": 2,
+                    "II": 3,
+                    "I": 4
+                };
+
+                const jugadoresRanking = Object.entries(jugadores);
+
+                jugadoresRanking.sort((a, b) => {
+                    const rangoA = a[1].rango;
+                    const rangoB = b[1].rango;
+
+                    const tierA = rangoA?.tier || "UNRANKED";
+                    const tierB = rangoB?.tier || "UNRANKED";
+
+                    if (ordenTier[tierA] !== ordenTier[tierB]) {
+                        return ordenTier[tierB] - ordenTier[tierA];
+                    }
+
+                    const divisionA = ordenDivision[rangoA?.rank] || 0;
+                    const divisionB = ordenDivision[rangoB?.rank] || 0;
+
+                    if (divisionA !== divisionB) {
+                        return divisionB - divisionA;
+                    }
+
+                    const lpA = rangoA?.lp || 0;
+                    const lpB = rangoB?.lp || 0;
+
+                    return lpB - lpA;
+                });
+
+                ranking.innerHTML = "";
+
+                jugadoresRanking.forEach(([nombre, jugador], index) => {
+                    const rango = jugador.rango;
+
+                    let textoRango = "UNRANKED";
+                    let lp = "";
+
+                    if (rango && rango.tier && rango.tier !== "UNRANKED") {
+                        textoRango =
+                            `${rango.tier} ${rango.rank}`;
+
+                        lp =
+                            `${rango.lp} LP`;
+                    }
+
+                    let posicion = `${index + 1}°`;
+
+                    if (index === 0) {
+                        posicion = "🥇";
+                    } else if (index === 1) {
+                        posicion = "🥈";
+                    } else if (index === 2) {
+                        posicion = "🥉";
+                    }
+
+                    ranking.innerHTML += `
+                        <div class="ranking-item">
+                            <div class="ranking-posicion">
+                                ${posicion}
+                            </div>
+
+                            <div class="ranking-nombre">
+                                ${nombre}
+                            </div>
+
+                            <div class="ranking-rango">
+                                ${textoRango}
+                            </div>
+
+                            <div class="ranking-lp">
+                                ${lp}
+                            </div>
+                        </div>
+                    `;
+                });
             })
             .catch(error => {
                 console.error("Error:", error);
