@@ -176,18 +176,26 @@ def obtener_detalle_partida(match_id):
 # =========================================================
 
 def jugador_en_partida(puuid):
-
     if not puuid:
+        print("SPECTATOR: No hay PUUID.")
         return None
 
+    print("SPECTATOR: Consultando Summoner por PUUID...")
+    
     summoner = obtener_summoner_por_puuid(puuid)
 
     if not summoner:
+        print("SPECTATOR: No se pudo obtener el Summoner.")
+        print("SPECTATOR: Código HTTP:", obtener_ultimo_codigo_http())
         return None
 
     summoner_id = summoner.get("id")
 
+    print("SPECTATOR: Summoner obtenido.")
+    print("SPECTATOR: Summoner ID:", summoner_id)
+
     if not summoner_id:
+        print("SPECTATOR: El Summoner no tiene ID.")
         return None
 
     url = (
@@ -195,10 +203,9 @@ def jugador_en_partida(puuid):
         f"/lol/spectator/v5/active-games/by-summoner/{summoner_id}"
     )
 
-    respuesta = requests.get(
-        url,
-        headers=HEADERS
-    )
+    print("SPECTATOR: Consultando partida activa...")
+
+    respuesta = requests.get(url, headers=HEADERS)
 
     guardar_codigo_http(respuesta.status_code)
 
@@ -207,7 +214,6 @@ def jugador_en_partida(puuid):
     print(respuesta.text)
 
     if respuesta.status_code == 200:
-
         datos = respuesta.json()
 
         return {
@@ -219,59 +225,6 @@ def jugador_en_partida(puuid):
         return None
 
     print("Error al consultar partida activa.")
-    print("Código:", respuesta.status_code)
-    print("Respuesta:", respuesta.text)
-
-    return None
-
-
-# =========================================================
-# RANGO
-# =========================================================
-
-def obtener_rango(puuid):
-
-    url = (
-        f"https://la2.api.riotgames.com"
-        f"/lol/league/v4/entries/by-puuid/{puuid}"
-    )
-
-    respuesta = requests.get(
-        url,
-        headers=HEADERS
-    )
-
-    guardar_codigo_http(respuesta.status_code)
-
-    print("RESPUESTA RANKING:")
-    print(respuesta.status_code)
-    print(respuesta.text)
-
-    if respuesta.status_code == 200:
-
-        datos = respuesta.json()
-
-        for liga in datos:
-
-            if liga.get("queueType") == "RANKED_SOLO_5x5":
-
-                return {
-                    "tier": liga.get("tier"),
-                    "rank": liga.get("rank"),
-                    "lp": liga.get("leaguePoints"),
-                    "wins": liga.get("wins"),
-                    "losses": liga.get("losses")
-                }
-
-        return {
-            "tier": "UNRANKED",
-            "rank": "",
-            "lp": 0,
-            "wins": 0,
-            "losses": 0
-        }
-
-    print("Error al obtener rango.")
     print("Código:", respuesta.status_code)
     print("Respuesta:", respuesta.text)
 
