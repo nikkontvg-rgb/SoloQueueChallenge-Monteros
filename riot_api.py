@@ -3,7 +3,6 @@ import os
 
 API_KEY = os.environ.get("RIOT_API_KEY")
 
-
 REGION = "americas"
 
 HEADERS = {
@@ -11,8 +10,26 @@ HEADERS = {
 }
 
 
-def obtener_partidas(puuid, cantidad=20):
+def obtener_summoner_id(puuid):
+    url = (
+        f"https://la2.api.riotgames.com"
+        f"/lol/summoner/v4/summoners/by-puuid/{puuid}"
+    )
 
+    respuesta = requests.get(url, headers=HEADERS)
+
+    if respuesta.status_code == 200:
+        datos = respuesta.json()
+        return datos["id"]
+
+    print("Error al obtener Summoner ID.")
+    print("Código:", respuesta.status_code)
+    print("Respuesta:", respuesta.text)
+
+    return None
+
+
+def obtener_partidas(puuid, cantidad=20):
     url = (
         f"https://{REGION}.api.riotgames.com"
         f"/lol/match/v5/matches/by-puuid/"
@@ -41,7 +58,6 @@ def obtener_partidas(puuid, cantidad=20):
 
 
 def obtener_detalle_partida(match_id):
-
     url = (
         f"https://{REGION}.api.riotgames.com"
         f"/lol/match/v5/matches/{match_id}"
@@ -62,50 +78,15 @@ def obtener_detalle_partida(match_id):
     return None
 
 
-def obtener_summoner_id(puuid):
-
-    url = (
-        f"https://la2.api.riotgames.com"
-        f"/lol/summoner/v4/summoners/by-puuid/{puuid}"
-    )
-
-    respuesta = requests.get(url, headers=HEADERS)
-
-    if respuesta.status_code == 200:
-        datos = respuesta.json()
-        return datos["id"]
-
-    print("Error al obtener Summoner ID.")
-    print("Código:", respuesta.status_code)
-    print("Respuesta:", respuesta.text)
-
-    return None
-
-
-def obtener_summoner_id(puuid):
-
-    url = (
-        f"https://la2.api.riotgames.com"
-        f"/lol/summoner/v4/summoners/by-puuid/{puuid}"
-    )
-
-    respuesta = requests.get(url, headers=HEADERS)
-
-    if respuesta.status_code == 200:
-        datos = respuesta.json()
-        return datos["id"]
-
-    print("Error al obtener Summoner ID.")
-    print("Código:", respuesta.status_code)
-    print("Respuesta:", respuesta.text)
-
-    return None
-
-
 def jugador_en_partida(puuid):
+    summoner_id = obtener_summoner_id(puuid)
+
+    if not summoner_id:
+        return False
+
     url = (
         f"https://la2.api.riotgames.com"
-        f"/lol/spectator/v5/active-games/by-summoner/{puuid}"
+        f"/lol/spectator/v5/active-games/by-summoner/{summoner_id}"
     )
 
     respuesta = requests.get(url, headers=HEADERS)
