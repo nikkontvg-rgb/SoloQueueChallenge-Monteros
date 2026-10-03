@@ -66,6 +66,12 @@
             color: #6b7280;
             margin-top: 30px;
         }
+        .contador {
+            margin-top: 8px;
+            color: #fbbf24;
+            font-size: 16px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -88,6 +94,18 @@
 
     <script>
 
+        // Guardamos el momento en que detectamos que cada jugador entró en partida
+        const tiemposPartida = {};
+
+        function formatearTiempo(segundos) {
+
+            const minutos = Math.floor(segundos / 60);
+            const segundosRestantes = segundos % 60;
+
+            return `${minutos}:${segundosRestantes.toString().padStart(2, "0")}`;
+        }
+
+
         function cargarJugadores() {
 
             fetch("/api/jugadores")
@@ -98,22 +116,56 @@
 
                     contenedor.innerHTML = "";
 
+                    const ahora = Date.now();
+
                     for (const nombre in jugadores) {
 
                         const jugador = jugadores[nombre];
 
                         let estadoTexto = "⚪ OFFLINE";
                         let claseEstado = "offline";
+                        let contador = "";
+
 
                         if (jugador.estado === "online") {
+
                             estadoTexto = "🟢 ONLINE";
                             claseEstado = "online";
+
                         }
 
+
                         if (jugador.estado === "in_game") {
+
                             estadoTexto = "🎮 EN PARTIDA";
                             claseEstado = "partida";
+
+
+                            // Si recién detectamos la partida,
+                            // comenzamos el contador en 5 segundos
+                            if (!tiemposPartida[nombre]) {
+                                tiemposPartida[nombre] = ahora - 5000;
+                            }
+
+
+                            const segundos = Math.floor(
+                                (ahora - tiemposPartida[nombre]) / 1000
+                            );
+
+
+                            contador = `
+                                <div class="contador">
+                                    ⏱️ ${formatearTiempo(segundos)}
+                                </div>
+                            `;
+
+                        } else {
+
+                            // Si salió de partida, eliminamos su contador
+                            delete tiemposPartida[nombre];
+
                         }
+
 
                         contenedor.innerHTML += `
                             <div class="jugador">
@@ -131,6 +183,8 @@
                                     ${estadoTexto}
                                 </div>
 
+                                ${contador}
+
                             </div>
                         `;
                     }
@@ -142,6 +196,62 @@
 
                 });
         }
+
+
+        // Actualizar inmediatamente
+        cargarJugadores();
+
+
+        // Consultar Riot cada 15 segundos
+        setInterval(cargarJugadores, 15000);
+
+
+        // Actualizar los contadores visualmente cada segundo
+        setInterval(() => {
+
+            for (const nombre in tiemposPartida) {
+
+                const contador = document.querySelector(
+                    `.jugador:has(.nombre)`
+                );
+
+            }
+
+            // Volvemos a cargar la información visual
+            // sin consultar Riot
+            const elementos = document.querySelectorAll(".contador");
+
+            for (const elemento of elementos) {
+
+                const jugadorElemento = elemento.closest(".jugador");
+
+                if (!jugadorElemento) {
+                    continue;
+                }
+
+                const nombreElemento =
+                    jugadorElemento.querySelector(".nombre");
+
+                if (!nombreElemento) {
+                    continue;
+                }
+
+                const nombre = nombreElemento.textContent.trim();
+
+                if (tiemposPartida[nombre]) {
+
+                    const segundos = Math.floor(
+                        (Date.now() - tiemposPartida[nombre]) / 1000
+                    );
+
+                    elemento.textContent =
+                        `⏱️ ${formatearTiempo(segundos)}`;
+                }
+            }
+
+        }, 1000);
+
+    </script>
 
 
         // Cargar inmediatamente
