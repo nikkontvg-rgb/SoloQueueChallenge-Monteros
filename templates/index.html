@@ -234,55 +234,69 @@
             font-size: 17px;
         }
         /* =========================================
-        PALETA SOLOQ CHALLENGE - ESMERALDA/BORDÓ
+        PALETA SOLOQ CHALLENGE
+        ROJO / RUBÍ / BORDÓ + BLANCO / GRIS
         ========================================= */
 
         :root {
-            --fondo: #0b1210;
-            --fondo-secundario: #101a17;
+            /* Fondos */
+            --fondo: #0d090b;
+            --fondo-secundario: #171014;
+            --fondo-tarjeta: #21171b;
 
-            --esmeralda-oscuro: #123d32;
-            --esmeralda: #176b55;
-            --esmeralda-medio: #20866b;
-            --esmeralda-claro: #2aa982;
+            /* Primario */
+            --rojo-oscuro: #3a0b16;
+            --bordo-oscuro: #541020;
+            --bordo: #70152b;
+            --rubí: #941b3a;
+            --rubí-claro: #b52a4b;
+            --rojo-brillante: #d63b5c;
 
-            --bordo-oscuro: #3d1723;
-            --bordo: #682638;
-            --bordo-medio: #87334a;
-            --bordo-claro: #a9445d;
-
-            --blanco: #f5f5f5;
-            --gris: #aeb8b4;
-            --gris-oscuro: #68736f;
+            /* Secundario */
+            --blanco: #ffffff;
+            --blanco-suave: #f1f1f1;
+            --gris-claro: #d2d2d2;
+            --gris: #a8a8a8;
+            --gris-medio: #7d7d7d;
         }
 
-        /* Fondo general */
+
+        /* =========================
+        FONDO
+        ========================= */
 
         body {
             background: var(--fondo);
             color: var(--blanco);
         }
 
-        /* Encabezado */
+
+        /* =========================
+        ENCABEZADO
+        ========================= */
 
         .encabezado h1 {
             color: var(--blanco);
         }
 
         .descripcion {
-            color: var(--gris);
+            color: var(--gris-claro);
         }
 
-        /* Menú */
+
+        /* =========================
+        MENÚ
+        ========================= */
 
         .menu-boton {
-            background: var(--esmeralda-oscuro);
-            border: 1px solid var(--esmeralda);
+            background: var(--bordo-oscuro);
+            border: 1px solid var(--bordo);
             color: var(--blanco);
         }
 
         .menu-boton:hover {
-            background: var(--esmeralda);
+            background: var(--rubí);
+            border-color: var(--rubí-claro);
         }
 
         .menu-contenido {
@@ -291,56 +305,88 @@
         }
 
         .menu-contenido a {
-            color: var(--blanco);
+            color: var(--blanco-suave);
         }
 
         .menu-contenido a:hover {
             background: var(--bordo-oscuro);
+            color: var(--blanco);
         }
 
-        /* Streamers */
+
+        /* =========================
+        STREAMERS
+        ========================= */
 
         .streamers h2 {
             color: var(--blanco);
         }
 
         .streamer-proximamente {
-            background: var(--fondo-secundario);
+            background: var(--fondo-tarjeta);
             border: 1px solid var(--bordo);
         }
 
         .streamer-proximamente h3 {
-            color: var(--esmeralda-claro);
+            color: var(--rubí-claro);
         }
 
         .streamer-proximamente p {
-            color: var(--gris);
+            color: var(--gris-claro);
         }
 
-        /* Tarjetas de jugadores */
+
+        /* =========================
+        JUGADORES
+        ========================= */
 
         .jugador {
-            background: var(--fondo-secundario);
-            border: 1px solid var(--esmeralda-oscuro);
+            background: var(--fondo-tarjeta);
+            border: 1px solid var(--bordo-oscuro);
         }
 
         .jugador:hover {
-            border-color: var(--esmeralda);
+            border-color: var(--rubí);
         }
-
-        /* Nombre del jugador */
 
         .nombre {
             color: var(--blanco);
         }
 
-        /* Riot ID */
-
         .riot {
+            color: var(--gris-claro);
+        }
+
+
+        /* =========================
+        ESTADOS
+        ========================= */
+
+        .estado.online {
+            color: var(--rubí-claro);
+        }
+
+        .estado.partida {
+            color: var(--rojo-brillante);
+        }
+
+        .estado.offline {
             color: var(--gris);
         }
 
-        /* Ranking */
+
+        /* =========================
+        CONTADOR
+        ========================= */
+
+        .contador {
+            color: var(--rubí-claro);
+        }
+
+
+        /* =========================
+        RANKING
+        ========================= */
 
         .ranking {
             background: var(--fondo-secundario);
@@ -352,12 +398,12 @@
         }
 
         .ranking-item {
-            background: #14201d;
-            border: 1px solid var(--esmeralda-oscuro);
+            background: var(--fondo-tarjeta);
+            border: 1px solid var(--bordo-oscuro);
         }
 
         .ranking-item:hover {
-            border-color: var(--bordo);
+            border-color: var(--rubí);
         }
 
         .ranking-nombre {
@@ -365,31 +411,11 @@
         }
 
         .ranking-rango {
-            color: var(--esmeralda-claro);
+            color: var(--rubí-claro);
         }
 
         .ranking-lp {
-            color: var(--bordo-claro);
-        }
-
-        /* Contador de partida */
-
-        .contador {
-            color: var(--esmeralda-claro);
-        }
-
-        /* Estados */
-
-        .estado.online {
-            color: var(--esmeralda-claro);
-        }
-
-        .estado.partida {
-            color: var(--bordo-claro);
-        }
-
-        .estado.offline {
-            color: var(--gris);
+            color: var(--blanco-suave);
         }
     </style>
 </head>
