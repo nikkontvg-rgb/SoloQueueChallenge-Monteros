@@ -23,7 +23,7 @@ def obtener_ultimo_codigo_http():
 
 
 # =========================================================
-# RIOT ID -> PUUID
+# CUENTA RIOT
 # =========================================================
 
 def obtener_puuid_por_riot_id(game_name, tag_line):
@@ -38,9 +38,7 @@ def obtener_puuid_por_riot_id(game_name, tag_line):
     guardar_codigo_http(respuesta.status_code)
 
     if respuesta.status_code == 200:
-
         datos = respuesta.json()
-
         return datos.get("puuid")
 
     print("Error al obtener PUUID por Riot ID.")
@@ -51,7 +49,7 @@ def obtener_puuid_por_riot_id(game_name, tag_line):
 
 
 # =========================================================
-# SUMMONER POR PUUID
+# SUMMONER
 # =========================================================
 
 def obtener_summoner_por_puuid(puuid):
@@ -66,7 +64,6 @@ def obtener_summoner_por_puuid(puuid):
     guardar_codigo_http(respuesta.status_code)
 
     if respuesta.status_code == 200:
-
         datos = respuesta.json()
 
         return {
@@ -81,10 +78,6 @@ def obtener_summoner_por_puuid(puuid):
 
     return None
 
-
-# =========================================================
-# SUMMONER ID
-# =========================================================
 
 def obtener_summoner_id(puuid, game_name=None):
 
@@ -109,7 +102,6 @@ def obtener_summoner_id(puuid, game_name=None):
         print(respuesta.text)
 
         if respuesta.status_code == 200:
-
             datos = respuesta.json()
 
             if datos.get("id"):
@@ -155,10 +147,6 @@ def obtener_partidas(puuid, cantidad=20):
     return None
 
 
-# =========================================================
-# DETALLE DE PARTIDA
-# =========================================================
-
 def obtener_detalle_partida(match_id):
 
     url = (
@@ -188,21 +176,17 @@ def obtener_detalle_partida(match_id):
 # =========================================================
 
 def jugador_en_partida(puuid):
-
     if not puuid:
         print("SPECTATOR: No hay PUUID.")
         return None
 
     print("SPECTATOR: Consultando Summoner por PUUID...")
-
+    
     summoner = obtener_summoner_por_puuid(puuid)
 
     if not summoner:
         print("SPECTATOR: No se pudo obtener el Summoner.")
-        print(
-            "SPECTATOR: Código HTTP:",
-            obtener_ultimo_codigo_http()
-        )
+        print("SPECTATOR: Código HTTP:", obtener_ultimo_codigo_http())
         return None
 
     summoner_id = summoner.get("id")
@@ -211,25 +195,17 @@ def jugador_en_partida(puuid):
     print("SPECTATOR: Summoner ID:", summoner_id)
 
     if not summoner_id:
-
-        print(
-            "SPECTATOR: El endpoint de Summoner no devolvió ID."
-        )
-
+        print("SPECTATOR: El Summoner no tiene ID.")
         return None
 
     url = (
         f"https://la2.api.riotgames.com"
-        f"/lol/spectator/v5/active-games/by-summoner/"
-        f"{summoner_id}"
+        f"/lol/spectator/v5/active-games/by-summoner/{summoner_id}"
     )
 
     print("SPECTATOR: Consultando partida activa...")
 
-    respuesta = requests.get(
-        url,
-        headers=HEADERS
-    )
+    respuesta = requests.get(url, headers=HEADERS)
 
     guardar_codigo_http(respuesta.status_code)
 
@@ -238,7 +214,6 @@ def jugador_en_partida(puuid):
     print(respuesta.text)
 
     if respuesta.status_code == 200:
-
         datos = respuesta.json()
 
         return {
@@ -254,7 +229,6 @@ def jugador_en_partida(puuid):
     print("Respuesta:", respuesta.text)
 
     return None
-
 
 # =========================================================
 # RANGO
@@ -274,6 +248,10 @@ def obtener_rango(puuid):
 
     guardar_codigo_http(respuesta.status_code)
 
+    print("RESPUESTA RANKING:")
+    print(respuesta.status_code)
+    print(respuesta.text)
+
     if respuesta.status_code == 200:
 
         datos = respuesta.json()
@@ -285,12 +263,18 @@ def obtener_rango(puuid):
                 return {
                     "tier": liga.get("tier"),
                     "rank": liga.get("rank"),
-                    "leaguePoints": liga.get("leaguePoints"),
+                    "lp": liga.get("leaguePoints"),
                     "wins": liga.get("wins"),
                     "losses": liga.get("losses")
                 }
 
-        return None
+        return {
+            "tier": "UNRANKED",
+            "rank": "",
+            "lp": 0,
+            "wins": 0,
+            "losses": 0
+        }
 
     print("Error al obtener rango.")
     print("Código:", respuesta.status_code)
@@ -300,27 +284,66 @@ def obtener_rango(puuid):
 
 
 # =========================================================
-# ACTUALIZAR PARTIDAS DEL JUGADOR
+# ACTUALIZAR HISTORIAL
 # =========================================================
 
 def actualizar_partidas_jugador(puuid, cantidad=10):
 
-    partidas = obtener_partidas(
-        puuid,
-        cantidad
-    )
+    partidas = obtener_partidas(puuid, cantidad)
 
     if partidas is None:
         return None
 
-    historial = []
+    if not partidas:
+        return []
+
+    resultado = []
 
     for match_id in partidas:
 
-        detalle = obtener_detalle_partida(match_id)
+        datos = obtener_detalle_partida(match_id)
 
-        if detalle:
+        if not datos:
+            continue
 
-            historial.append(detalle)
+        info = datos.get("info", {})
 
-    return historial
+        participantes = info.get("participants", [])
+
+        jugador = None
+
+        for participante in participantes:
+
+            if participante.get("puuid") == puuid:
+                jugador = participante
+                break
+
+        if not jugador:
+            continue
+
+        fecha = (
+            info.get("gameEndTimestamp")
+            or info.get("gameCreation")
+        )
+
+        if fecha:
+
+            fecha = datetime.fromtimestamp(
+                fecha / 1000
+            ).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+
+        resultado.append({
+            "match_id": match_id,
+            "fecha": fecha,
+            "modo": info.get("gameMode"),
+            "duracion": info.get("gameDuration"),
+            "resultado":
+                "VICTORIA"
+                if jugador.get("win")
+                else "DERROTA",
+            "campeon": jugador.get("championName")
+        })
+
+    return resultado
