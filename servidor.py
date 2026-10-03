@@ -373,11 +373,23 @@ def obtener_estado_jugador(nombre, jugador):
             "game_start_time": None
         }
 
+    # =========================================================
+    # PRIMER INTENTO
+    # =========================================================
+
+    print(
+        f"Consultando estado de {nombre}..."
+    )
+
     partida = jugador_en_partida(
         puuid
     )
 
     codigo = obtener_ultimo_codigo_http()
+
+    # =========================================================
+    # RATE LIMIT
+    # =========================================================
 
     if codigo == 429:
 
@@ -407,7 +419,147 @@ def obtener_estado_jugador(nombre, jugador):
             "game_start_time": None
         }
 
+    # =========================================================
+    # PUUID INVALIDO
+    # =========================================================
+
+    if codigo == 400:
+
+        riot_id = jugador.get("riot_id")
+        riot_tag = jugador.get("riot_tag")
+
+        if riot_id and riot_tag:
+
+            print(
+                f"PUUID rechazado al consultar estado de {nombre}."
+            )
+
+            print(
+                "Renovando PUUID mediante Riot ID..."
+            )
+
+            nuevo_puuid = obtener_puuid_por_riot_id(
+                riot_id,
+                riot_tag
+            )
+
+            codigo_puuid = obtener_ultimo_codigo_http()
+
+            if codigo_puuid == 429:
+
+                print(
+                    f"RATE LIMIT renovando PUUID de {nombre}."
+                )
+
+                with bloqueo_estados:
+
+                    anterior = cache_estados.get(nombre)
+
+                    if anterior:
+
+                        return {
+                            "estado": anterior.get(
+                                "estado",
+                                "offline"
+                            ),
+                            "game_start_time":
+                                anterior.get(
+                                    "game_start_time"
+                                )
+                        }
+
+                return {
+                    "estado": "offline",
+                    "game_start_time": None
+                }
+
+            if nuevo_puuid:
+
+                # Guardamos el nuevo PUUID
+                jugador["puuid"] = nuevo_puuid
+
+                # Guardamos también en datos.json
+                datos = cargar_datos()
+
+                jugadores = datos.get(
+                    "jugadores",
+                    {}
+                )
+
+                if nombre in jugadores:
+
+                    jugadores[nombre]["puuid"] = nuevo_puuid
+
+                    guardar_datos(datos)
+
+                puuid = nuevo_puuid
+
+                print(
+                    f"PUUID renovado para {nombre}."
+                )
+
+                print(
+                    "Volviendo a consultar partida activa..."
+                )
+
+                # =================================================
+                # SEGUNDO INTENTO CON PUUID NUEVO
+                # =================================================
+
+                partida = jugador_en_partida(
+                    puuid
+                )
+
+                codigo = obtener_ultimo_codigo_http()
+
+                if codigo == 429:
+
+                    print(
+                        f"RATE LIMIT durante segundo intento de {nombre}."
+                    )
+
+                    with bloqueo_estados:
+
+                        anterior = cache_estados.get(nombre)
+
+                        if anterior:
+
+                            return {
+                                "estado": anterior.get(
+                                    "estado",
+                                    "offline"
+                                ),
+                                "game_start_time":
+                                    anterior.get(
+                                        "game_start_time"
+                                    )
+                            }
+
+                    return {
+                        "estado": "offline",
+                        "game_start_time": None
+                    }
+
+                print(
+                    f"Segundo intento de estado para {nombre}: "
+                    f"HTTP {codigo}"
+                )
+
+            else:
+
+                print(
+                    f"No se pudo renovar PUUID de {nombre}."
+                )
+
+    # =========================================================
+    # RESULTADO
+    # =========================================================
+
     if partida:
+
+        print(
+            f"{nombre} está EN PARTIDA."
+        )
 
         estado = {
             "estado": "in_game",
@@ -415,18 +567,23 @@ def obtener_estado_jugador(nombre, jugador):
                 partida.get(
                     "game_start_time"
                 ),
-            "timestamp": ahora
+            "timestamp": time.time()
         }
 
     else:
 
+        print(
+            f"{nombre} está OFFLINE."
+        )
+
         estado = {
             "estado": "offline",
             "game_start_time": None,
-            "timestamp": ahora
+            "timestamp": time.time()
         }
 
     with bloqueo_estados:
+
         cache_estados[nombre] = estado
 
     return {
