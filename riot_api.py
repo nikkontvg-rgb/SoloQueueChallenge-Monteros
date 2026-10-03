@@ -195,3 +195,51 @@ def obtener_rango(puuid):
     print("Respuesta:", respuesta.text)
 
     return None
+
+
+def actualizar_partidas_jugador(puuid, cantidad=10):
+    partidas = obtener_partidas(puuid, cantidad)
+
+    if not partidas:
+        return []
+
+    resultado = []
+
+    for match_id in partidas:
+
+        datos = obtener_detalle_partida(match_id)
+
+        if not datos:
+            continue
+
+        info = datos.get("info", {})
+        participantes = info.get("participants", [])
+
+        jugador = None
+
+        for participante in participantes:
+            if participante.get("puuid") == puuid:
+                jugador = participante
+                break
+
+        if not jugador:
+            continue
+
+        fecha = info.get("gameEndTimestamp") or info.get("gameCreation")
+
+        if fecha:
+            from datetime import datetime
+            fecha = datetime.fromtimestamp(
+                fecha / 1000
+            ).strftime("%Y-%m-%d %H:%M:%S")
+
+        resultado.append({
+            "match_id": match_id,
+            "fecha": fecha,
+            "modo": info.get("gameMode"),
+            "duracion": info.get("gameDuration"),
+            "resultado": "VICTORIA" if jugador.get("win") else "DERROTA",
+            "campeon": jugador.get("championName")
+        })
+
+    return resultado
