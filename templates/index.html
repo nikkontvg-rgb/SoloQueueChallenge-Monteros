@@ -57,69 +57,128 @@
 
 
         /* =========================================================
-           FONDO ANIMADO
+        FONDO ANIMADO
         ========================================================= */
 
-        body::before,
-        body::after {
+        body::before {
             content: "";
             position: fixed;
+            inset: -50%;
+            width: 200%;
+            height: 200%;
+
             pointer-events: none;
-            z-index: -1;
-            border-radius: 50%;
-            filter: blur(70px);
+            z-index: 0;
+
+            background:
+                /* Líneas diagonales */
+                repeating-linear-gradient(
+                    125deg,
+                    transparent 0px,
+                    transparent 90px,
+                    rgba(53, 21, 28, 0.055) 91px,
+                    rgba(53, 21, 28, 0.055) 93px,
+                    transparent 94px,
+                    transparent 180px
+                ),
+
+                /* Rectángulos horizontales */
+                linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    transparent 25%,
+                    rgba(112, 21, 43, 0.035) 25.2%,
+                    rgba(112, 21, 43, 0.035) 25.5%,
+                    transparent 25.7%,
+                    transparent 70%,
+                    rgba(112, 21, 43, 0.04) 70.2%,
+                    rgba(112, 21, 43, 0.04) 70.5%,
+                    transparent 70.7%
+                );
+
+            background-size:
+                500px 500px,
+                700px 700px;
+
+            animation: movimientoGeometrico 20s linear infinite;
         }
 
-        /* Mancha superior izquierda */
-        body::before {
-            width: 550px;
-            height: 550px;
-            top: -220px;
-            left: -180px;
 
-            background: rgba(112, 21, 43, 0.10);
-
-            animation: movimientoFondo1 14s ease-in-out infinite alternate;
-        }
-
-        /* Mancha inferior derecha */
         body::after {
-            width: 650px;
-            height: 650px;
-            right: -250px;
-            bottom: -280px;
+            content: "";
 
-            background: rgba(112, 21, 43, 0.08);
+            position: fixed;
+            inset: 0;
 
-            animation: movimientoFondo2 18s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: 0;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    transparent 48%,
+                    rgba(90, 30, 42, 0.045) 48.2%,
+                    transparent 48.5%
+                ),
+
+                linear-gradient(
+                    0deg,
+                    transparent 0%,
+                    transparent 35%,
+                    rgba(90, 30, 42, 0.04) 35.2%,
+                    transparent 35.5%
+                );
+
+            background-size:
+                420px 420px,
+                420px 420px;
+
+            animation: movimientoLineas 28s linear infinite;
         }
 
-        @keyframes movimientoFondo1 {
+
+        /* Movimiento principal */
+        @keyframes movimientoGeometrico {
+
             0% {
-                transform: translate(0, 0) scale(1);
+                transform: translate(-2%, -2%) rotate(0deg);
+            }
+
+            25% {
+                transform: translate(1%, -4%) rotate(0.5deg);
             }
 
             50% {
-                transform: translate(180px, 100px) scale(1.15);
+                transform: translate(4%, 0%) rotate(0deg);
+            }
+
+            75% {
+                transform: translate(1%, 4%) rotate(-0.5deg);
             }
 
             100% {
-                transform: translate(80px, 220px) scale(1.05);
+                transform: translate(-2%, -2%) rotate(0deg);
             }
+
         }
 
-        @keyframes movimientoFondo2 {
+
+        /* Movimiento secundario */
+        @keyframes movimientoLineas {
+
             0% {
-                transform: translate(0, 0) scale(1);
+                transform: translate(0%, 0%);
             }
 
             50% {
-                transform: translate(-150px, -120px) scale(1.12);
+                transform: translate(-4%, 3%);
             }
 
             100% {
-                transform: translate(-50px, -200px) scale(1.05);
+                transform: translate(0%, 0%);
             }
+
         }
 
 
