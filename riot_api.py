@@ -196,9 +196,6 @@ def jugador_en_partida(puuid):
 
         return None
 
-    # =====================================================
-    # CORRECCIÓN: Usamos by-puuid en la API V5 de Spectator
-    # =====================================================
     url = (
         f"https://la2.api.riotgames.com"
         f"/lol/spectator/v5/active-games/by-puuid/{puuid}"
@@ -256,9 +253,19 @@ def jugador_en_partida(puuid):
 
 def obtener_rango(puuid):
 
+    # 1. Obtenemos el Summoner ID primero
+    summoner = obtener_summoner_por_puuid(puuid)
+    
+    if not summoner or not summoner.get("id"):
+        print("RANKING: No se pudo obtener el summoner_id.")
+        return None
+        
+    summoner_id = summoner.get("id")
+
+    # 2. Consultamos Ligas usando el by-summoner
     url = (
         f"https://la2.api.riotgames.com"
-        f"/lol/league/v4/entries/by-puuid/{puuid}"
+        f"/lol/league/v4/entries/by-summoner/{summoner_id}"
     )
 
     respuesta = requests.get(
@@ -272,7 +279,6 @@ def obtener_rango(puuid):
 
     print("RESPUESTA RANKING:")
     print(respuesta.status_code)
-    print(respuesta.text)
 
     if respuesta.status_code == 200:
 
@@ -289,16 +295,6 @@ def obtener_rango(puuid):
                     "wins": liga.get("wins"),
                     "losses": liga.get("losses")
                 }
-
-        # =================================================
-        # IMPORTANTE
-        # =================================================
-        # Si Riot responde correctamente pero no devuelve
-        # Solo/Duo, NO asumimos que el jugador sea UNRANKED.
-        #
-        # Devolvemos None para que servidor.py conserve
-        # el rango anterior.
-        # =================================================
 
         print(
             "RANKING: Riot no devolvió RANKED_SOLO_5x5."
