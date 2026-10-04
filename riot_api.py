@@ -196,49 +196,12 @@ def jugador_en_partida(puuid):
 
         return None
 
-    print(
-        "SPECTATOR: Consultando Summoner por PUUID..."
-    )
-
-    summoner = obtener_summoner_por_puuid(
-        puuid
-    )
-
-    if not summoner:
-
-        print(
-            "SPECTATOR: No se pudo obtener el Summoner."
-        )
-
-        print(
-            "SPECTATOR: Código HTTP:",
-            obtener_ultimo_codigo_http()
-        )
-
-        return None
-
-    summoner_id = summoner.get("id")
-
-    print(
-        "SPECTATOR: Summoner obtenido."
-    )
-
-    print(
-        "SPECTATOR: Summoner ID:",
-        summoner_id
-    )
-
-    if not summoner_id:
-
-        print(
-            "SPECTATOR: El Summoner no tiene ID."
-        )
-
-        return None
-
+    # =====================================================
+    # CORRECCIÓN: Usamos by-puuid en la API V5 de Spectator
+    # =====================================================
     url = (
         f"https://la2.api.riotgames.com"
-        f"/lol/spectator/v5/active-games/by-summoner/{summoner_id}"
+        f"/lol/spectator/v5/active-games/by-puuid/{puuid}"
     )
 
     print(
@@ -256,7 +219,6 @@ def jugador_en_partida(puuid):
 
     print("RESPUESTA SPECTATOR:")
     print(respuesta.status_code)
-    print(respuesta.text)
 
     if respuesta.status_code == 200:
 
