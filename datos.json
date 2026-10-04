@@ -1,1 +1,67 @@
-[]
+{
+    "jugadores": {
+        "Nico": {
+            "riot_id": "Nico",
+            "riot_tag": "LAS",
+            "puuid": null,
+            "rango": null,
+            "partidas_riot": []
+        },
+        "Lautaro": {
+            "riot_id": "Lautaro",
+            "riot_tag": "LAS",
+            "puuid": null,
+            "rango": null,
+            "partidas_riot": []
+        },
+        "Petaco": {
+            "riot_id": "Petaco",
+            "riot_tag": "LAS",
+            "puuid": null,
+            "rango": null,
+            "partidas_riot": []
+        },
+        "Pato": {
+            "riot_id": "Pato",
+            "riot_tag": "LAS",
+            "puuid": null,
+            "rango": null,
+            "partidas_riot": []
+        },
+        "Parky": {
+            "riot_id": "Parky",
+            "riot_tag": "LAS",
+            "puuid": null,
+            "rango": null,
+            "partidas_riot": []
+        },
+        "Alebak": {
+            "riot_id": "Alebak",
+            "riot_tag": "LAS",
+            "puuid": null,
+            "rango": null,
+            "partidas_riot": []
+        },
+        "Facundo": {
+            "riot_id": "Facundo",
+            "riot_tag": "LAS",
+            "puuid": null,
+            "rango": null,
+            "partidas_riot": []
+        },
+        "Red": {
+            "riot_id": "Red",
+            "riot_tag": "LAS",
+            "puuid": null,
+            "rango": null,
+            "partidas_riot": []
+        },
+        "Lucas": {
+            "riot_id": "Lucas",
+            "riot_tag": "LAS",
+            "puuid": null,
+            "rango": null,
+            "partidas_riot": []
+        }
+    }
+}
