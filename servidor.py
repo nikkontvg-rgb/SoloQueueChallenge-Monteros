@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify
+from flask_cors import CORS
 import json
 import os
 import time
@@ -13,136 +14,140 @@ from riot_api import (
 )
 
 
+# ============================================================
+# CONFIGURACIÓN
+# ============================================================
+
 app = Flask(__name__)
+
+# Permitir que el frontend de Netlify consulte este backend de Render
+CORS(app, origins=[
+    "https://soloqchallenge-monteros.netlify.app"
+])
 
 ARCHIVO = "datos.json"
 
-# Cada cuánto se actualizan datos pesados de Riot
+# Actualización de datos pesados de Riot
 INTERVALO_ACTUALIZACION = 10 * 60
 
-# Cada cuánto se consulta el estado de partida
+# Comprobación del estado de los jugadores
 INTERVALO_ESTADO = 15
+
+
+# ============================================================
+# VARIABLES GLOBALES
+# ============================================================
 
 ultima_actualizacion = 0
 
 bloqueo_actualizacion = threading.Lock()
 
 cache_estados = {}
+
 bloqueo_estados = threading.Lock()
 
 
-# =========================================================
-# DATOS
-# =========================================================
+# ============================================================
+# CARGAR DATOS
+# ============================================================
 
 def cargar_datos():
-
-    if not os.path.exists(ARCHIVO):
-        return {"jugadores": {}}
-
     try:
-        with open(
-            ARCHIVO,
-            "r",
-            encoding="utf-8"
-        ) as archivo:
+        if not os.path.exists(ARCHIVO):
+            return {
+                "jugadores": {}
+            }
 
+        with open(ARCHIVO, "r", encoding="utf-8") as archivo:
             datos = json.load(archivo)
 
-    except Exception as error:
+        if not isinstance(datos, dict):
+            return {
+                "jugadores": {}
+            }
 
-        print("ERROR LEYENDO datos.json:")
-        print(error)
+        if "jugadores" not in datos:
+            datos["jugadores"] = {}
 
-        return {"jugadores": {}}
+        if not isinstance(datos["jugadores"], dict):
+            datos["jugadores"] = {}
 
-    # Protección contra el formato viejo []
-    if not isinstance(datos, dict):
-        print("datos.json tiene un formato incorrecto.")
-        print("Se utilizará una estructura vacía.")
+        return datos
 
-        return {"jugadores": {}}
+    except (json.JSONDecodeError, OSError) as e:
+        print("ERROR AL CARGAR DATOS:", e)
 
-    if not isinstance(
-        datos.get("jugadores"),
-        dict
-    ):
-        datos["jugadores"] = {}
+        return {
+            "jugadores": {}
+        }
 
-    return datos
 
+# ============================================================
+# GUARDAR DATOS
+# ============================================================
 
 def guardar_datos(datos):
+    try:
+        with open(ARCHIVO, "w", encoding="utf-8") as archivo:
+            json.dump(
+                datos,
+                archivo,
+                ensure_ascii=False,
+                indent=4
+            )
 
-    with open(
-        ARCHIVO,
-        "w",
-        encoding="utf-8"
-    ) as archivo:
-
-        json.dump(
-            datos,
-            archivo,
-            ensure_ascii=False,
-            indent=4
-        )
+    except OSError as e:
+        print("ERROR AL GUARDAR DATOS:", e)
 
 
-# =========================================================
-# ACTUALIZACIÓN DE RIOT
-# =========================================================
+# ============================================================
+# ACTUALIZAR DATOS DE RIOT
+# ============================================================
 
 def actualizar_datos_riot():
 
     global ultima_actualizacion
 
-    ahora = time.time()
-
-    if ahora - ultima_actualizacion < INTERVALO_ACTUALIZACION:
-        return
-
-    if not bloqueo_actualizacion.acquire(
-        blocking=False
-    ):
+    # Evitar que dos procesos actualicen Riot al mismo tiempo
+    if not bloqueo_actualizacion.acquire(blocking=False):
         return
 
     try:
 
         ahora = time.time()
 
+        # Todavía no corresponde actualizar
         if ahora - ultima_actualizacion < INTERVALO_ACTUALIZACION:
             return
 
+        print()
         print("===================================")
         print("ACTUALIZANDO DATOS DE RIOT")
         print("===================================")
 
         datos = cargar_datos()
 
-        jugadores = datos.get(
-            "jugadores",
-            {}
-        )
-
-        rate_limit = False
+        jugadores = datos.get("jugadores", {})
 
         for nombre, jugador in jugadores.items():
 
-            riot_id = jugador.get("riot_id")
-            riot_tag = jugador.get("riot_tag")
+            print()
+            print("Actualizando:", nombre)
 
-            if not riot_id or not riot_tag:
-                continue
-
-            print(f"Actualizando: {nombre}")
-
-            # =================================================
-            # PUUID
-            # =================================================
+            # ------------------------------------------------
+            # OBTENER PUUID SI NO EXISTE
+            # ------------------------------------------------
 
             puuid = jugador.get("puuid")
 
             if not puuid:
+
+                riot_id = jugador.get("riot_id")
+                riot_tag = jugador.get("riot_tag")
+
+                if not riot_id or not riot_tag:
+                    print("Faltan Riot ID o Riot Tag para:", nombre)
+                    continue
 
                 puuid = obtener_puuid_por_riot_id(
                     riot_id,
@@ -153,254 +158,112 @@ def actualizar_datos_riot():
 
                 if codigo == 429:
 
-                    print(
-                        "RATE LIMIT al obtener PUUID."
-                    )
+                    print("RATE LIMIT al obtener PUUID.")
+                    print()
+                    print("===================================")
+                    print("ACTUALIZACIÓN DETENIDA POR RATE LIMIT")
+                    print("===================================")
+                    print("Los datos anteriores fueron conservados.")
+                    print("Se reintentará en el próximo ciclo.")
+                    print()
 
-                    rate_limit = True
                     break
 
-                if puuid:
-                    jugador["puuid"] = puuid
+                if not puuid:
 
-            if not puuid:
+                    print("No se pudo obtener PUUID para:", nombre)
+                    continue
 
-                print(
-                    f"No se pudo obtener PUUID de {nombre}"
+                jugador["puuid"] = puuid
+
+                guardar_datos(datos)
+
+            # ------------------------------------------------
+            # ACTUALIZAR PARTIDAS
+            # ------------------------------------------------
+
+            try:
+
+                actualizar_partidas_jugador(
+                    puuid,
+                    jugador
                 )
 
-                continue
+            except Exception as e:
 
-            # =================================================
-            # HISTORIAL
-            # =================================================
-
-            partidas = actualizar_partidas_jugador(
-                puuid,
-                10
-            )
+                print(
+                    f"Error actualizando partidas de {nombre}:",
+                    e
+                )
 
             codigo = obtener_ultimo_codigo_http()
 
             if codigo == 429:
 
-                print(
-                    f"RATE LIMIT al actualizar {nombre}."
-                )
-
-                rate_limit = True
+                print("RATE LIMIT al actualizar partidas.")
                 break
 
-            # =================================================
-            # PUUID INVALIDO
-            # =================================================
+            # ------------------------------------------------
+            # ACTUALIZAR RANGO
+            # ------------------------------------------------
 
-            if partidas is None and codigo == 400:
+            try:
 
-                print(
-                    f"PUUID rechazado para {nombre}."
-                )
+                rango = obtener_rango(puuid)
 
-                print(
-                    "Intentando renovar PUUID mediante Riot ID..."
-                )
+                codigo = obtener_ultimo_codigo_http()
 
-                nuevo_puuid = obtener_puuid_por_riot_id(
-                    riot_id,
-                    riot_tag
-                )
+                if codigo == 429:
 
-                codigo_puuid = obtener_ultimo_codigo_http()
-
-                if codigo_puuid == 429:
-
-                    print(
-                        "RATE LIMIT al renovar PUUID."
-                    )
-
-                    rate_limit = True
+                    print("RATE LIMIT al obtener rango.")
                     break
 
-                if nuevo_puuid:
-
-                    puuid = nuevo_puuid
-
-                    jugador["puuid"] = nuevo_puuid
-
-                    print(
-                        f"PUUID renovado para {nombre}."
-                    )
-
-                    partidas = actualizar_partidas_jugador(
-                        puuid,
-                        10
-                    )
-
-                    codigo = obtener_ultimo_codigo_http()
-
-                    if codigo == 429:
-
-                        print(
-                            "RATE LIMIT durante el segundo intento."
-                        )
-
-                        rate_limit = True
-                        break
-
-            # =================================================
-            # HISTORIAL
-            # =================================================
-
-            if partidas is not None:
-
-                if partidas:
-
-                    jugador["partidas_riot"] = (
-                        partidas[:10]
-                    )
-
-                elif "partidas_riot" not in jugador:
-
-                    jugador["partidas_riot"] = []
-
-            # =================================================
-            # RANGO
-            # =================================================
-
-            rango_anterior = jugador.get("rango")
-
-            rango = obtener_rango(puuid)
-
-            codigo = obtener_ultimo_codigo_http()
-
-            if codigo == 429:
-
-                print(
-                    f"RATE LIMIT al obtener rango de {nombre}."
-                )
-
-                rate_limit = True
-                break
-
-            if rango is None:
-
-                print(
-                    f"No se pudo actualizar rango de {nombre}."
-                )
-
-                print(
-                    "Se conserva el rango anterior."
-                )
-
-            elif rango.get("tier") == "UNRANKED":
-
-                if (
-                    rango_anterior
-                    and rango_anterior.get("tier")
-                    not in (
-                        None,
-                        "",
-                        "UNRANKED"
-                    )
-                ):
-
-                    print(
-                        f"Riot devolvió UNRANKED para {nombre}, "
-                        "pero existe un rango válido anterior."
-                    )
-
-                    print(
-                        "Se conserva el rango anterior."
-                    )
-
-                else:
+                if rango:
 
                     jugador["rango"] = rango
 
-            else:
+                    print(
+                        f"Rango actualizado para {nombre}: "
+                        f"{rango.get('tier', '')} "
+                        f"{rango.get('rank', '')} "
+                        f"{rango.get('lp', 0)} LP"
+                    )
 
-                jugador["rango"] = rango
+            except Exception as e:
 
                 print(
-                    f"Rango actualizado para {nombre}: "
-                    f"{rango.get('tier')} "
-                    f"{rango.get('rank')} "
-                    f"{rango.get('lp')} LP"
+                    f"Error obteniendo rango de {nombre}:",
+                    e
                 )
 
-        # =====================================================
-        # GUARDAR
-        # =====================================================
+            # Guardar después de cada jugador
+            guardar_datos(datos)
+
+        # Actualizamos el momento solamente si pasó el ciclo
+        ultima_actualizacion = time.time()
 
         datos["fecha"] = time.strftime(
-            "%Y-%m-%d"
+            "%Y-%m-%d %H:%M:%S"
         )
 
         guardar_datos(datos)
 
-        ultima_actualizacion = time.time()
-
-        if rate_limit:
-
-            print("===================================")
-            print("ACTUALIZACIÓN DETENIDA POR RATE LIMIT")
-            print("Los datos anteriores fueron conservados.")
-            print("Se reintentará en el próximo ciclo.")
-            print("===================================")
-
-        else:
-
-            print(
-                "DATOS ACTUALIZADOS CORRECTAMENTE"
-            )
-
-    except Exception as error:
-
-        print(
-            "ERROR ACTUALIZANDO DATOS:"
-        )
-
-        print(error)
+        print()
+        print("===================================")
+        print("ACTUALIZACIÓN FINALIZADA")
+        print("===================================")
+        print()
 
     finally:
 
         bloqueo_actualizacion.release()
 
 
-# =========================================================
-# ESTADO DE PARTIDA
-# =========================================================
+# ============================================================
+# OBTENER ESTADO DE UN JUGADOR
+# ============================================================
 
 def obtener_estado_jugador(nombre, jugador):
-
-    ahora = time.time()
-
-    with bloqueo_estados:
-
-        estado_guardado = cache_estados.get(nombre)
-
-        if estado_guardado:
-
-            tiempo_cache = estado_guardado.get(
-                "timestamp",
-                0
-            )
-
-            if (
-                ahora - tiempo_cache
-                < INTERVALO_ESTADO
-            ):
-
-                return {
-                    "estado": estado_guardado.get(
-                        "estado",
-                        "offline"
-                    ),
-                    "game_start_time":
-                        estado_guardado.get(
-                            "game_start_time"
-                        )
-                }
 
     puuid = jugador.get("puuid")
 
@@ -411,175 +274,213 @@ def obtener_estado_jugador(nombre, jugador):
             "game_start_time": None
         }
 
-    partida = jugador_en_partida(
-        puuid
-    )
+    try:
 
-    codigo = obtener_ultimo_codigo_http()
+        partida = jugador_en_partida(puuid)
 
-    if codigo == 429:
+        codigo = obtener_ultimo_codigo_http()
+
+        # ----------------------------------------------------
+        # RATE LIMIT
+        # ----------------------------------------------------
+
+        if codigo == 429:
+
+            # Si ya teníamos un estado anterior,
+            # conservarlo en vez de marcarlo offline.
+            with bloqueo_estados:
+
+                anterior = cache_estados.get(nombre)
+
+            if anterior:
+                return anterior
+
+            return {
+                "estado": "offline",
+                "game_start_time": None
+            }
+
+        # ----------------------------------------------------
+        # EN PARTIDA
+        # ----------------------------------------------------
+
+        if partida:
+
+            game_start_time = partida.get(
+                "game_start_time"
+            )
+
+            estado = {
+                "estado": "in_game",
+                "game_start_time": game_start_time
+            }
+
+            with bloqueo_estados:
+                cache_estados[nombre] = estado
+
+            return estado
+
+        # ----------------------------------------------------
+        # OFFLINE
+        # ----------------------------------------------------
+
+        estado = {
+            "estado": "offline",
+            "game_start_time": None
+        }
+
+        with bloqueo_estados:
+            cache_estados[nombre] = estado
+
+        return estado
+
+    except Exception as e:
 
         print(
-            f"RATE LIMIT consultando estado de {nombre}."
+            f"Error obteniendo estado de {nombre}:",
+            e
         )
 
         with bloqueo_estados:
-
             anterior = cache_estados.get(nombre)
 
-            if anterior:
-
-                return {
-                    "estado": anterior.get(
-                        "estado",
-                        "offline"
-                    ),
-                    "game_start_time":
-                        anterior.get(
-                            "game_start_time"
-                        )
-                }
+        if anterior:
+            return anterior
 
         return {
             "estado": "offline",
             "game_start_time": None
         }
 
-    if partida:
 
-        estado = {
-            "estado": "in_game",
-            "game_start_time":
-                partida.get(
-                    "game_start_time"
-                ),
-            "timestamp": ahora
-        }
+# ============================================================
+# ACTUALIZAR ESTADOS
+# ============================================================
 
-    else:
-
-        estado = {
-            "estado": "offline",
-            "game_start_time": None,
-            "timestamp": ahora
-        }
-
-    with bloqueo_estados:
-
-        cache_estados[nombre] = estado
-
-    return {
-        "estado": estado["estado"],
-        "game_start_time":
-            estado["game_start_time"]
-    }
-
-
-# =========================================================
-# PAGINA PRINCIPAL
-# =========================================================
-
-@app.route("/")
-def inicio():
+def actualizar_estados():
 
     datos = cargar_datos()
 
-    jugadores = datos.get(
-        "jugadores",
-        {}
-    )
-
-    return render_template(
-        "index.html",
-        jugadores=jugadores
-    )
-
-
-# =========================================================
-# API DE JUGADORES
-# =========================================================
-
-@app.route("/api/jugadores")
-def api_jugadores():
-
-    actualizar_datos_riot()
-
-    datos = cargar_datos()
-
-    jugadores = datos.get(
-        "jugadores",
-        {}
-    )
-
-    resultado = {}
+    jugadores = datos.get("jugadores", {})
 
     for nombre, jugador in jugadores.items():
 
-        riot_id = jugador.get(
-            "riot_id",
-            ""
-        )
-
-        riot_tag = jugador.get(
-            "riot_tag",
-            ""
-        )
-
-        estado_info = obtener_estado_jugador(
+        estado = obtener_estado_jugador(
             nombre,
             jugador
         )
 
-        partidas = jugador.get(
-            "partidas_riot",
-            []
+        with bloqueo_estados:
+            cache_estados[nombre] = estado
+
+
+# ============================================================
+# RUTA PRINCIPAL
+# ============================================================
+
+@app.route("/")
+def inicio():
+
+    return render_template(
+        "index.html"
+    )
+
+
+# ============================================================
+# API JUGADORES
+# ============================================================
+
+@app.route("/api/jugadores")
+def api_jugadores():
+
+    global ultima_actualizacion
+
+    try:
+
+        # ----------------------------------------------------
+        # Actualizar datos pesados de Riot
+        # ----------------------------------------------------
+
+        actualizar_datos_riot()
+
+        # ----------------------------------------------------
+        # Actualizar estados
+        # ----------------------------------------------------
+
+        datos = cargar_datos()
+
+        jugadores = datos.get(
+            "jugadores",
+            {}
         )
 
-        ultima_partida = None
+        # ----------------------------------------------------
+        # Construir respuesta
+        # ----------------------------------------------------
 
-        if partidas:
+        respuesta = {}
 
-            ultima_partida = (
-                partidas[0].get(
-                    "fecha"
+        for nombre, jugador in jugadores.items():
+
+            with bloqueo_estados:
+                estado = cache_estados.get(
+                    nombre,
+                    {
+                        "estado": "offline",
+                        "game_start_time": None
+                    }
                 )
-            )
 
-        resultado[nombre] = {
+            respuesta[nombre] = {
 
-            "riot_id": riot_id,
+                "riot_id": jugador.get(
+                    "riot_id"
+                ),
 
-            "riot_tag": riot_tag,
+                "riot_tag": jugador.get(
+                    "riot_tag"
+                ),
 
-            "estado":
-                estado_info.get(
+                "estado": estado.get(
                     "estado",
                     "offline"
                 ),
 
-            "game_start_time":
-                estado_info.get(
+                "game_start_time": estado.get(
                     "game_start_time"
                 ),
 
-            "ultima_partida":
-                ultima_partida,
+                "ultima_partida": jugador.get(
+                    "ultima_partida"
+                ),
 
-            "rango":
-                jugador.get(
+                "rango": jugador.get(
                     "rango"
                 ),
 
-            "partidas_riot":
-                partidas
-        }
+                "partidas_riot": jugador.get(
+                    "partidas_riot",
+                    []
+                )
+            }
 
-    return jsonify(resultado)
+        return jsonify(respuesta)
+
+    except Exception as e:
+
+        print()
+        print("ERROR EN /api/jugadores:")
+        print(e)
+        print()
+
+        return jsonify({
+            "error": "Error interno del servidor"
+        }), 500
 
 
-# =========================================================
-# SERVIDOR
-# =========================================================
+# ============================================================
+# EJECUCIÓN
+# ============================================================
 
 if __name__ == "__main__":
 
