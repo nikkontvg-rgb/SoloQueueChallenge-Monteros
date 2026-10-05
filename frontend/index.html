@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Solo Queue Challenge</title>
+
+    <style>
+
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@400;500;600;700;800&family=Press+Start+2P&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+
+        /* =========================================================
+           VARIABLES
+        ========================================================= */
+
+        :root {
+            --fondo: #e8e5df;
+            --fondo-claro: #efede8;
+
+            --rojo-oscuro: #35151c;
+            --bordo-oscuro: #541020;
+            --bordo: #70152b;
+
+            --rubí: #941b3a;
+            --rubí-claro: #b52a4b;
+            --rojo-brillante: #d63b5c;
+
+            --blanco: #ffffff;
+
+            --gris-oscuro: #292929;
+            --gris: #7d7d7d;
+            --gris-claro: #d2d2d2;
+        }
+
+
+        /* =========================================================
+           BASE
+        ========================================================= */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            background: var(--fondo);
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--gris-oscuro);
+
+            margin: 0;
+            padding: 30px;
+
+            min-height: 100vh;
+
+            position: relative;
+
+            overflow-x: hidden;
+        }
+
+
+        /* =========================================================
+           FONDO ANIMADO
+        ========================================================= */
+
+        body::before {
+            content: "";
+
+            position: fixed;
+            inset: -50%;
+
+            width: 200%;
+            height: 200%;
+
+            pointer-events: none;
+
+            z-index: 0;
+
+            background:
+                repeating-linear-gradient(
+                    125deg,
+                    transparent 0px,
+                    transparent 90px,
+                    rgba(53, 21, 28, 0.055) 91px,
+                    rgba(53, 21, 28, 0.055) 93px,
+                    transparent 94px,
+                    transparent 180px
+                ),
+
+                linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    transparent 25%,
+                    rgba(112, 21, 43, 0.035) 25.2%,
+                    rgba(112, 21, 43, 0.035) 25.5%,
+                    transparent 25.7%,
+                    transparent 70%,
+                    rgba(112, 21, 43, 0.04) 70.2%,
+                    rgba(112, 21, 43, 0.04) 70.5%,
+                    transparent 70.7%
+                );
+
+            background-size:
+                500px 500px,
+                700px 700px;
+
+            animation:
+                movimientoGeometrico 20s linear infinite;
+        }
+
+
+        body::after {
+            content: "";
+
+            position: fixed;
+            inset: 0;
+
+            pointer-events: none;
+
+            z-index: 0;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    transparent 48%,
+                    rgba(90, 30, 42, 0.045) 48.2%,
+                    transparent 48.5%
+                ),
+
+                linear-gradient(
+                    0deg,
+                    transparent 0%,
+                    transparent 35%,
+                    rgba(90, 30, 42, 0.04) 35.2%,
+                    transparent 35.5%
+                );
+
+            background-size:
+                420px 420px,
+                420px 420px;
+
+            animation:
+                movimientoLineas 28s linear infinite;
+        }
+
+
+        @keyframes movimientoGeometrico {
+
+            0% {
+                transform:
+                    translate(-2%, -2%)
+                    rotate(0deg);
+            }
+
+            25% {
+                transform:
+                    translate(1%, -4%)
+                    rotate(0.5deg);
+            }
+
+            50% {
+                transform:
+                    translate(4%, 0%)
+                    rotate(0deg);
+            }
+
+            75% {
+                transform:
+                    translate(1%, 4%)
+                    rotate(-0.5deg);
+            }
+
+            100% {
+                transform:
+                    translate(-2%, -2%)
+                    rotate(0deg);
+            }
+
+        }
+
+
+        @keyframes movimientoLineas {
+
+            0% {
+                transform:
+                    translate(0%, 0%);
+            }
+
+            50% {
+                transform:
+                    translate(-4%, 3%);
+            }
+
+            100% {
+                transform:
+                    translate(0%, 0%);
+            }
+
+        }
+
+
+        /* =========================================================
+           CONTENEDOR
+        ========================================================= */
+
+        .contenedor {
+            max-width: 900px;
+
+            margin: auto;
+
+            position: relative;
+
+            z-index: 1;
+        }
+
+
+        /* =========================================================
+           ENCABEZADO
+        ========================================================= */
+
+        .encabezado {
+            text-align: center;
+
+            margin-bottom: 25px;
+        }
+
+
+        .encabezado h1 {
+            font-family: 'Bebas Neue', sans-serif;
+
+            font-size: 42px;
+
+            font-weight: 700;
+
+            letter-spacing: 1px;
+
+            color: var(--rojo-oscuro);
+
+            margin:
+                0 0 10px;
+        }
+
+
+        .descripcion {
+            max-width: 750px;
+
+            margin: 0 auto;
+
+            font-size: 21px;
+
+            font-weight: 400;
+
+            line-height: 1.5;
+
+            color: #555555;
+        }
+
+
+        /* =========================================================
+           MENÚ LATERAL
+        ========================================================= */
+
+        .menu-lateral {
+
+            position: fixed;
+
+            left: -270px;
+
+            top: 0;
+
+            width: 250px;
+
+            height: 100vh;
+
+            background: var(--rojo-oscuro);
+
+            border-right:
+                1px solid var(--bordo);
+
+            z-index: 3000;
+
+            transition:
+                left 0.3s ease;
+
+            overflow-y: auto;
+
+            box-shadow:
+                8px 0 25px rgba(0, 0, 0, 0.25);
+        }
+
+
+        .menu-lateral.abierto {
+            left: 0;
+        }
+
+
+        /* =========================================================
+           BOTÓN / FLECHA
+        ========================================================= */
+
+        .menu-flecha {
+
+            position: fixed;
+
+            left: 0;
+
+            top: 50%;
+
+            transform:
+                translateY(-50%);
+
+            width: 58px;
+
+            height: 42px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background:
+                var(--bordo);
+
+            color:
+                var(--blanco);
+
+            border:
+                1px solid var(--rubí);
+
+            border-left:
+                none;
+
+            border-radius:
+                0 8px 8px 0;
+
+            font-size:
+                28px;
+
+            font-weight:
+                bold;
+
+            cursor:
+                pointer;
+
+            z-index:
+                3001;
+
+            user-select:
+                none;
+
+            transition:
+                left 0.3s ease,
+                background 0.2s ease,
+                transform 0.2s ease;
+        }
+
+
+        .menu-flecha:hover {
+            background:
+                var(--rubí);
+        }
+
+
+        .menu-flecha:active {
+            transform:
+                translateY(-50%)
+                scale(0.95);
+        }
+
+
+        .menu-flecha.abierto {
+            left: 250px;
+        }
+
+
+        /* =========================================================
+           TÍTULO DEL MENÚ
+        ========================================================= */
+
+        .menu-titulo {
+
+            width: 250px;
+
+            height: 65px;
+
+            display: flex;
+
+            align-items: center;
+
+            padding-left: 20px;
+
+            color:
+                var(--blanco);
+
+            background:
+                var(--rojo-oscuro);
+
+            font-size:
+                19px;
+
+            font-weight:
+                bold;
+
+            border-bottom:
+                1px solid var(--bordo);
+        }
+
+
+        /* =========================================================
+           CONTENIDO DEL MENÚ
+        ========================================================= */
+
+        .menu-contenido {
+
+            width: 250px;
+
+            padding:
+                15px 10px;
+
+            background:
+                var(--rojo-oscuro);
+
+            min-height:
+                calc(100vh - 65px);
+        }
+
+
+        .menu-contenido a {
+
+            display: block;
+
+            padding:
+                14px 15px;
+
+            margin-bottom:
+                6px;
+
+            color:
+                var(--blanco);
+
+            text-decoration:
+                none;
+
+            border-radius:
+                7px;
+
+            font-size:
+                17px;
+
+            white-space:
+                nowrap;
+
+            transition:
+                background 0.2s ease,
+                transform 0.2s ease;
+        }
+
+
+        .menu-contenido a:hover {
+
+            background:
+                var(--bordo-oscuro);
+
+            transform:
+                translateX(4px);
+        }
+
+
+        /* =========================================================
+           OVERLAY
+        ========================================================= */
+
+        .menu-overlay {
+
+            position: fixed;
+
+            inset: 0;
+
+            background:
+                rgba(0, 0, 0, 0.35);
+
+            z-index:
+                2999;
+
+            opacity:
+                0;
+
+            visibility:
+                hidden;
+
+            transition:
+                opacity 0.3s ease,
+                visibility 0.3s ease;
+        }
+
+
+        .menu-overlay.visible {
+
+            opacity:
+                1;
+
+            visibility:
+                visible;
+        }
+
+
+        /* =========================================================
+           STREAMERS
+        ========================================================= */
+
+        .streamers {
+
+            margin:
+                55px auto 90px;
+
+            max-width:
+                900px;
+        }
+
+
+        .streamers h2 {
+
+            text-align:
+                center;
+
+            font-family:
+                'Orbitron',
+                sans-serif;
+
+            font-size:
+                28px;
+
+            font-weight:
+                600;
+
+            letter-spacing:
+                1px;
+
+            margin-bottom:
+                18px;
+
+            color:
+                var(--rojo-oscuro);
+        }
+
+
+        .streamer-proximamente {
+
+            background:
+                var(--rojo-oscuro);
+
+            border:
+                1px solid var(--bordo);
+
+            border-radius:
+                12px;
+
+            min-height:
+                330px;
+
+            padding:
+                60px 30px;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            text-align:
+                center;
+        }
+
+
+        .streamer-proximamente .icono {
+
+            font-size:
+                42px;
+
+            margin-bottom:
+                10px;
+        }
+
+
+        .streamer-proximamente h3 {
+
+            margin:
+                5px 0;
+
+            font-size:
+                23px;
+
+            color:
+                var(--rubí-claro);
+        }
+
+
+        .streamer-proximamente p {
+
+            margin:
+                0;
+
+            color:
+                var(--gris-claro);
+
+            font-size:
+                17px;
+
+            max-width:
+                650px;
+        }
+
+
+        /* =========================================================
+           JUGADORES
+        ========================================================= */
+
+        .jugador {
+
+            position:
+                relative;
+
+            background:
+                var(--rojo-oscuro);
+
+            border:
+                1px solid var(--bordo-oscuro);
+
+            border-radius:
+                12px;
+
+            padding:
+                20px;
+
+            margin-bottom:
+                15px;
+
+            transition:
+                border-color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+
+        .jugador:hover {
+
+            border-color:
+                var(--rubí);
+
+            transform:
+                translateX(4px);
+        }
+
+
+        /* =========================================================
+           HISTORIAL
+        ========================================================= */
+
+        .jugador::after {
+
+            content:
+                "VER HISTORIAL →";
+
+            position:
+                absolute;
+
+            right:
+                20px;
+
+            top:
+                50%;
+
+            transform:
+                translateY(-50%)
+                translateX(10px);
+
+            color:
+                var(--rubí-claro);
+
+            font-family:
+                'Rajdhani',
+                sans-serif;
+
+            font-size:
+                15px;
+
+            font-weight:
+                700;
+
+            white-space:
+                nowrap;
+
+            opacity:
+                0;
+
+            pointer-events:
+                none;
+
+            transition:
+                opacity 0.2s ease,
+                transform 0.2s ease;
+        }
+
+
+        .jugador:hover::after {
+
+            opacity:
+                1;
+
+            transform:
+                translateY(-50%)
+                translateX(0);
+        }
+
+
+        /* =========================================================
+           NOMBRE
+        ========================================================= */
+
+        .nombre {
+
+            font-family:
+                'Press Start 2P',
+                cursive;
+
+            font-size:
+                16px;
+
+            font-weight:
+                bold;
+
+            color:
+                var(--blanco);
+
+            animation:
+                nombreFlotando 1s ease-in-out infinite;
+        }
+
+
+        @keyframes nombreFlotando {
+
+            0%,
+            100% {
+
+                transform:
+                    translateY(0);
+            }
+
+            50% {
+
+                transform:
+                    translateY(-2px);
+            }
+
+        }
+
+
+        .riot {
+
+            color:
+                var(--gris-claro);
+
+            margin-top:
+                5px;
+        }
+
+
+        .estado {
+
+            margin-top:
+                15px;
+
+            font-weight:
+                bold;
+
+            font-size:
+                18px;
+        }
+
+
+        .online {
+
+            color:
+                #22c55e;
+        }
+
+
+        .partida {
+
+            color:
+                var(--rojo-brillante);
+        }
+
+
+        .offline {
+
+            color:
+                var(--gris);
+        }
+
+
+        /* =========================================================
+           CONTADOR
+        ========================================================= */
+
+        .contador {
+
+            margin-top:
+                8px;
+
+            color:
+                var(--rubí-claro);
+
+            font-size:
+                16px;
+
+            font-weight:
+                bold;
+        }
+
+
+        /* =========================================================
+           ACTUALIZACIÓN
+        ========================================================= */
+
+        .actualizacion {
+
+            text-align:
+                center;
+
+            color:
+                var(--gris);
+
+            margin-top:
+                45px;
+
+            margin-bottom:
+                55px;
+        }
+
+
+        /* =========================================================
+           RANKING
+        ========================================================= */
+
+        .ranking {
+
+            margin-top:
+                0;
+
+            padding:
+                20px;
+
+            background:
+                rgba(53, 21, 28, 0.95);
+
+            border:
+                1px solid var(--bordo-oscuro);
+
+            border-radius:
+                12px;
+        }
+
+
+        .ranking h2 {
+
+            margin-top:
+                0;
+
+            margin-bottom:
+                20px;
+
+            text-align:
+                center;
+
+            color:
+                var(--blanco);
+        }
+
+
+        .ranking-item {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                12px;
+
+            padding:
+                12px;
+
+            margin-bottom:
+                8px;
+
+            background:
+                #421b24;
+
+            border:
+                1px solid var(--bordo-oscuro);
+
+            border-radius:
+                8px;
+
+            transition:
+                border-color 0.2s ease;
+        }
+
+
+        .ranking-item:hover {
+
+            border-color:
+                var(--rubí);
+        }
+
+
+        .ranking-posicion {
+
+            width:
+                35px;
+
+            font-size:
+                20px;
+
+            font-weight:
+                bold;
+
+            text-align:
+                center;
+        }
+
+
+        .ranking-nombre {
+
+            flex:
+                1;
+
+            font-weight:
+                bold;
+
+            color:
+                var(--blanco);
+        }
+
+
+        .ranking-rango {
+
+            font-weight:
+                bold;
+
+            color:
+                var(--rubí-claro);
+        }
+
+
+        .ranking-lp {
+
+            min-width:
+                70px;
+
+            text-align:
+                right;
+
+            color:
+                var(--gris-claro);
+        }
+
+
+        /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+
+        @media (max-width: 700px) {
+
+            body {
+
+                padding:
+                    20px 15px;
+            }
+
+
+            .encabezado h1 {
+
+                font-size:
+                    34px;
+            }
+
+
+            .descripcion {
+
+                font-size:
+                    18px;
+            }
+
+
+            .streamer-proximamente {
+
+                min-height:
+                    280px;
+            }
+
+
+            .ranking-item {
+
+                gap:
+                    7px;
+            }
+
+
+            .ranking-rango {
+
+                font-size:
+                    14px;
+            }
+
+
+            .ranking-lp {
+
+                min-width:
+                    55px;
+
+                font-size:
+                    14px;
+            }
+
+
+            /* En celular el historial no aparece */
+
+            .jugador::after {
+
+                display:
+                    none;
+            }
+
+
+            .menu-flecha {
+
+                width:
+                    52px;
+
+                height:
+                    40px;
+
+                font-size:
+                    25px;
+            }
+
+
+            .menu-flecha.abierto {
+
+                left:
+                    250px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <div class="contenedor">
+
+
+        <!-- ================= ENCABEZADO ================= -->
+
+        <div class="encabezado">
+
+            <h1>
+                🏆 Bienvenidos al SoloQ Challenge Monteros
+            </h1>
+
+            <div class="descripcion">
+
+                Un desafío de Solo Queue donde los jugadores del Sur Tucumano
+                compiten para demostrar quién puede alcanzar el mejor rendimiento
+                y posicionarse en lo más alto del ranking en 30 días.
+
+            </div>
+
+        </div>
+
+
+        <!-- ================= MENÚ ================= -->
+
+        <div
+            class="menu-lateral"
+            id="menuLateral"
+        >
+
+            <div class="menu-titulo">
+
+                ☰ MENÚ
+
+            </div>
+
+
+            <div class="menu-contenido">
+
+                <a href="#">
+                    📝 Registrarse
+                </a>
+
+                <a href="#">
+                    📰 Noticias
+                </a>
+
+                <a href="#jugadores">
+                    👥 Jugadores
+                </a>
+
+                <a href="#ranking">
+                    🏆 Ranking
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- BOTÓN ÚNICO -->
+
+        <div
+            class="menu-flecha"
+            id="menuFlecha"
+            role="button"
+            aria-label="Abrir menú"
+            tabindex="0"
+        >
+            →
+        </div>
+
+
+        <!-- OSCURECER FONDO -->
+
+        <div
+            class="menu-overlay"
+            id="menuOverlay"
+        ></div>
+
+
+        <!-- ================= STREAMERS ================= -->
+
+        <div class="streamers">
+
+            <h2>
+                📺 Streamers en vivo
+            </h2>
+
+
+            <div class="streamer-proximamente">
+
+                <div class="icono">
+                    🎥
+                </div>
+
+
+                <h3>
+                    Próximamente
+                </h3>
+
+
+                <p>
+
+                    Próximamente podrás ver aquí a los participantes
+                    que estén transmitiendo sus partidas en Twitch o Kick.
+
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================= JUGADORES ================= -->
+
+        <div id="jugadores">
+
+            Cargando jugadores...
+
+        </div>
+
+
+        <!-- ================= ACTUALIZACIÓN ================= -->
+
+        <div class="actualizacion">
+
+            🔄 Actualizando automáticamente...
+
+        </div>
+
+
+        <!-- ================= RANKING ================= -->
+
+        <div class="ranking">
+
+            <h2>
+                🏆 RANKING
+            </h2>
+
+            <div id="ranking"></div>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================= -->
+
+    <script>
+
+
+        /* =========================================================
+           MENÚ LATERAL
+        ========================================================= */
+
+        const menuLateral =
+            document.getElementById("menuLateral");
+
+        const menuFlecha =
+            document.getElementById("menuFlecha");
+
+        const menuOverlay =
+            document.getElementById("menuOverlay");
+
+
+        function abrirMenu() {
+
+            menuLateral.classList.add("abierto");
+
+            menuFlecha.classList.add("abierto");
+
+            menuOverlay.classList.add("visible");
+
+            menuFlecha.textContent = "←";
+
+        }
+
+
+        function cerrarMenu() {
+
+            menuLateral.classList.remove("abierto");
+
+            menuFlecha.classList.remove("abierto");
+
+            menuOverlay.classList.remove("visible");
+
+            menuFlecha.textContent = "→";
+
+        }
+
+
+        function alternarMenu() {
+
+            if (
+                menuLateral.classList.contains("abierto")
+            ) {
+
+                cerrarMenu();
+
+            } else {
+
+                abrirMenu();
+
+            }
+
+        }
+
+
+        /* CLICK EN LA FLECHA */
+
+        menuFlecha.addEventListener(
+            "click",
+            alternarMenu
+        );
+
+
+        /* ENTER / ESPACIO */
+
+        menuFlecha.addEventListener(
+            "keydown",
+            function(evento) {
+
+                if (
+                    evento.key === "Enter" ||
+                    evento.key === " "
+                ) {
+
+                    evento.preventDefault();
+
+                    alternarMenu();
+
+                }
+
+            }
+        );
+
+
+        /* CLICK FUERA DEL MENÚ */
+
+        menuOverlay.addEventListener(
+            "click",
+            cerrarMenu
+        );
+
+
+        /* CLICK EN UN ELEMENTO DEL MENÚ */
+
+        document
+            .querySelectorAll(".menu-contenido a")
+            .forEach(function(enlace) {
+
+                enlace.addEventListener(
+                    "click",
+                    cerrarMenu
+                );
+
+            });
+
+
+        /* =========================================================
+           VARIABLES DE PARTIDA
+        ========================================================= */
+
+        let tiemposPartida = {};
+
+
+        /* =========================================================
+           FORMATEAR TIEMPO
+        ========================================================= */
+
+        function formatearTiempo(segundos) {
+
+            const minutos =
+                Math.floor(segundos / 60);
+
+            const segundosRestantes =
+                segundos % 60;
+
+            return `${minutos}:${segundosRestantes
+                .toString()
+                .padStart(2, "0")}`;
+
+        }
+
+
+        /* =========================================================
+           FECHA ÚLTIMA PARTIDA
+        ========================================================= */
+
+        function fechaUltimaPartida(jugador) {
+
+            if (!jugador.ultima_partida) {
+                return 0;
+            }
+
+            const fecha =
+                jugador.ultima_partida
+                    .replace(" ", "T");
+
+            const tiempo =
+                new Date(fecha).getTime();
+
+            return Number.isNaN(tiempo)
+                ? 0
+                : tiempo;
+
+        }
+
+
+        /* =========================================================
+           CARGAR JUGADORES
+        ========================================================= */
+
+        function cargarJugadores() {
+
+            fetch("https://soloqueuechallenge-monteros.onrender.com/api/jugadores")
+
+                .then(respuesta =>
+                    respuesta.json()
+                )
+
+                .then(jugadores => {
+
+
+                    const contenedor =
+                        document.getElementById(
+                            "jugadores"
+                        );
+
+
+                    contenedor.innerHTML = "";
+
+
+                    /* =================================================
+                       ORDEN DE ESTADOS
+                    ================================================= */
+
+                    const ordenEstado = {
+
+                        "in_game": 1,
+
+                        "online": 2,
+
+                        "offline": 3
+
+                    };
+
+
+                    const jugadoresOrdenados =
+                        Object.entries(jugadores);
+
+
+                    jugadoresOrdenados.sort(
+
+                        ([nombreA, jugadorA],
+                         [nombreB, jugadorB]) => {
+
+
+                            const estadoA =
+                                ordenEstado[
+                                    jugadorA.estado
+                                ] || 3;
+
+
+                            const estadoB =
+                                ordenEstado[
+                                    jugadorB.estado
+                                ] || 3;
+
+
+                            if (
+                                estadoA !==
+                                estadoB
+                            ) {
+
+                                return (
+                                    estadoA -
+                                    estadoB
+                                );
+
+                            }
+
+
+                            /* OFFLINE:
+                               MÁS RECIENTE PRIMERO */
+
+                            if (
+                                jugadorA.estado ===
+                                "offline"
+                            ) {
+
+                                const fechaA =
+                                    fechaUltimaPartida(
+                                        jugadorA
+                                    );
+
+
+                                const fechaB =
+                                    fechaUltimaPartida(
+                                        jugadorB
+                                    );
+
+
+                                if (
+                                    fechaA !==
+                                    fechaB
+                                ) {
+
+                                    return (
+                                        fechaB -
+                                        fechaA
+                                    );
+
+                                }
+
+                            }
+
+
+                            return 0;
+
+                        }
+
+                    );
+
+
+                    /* =================================================
+                       MOSTRAR JUGADORES
+                    ================================================= */
+
+                    for (
+                        const [nombre, jugador]
+                        of jugadoresOrdenados
+                    ) {
+
+
+                        let estadoTexto =
+                            "⚪ OFFLINE";
+
+
+                        let claseEstado =
+                            "offline";
+
+
+                        let contador =
+                            "";
+
+
+                        /* ONLINE */
+
+                        if (
+                            jugador.estado ===
+                            "online"
+                        ) {
+
+                            estadoTexto =
+                                "🟢 ONLINE";
+
+                            claseEstado =
+                                "online";
+
+                        }
+
+
+                        /* EN PARTIDA */
+
+                        if (
+                            jugador.estado ===
+                            "in_game"
+                        ) {
+
+                            estadoTexto =
+                                "🎮 EN PARTIDA";
+
+                            claseEstado =
+                                "partida";
+
+
+                            if (
+                                jugador.game_start_time
+                            ) {
+
+                                tiemposPartida[nombre] =
+                                    jugador.game_start_time;
+
+
+                                const segundos =
+                                    Math.max(
+                                        0,
+                                        Math.floor(
+                                            (
+                                                Date.now() -
+                                                jugador.game_start_time
+                                            ) / 1000
+                                        )
+                                    );
+
+
+                                contador = `
+
+                                    <div class="contador">
+
+                                        ⏱️ ${formatearTiempo(
+                                            segundos
+                                        )}
+
+                                    </div>
+
+                                `;
+
+                            }
+
+                        } else {
+
+                            delete tiemposPartida[nombre];
+
+                        }
+
+
+                        /* =================================================
+                           TARJETA
+                        ================================================= */
+
+                        contenedor.innerHTML += `
+
+                            <div class="jugador">
+
+                                <div class="nombre">
+
+                                    ${nombre}
+
+                                </div>
+
+
+                                <div class="riot">
+
+                                    Riot ID:
+                                    ${jugador.riot_id}#${jugador.riot_tag}
+
+                                </div>
+
+
+                                <div class="estado ${claseEstado}">
+
+                                    ${estadoTexto}
+
+                                </div>
+
+
+                                ${contador}
+
+                            </div>
+
+                        `;
+
+                    }
+
+
+                    /* =================================================
+                       RANKING
+                    ================================================= */
+
+                    const ranking =
+                        document.getElementById(
+                            "ranking"
+                        );
+
+
+                    const ordenTier = {
+
+                        "IRON": 1,
+                        "BRONZE": 2,
+                        "SILVER": 3,
+                        "GOLD": 4,
+                        "PLATINUM": 5,
+                        "EMERALD": 6,
+                        "DIAMOND": 7,
+                        "MASTER": 8,
+                        "GRANDMASTER": 9,
+                        "CHALLENGER": 10,
+                        "UNRANKED": 0
+
+                    };
+
+
+                    const ordenDivision = {
+
+                        "IV": 1,
+                        "III": 2,
+                        "II": 3,
+                        "I": 4
+
+                    };
+
+
+                    const jugadoresRanking =
+                        Object.entries(jugadores);
+
+
+                    jugadoresRanking.sort(
+
+                        (a, b) => {
+
+
+                            const rangoA =
+                                a[1].rango;
+
+
+                            const rangoB =
+                                b[1].rango;
+
+
+                            const tierA =
+                                rangoA?.tier ||
+                                "UNRANKED";
+
+
+                            const tierB =
+                                rangoB?.tier ||
+                                "UNRANKED";
+
+
+                            if (
+                                ordenTier[tierA] !==
+                                ordenTier[tierB]
+                            ) {
+
+                                return (
+                                    ordenTier[tierB] -
+                                    ordenTier[tierA]
+                                );
+
+                            }
+
+
+                            const divisionA =
+                                ordenDivision[
+                                    rangoA?.rank
+                                ] || 0;
+
+
+                            const divisionB =
+                                ordenDivision[
+                                    rangoB?.rank
+                                ] || 0;
+
+
+                            if (
+                                divisionA !==
+                                divisionB
+                            ) {
+
+                                return (
+                                    divisionB -
+                                    divisionA
+                                );
+
+                            }
+
+
+                            const lpA =
+                                rangoA?.lp || 0;
+
+
+                            const lpB =
+                                rangoB?.lp || 0;
+
+
+                            return (
+                                lpB -
+                                lpA
+                            );
+
+                        }
+
+                    );
+
+
+                    ranking.innerHTML = "";
+
+
+                    jugadoresRanking.forEach(
+
+                        ([nombre, jugador], index) => {
+
+
+                            const rango =
+                                jugador.rango;
+
+
+                            let textoRango =
+                                "UNRANKED";
+
+
+                            let lp =
+                                "";
+
+
+                            if (
+                                rango &&
+                                rango.tier &&
+                                rango.tier !==
+                                    "UNRANKED"
+                            ) {
+
+                                textoRango =
+                                    `${rango.tier} ${rango.rank}`;
+
+
+                                lp =
+                                    `${rango.lp} LP`;
+
+                            }
+
+
+                            let posicion =
+                                `${index + 1}°`;
+
+
+                            if (index === 0) {
+
+                                posicion =
+                                    "🥇";
+
+                            } else if (index === 1) {
+
+                                posicion =
+                                    "🥈";
+
+                            } else if (index === 2) {
+
+                                posicion =
+                                    "🥉";
+
+                            }
+
+
+                            ranking.innerHTML += `
+
+                                <div class="ranking-item">
+
+                                    <div class="ranking-posicion">
+
+                                        ${posicion}
+
+                                    </div>
+
+
+                                    <div class="ranking-nombre">
+
+                                        ${nombre}
+
+                                    </div>
+
+
+                                    <div class="ranking-rango">
+
+                                        ${textoRango}
+
+                                    </div>
+
+
+                                    <div class="ranking-lp">
+
+                                        ${lp}
+
+                                    </div>
+
+                                </div>
+
+                            `;
+
+                        }
+
+                    );
+
+                })
+
+
+                .catch(error => {
+
+                    console.error(
+                        "Error:",
+                        error
+                    );
+
+                });
+
+        }
+
+
+        /* =========================================================
+           CARGA INICIAL
+        ========================================================= */
+
+        cargarJugadores();
+
+
+        /* =========================================================
+           ACTUALIZAR CADA 15 SEGUNDOS
+        ========================================================= */
+
+        setInterval(
+            cargarJugadores,
+            15000
+        );
+
+
+        /* =========================================================
+           ACTUALIZAR CONTADORES CADA SEGUNDO
+        ========================================================= */
+
+        setInterval(() => {
+
+
+            const elementos =
+                document.querySelectorAll(
+                    ".contador"
+                );
+
+
+            elementos.forEach(
+                elemento => {
+
+
+                    const jugadorElemento =
+                        elemento.closest(
+                            ".jugador"
+                        );
+
+
+                    if (!jugadorElemento) {
+                        return;
+                    }
+
+
+                    const nombreElemento =
+                        jugadorElemento.querySelector(
+                            ".nombre"
+                        );
+
+
+                    if (!nombreElemento) {
+                        return;
+                    }
+
+
+                    const nombre =
+                        nombreElemento
+                            .textContent
+                            .trim();
+
+
+                    if (
+                        tiemposPartida[nombre]
+                    ) {
+
+
+                        const segundos =
+                            Math.max(
+                                0,
+                                Math.floor(
+                                    (
+                                        Date.now() -
+                                        tiemposPartida[nombre]
+                                    ) / 1000
+                                )
+                            );
+
+
+                        elemento.textContent =
+                            `⏱️ ${formatearTiempo(
+                                segundos
+                            )}`;
+
+                    }
+
+                }
+
+            );
+
+        }, 1000);
+
+
+    </script>
+
+
+</body>
+
+</html>
