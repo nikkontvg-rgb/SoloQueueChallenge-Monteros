@@ -8,6 +8,7 @@ import threading
 from riot_api import (
     jugador_en_partida,
     obtener_puuid_por_riot_id,
+    obtener_summoner_por_puuid,
     actualizar_partidas_jugador,
     obtener_rango,
     obtener_ultimo_codigo_http
@@ -20,7 +21,6 @@ from riot_api import (
 
 app = Flask(__name__)
 
-# Permitir que el frontend de Netlify consulte este backend de Render
 CORS(app, origins=[
     "https://soloqchallenge-monteros.netlify.app"
 ])
@@ -52,30 +52,51 @@ bloqueo_estados = threading.Lock()
 # ============================================================
 
 def cargar_datos():
+
     try:
+
         if not os.path.exists(ARCHIVO):
+
             return {
                 "jugadores": {}
             }
 
-        with open(ARCHIVO, "r", encoding="utf-8") as archivo:
+        with open(
+            ARCHIVO,
+            "r",
+            encoding="utf-8"
+        ) as archivo:
+
             datos = json.load(archivo)
 
         if not isinstance(datos, dict):
+
             return {
                 "jugadores": {}
             }
 
         if "jugadores" not in datos:
+
             datos["jugadores"] = {}
 
-        if not isinstance(datos["jugadores"], dict):
+        if not isinstance(
+            datos["jugadores"],
+            dict
+        ):
+
             datos["jugadores"] = {}
 
         return datos
 
-    except (json.JSONDecodeError, OSError) as e:
-        print("ERROR AL CARGAR DATOS:", e)
+    except (
+        json.JSONDecodeError,
+        OSError
+    ) as e:
+
+        print(
+            "ERROR AL CARGAR DATOS:",
+            e
+        )
 
         return {
             "jugadores": {}
@@ -87,8 +108,15 @@ def cargar_datos():
 # ============================================================
 
 def guardar_datos(datos):
+
     try:
-        with open(ARCHIVO, "w", encoding="utf-8") as archivo:
+
+        with open(
+            ARCHIVO,
+            "w",
+            encoding="utf-8"
+        ) as archivo:
+
             json.dump(
                 datos,
                 archivo,
@@ -97,7 +125,11 @@ def guardar_datos(datos):
             )
 
     except OSError as e:
-        print("ERROR AL GUARDAR DATOS:", e)
+
+        print(
+            "ERROR AL GUARDAR DATOS:",
+            e
+        )
 
 
 # ============================================================
@@ -108,8 +140,11 @@ def actualizar_datos_riot():
 
     global ultima_actualizacion
 
-    # Evitar que dos procesos actualicen Riot al mismo tiempo
-    if not bloqueo_actualizacion.acquire(blocking=False):
+    # Evitar dos actualizaciones pesadas simultáneas
+    if not bloqueo_actualizacion.acquire(
+        blocking=False
+    ):
+
         return
 
     try:
@@ -117,7 +152,11 @@ def actualizar_datos_riot():
         ahora = time.time()
 
         # Todavía no corresponde actualizar
-        if ahora - ultima_actualizacion < INTERVALO_ACTUALIZACION:
+        if (
+            ahora - ultima_actualizacion
+            < INTERVALO_ACTUALIZACION
+        ):
+
             return
 
         print()
@@ -127,27 +166,46 @@ def actualizar_datos_riot():
 
         datos = cargar_datos()
 
-        jugadores = datos.get("jugadores", {})
+        jugadores = datos.get(
+            "jugadores",
+            {}
+        )
 
         for nombre, jugador in jugadores.items():
 
             print()
             print("Actualizando:", nombre)
 
-            # ------------------------------------------------
-            # OBTENER PUUID SI NO EXISTE
-            # ------------------------------------------------
+            # ==================================================
+            # 1. OBTENER PUUID SI NO EXISTE
+            # ==================================================
 
-            puuid = jugador.get("puuid")
+            puuid = jugador.get(
+                "puuid"
+            )
 
             if not puuid:
 
-                riot_id = jugador.get("riot_id")
-                riot_tag = jugador.get("riot_tag")
+                riot_id = jugador.get(
+                    "riot_id"
+                )
+
+                riot_tag = jugador.get(
+                    "riot_tag"
+                )
 
                 if not riot_id or not riot_tag:
-                    print("Faltan Riot ID o Riot Tag para:", nombre)
+
+                    print(
+                        "Faltan Riot ID o Riot Tag para:",
+                        nombre
+                    )
+
                     continue
+
+                print(
+                    "Obteniendo PUUID mediante Riot ID..."
+                )
 
                 puuid = obtener_puuid_por_riot_id(
                     riot_id,
@@ -158,36 +216,123 @@ def actualizar_datos_riot():
 
                 if codigo == 429:
 
-                    print("RATE LIMIT al obtener PUUID.")
-                    print()
-                    print("===================================")
-                    print("ACTUALIZACIÓN DETENIDA POR RATE LIMIT")
-                    print("===================================")
-                    print("Los datos anteriores fueron conservados.")
-                    print("Se reintentará en el próximo ciclo.")
-                    print()
+                    print(
+                        "RATE LIMIT al obtener PUUID."
+                    )
+
+                    print(
+                        "ACTUALIZACIÓN DETENIDA."
+                    )
 
                     break
 
                 if not puuid:
 
-                    print("No se pudo obtener PUUID para:", nombre)
+                    print(
+                        "No se pudo obtener PUUID para:",
+                        nombre
+                    )
+
                     continue
 
                 jugador["puuid"] = puuid
 
                 guardar_datos(datos)
 
-            # ------------------------------------------------
-            # ACTUALIZAR PARTIDAS
-            # ------------------------------------------------
+                print(
+                    "PUUID guardado para:",
+                    nombre
+                )
+
+            # ==================================================
+            # 2. OBTENER SUMMONER ID SI NO EXISTE
+            # ==================================================
+
+            summoner_id = jugador.get(
+                "summoner_id"
+            )
+
+            if not summoner_id:
+
+                print(
+                    "No hay Summoner ID guardado."
+                )
+
+                print(
+                    "Obteniendo Summoner ID..."
+                )
+
+                summoner = obtener_summoner_por_puuid(
+                    puuid
+                )
+
+                codigo = obtener_ultimo_codigo_http()
+
+                if codigo == 429:
+
+                    print(
+                        "RATE LIMIT al obtener Summoner ID."
+                    )
+
+                    break
+
+                if not summoner:
+
+                    print(
+                        "No se pudo obtener Summoner ID para:",
+                        nombre
+                    )
+
+                    continue
+
+                summoner_id = summoner.get(
+                    "id"
+                )
+
+                if not summoner_id:
+
+                    print(
+                        "El Summoner no tiene ID:",
+                        nombre
+                    )
+
+                    continue
+
+                jugador["summoner_id"] = summoner_id
+
+                guardar_datos(datos)
+
+                print(
+                    "Summoner ID guardado para:",
+                    nombre
+                )
+
+            # ==================================================
+            # 3. ACTUALIZAR HISTORIAL DE PARTIDAS
+            # ==================================================
 
             try:
 
-                actualizar_partidas_jugador(
-                    puuid,
-                    jugador
+                historial_actual = jugador.get(
+                    "partidas_riot",
+                    []
                 )
+
+                if not isinstance(
+                    historial_actual,
+                    list
+                ):
+
+                    historial_actual = []
+
+                partidas = actualizar_partidas_jugador(
+                    puuid,
+                    historial_actual
+                )
+
+                if partidas is not None:
+
+                    jugador["partidas_riot"] = partidas
 
             except Exception as e:
 
@@ -200,22 +345,30 @@ def actualizar_datos_riot():
 
             if codigo == 429:
 
-                print("RATE LIMIT al actualizar partidas.")
+                print(
+                    "RATE LIMIT al actualizar partidas."
+                )
+
                 break
 
-            # ------------------------------------------------
-            # ACTUALIZAR RANGO
-            # ------------------------------------------------
+            # ==================================================
+            # 4. ACTUALIZAR RANGO
+            # ==================================================
 
             try:
 
-                rango = obtener_rango(puuid)
+                rango = obtener_rango(
+                    puuid
+                )
 
                 codigo = obtener_ultimo_codigo_http()
 
                 if codigo == 429:
 
-                    print("RATE LIMIT al obtener rango.")
+                    print(
+                        "RATE LIMIT al obtener rango."
+                    )
+
                     break
 
                 if rango:
@@ -236,10 +389,16 @@ def actualizar_datos_riot():
                     e
                 )
 
-            # Guardar después de cada jugador
+            # ==================================================
+            # GUARDAR DESPUÉS DE CADA JUGADOR
+            # ==================================================
+
             guardar_datos(datos)
 
-        # Actualizamos el momento solamente si pasó el ciclo
+        # ======================================================
+        # FINALIZAR ACTUALIZACIÓN
+        # ======================================================
+
         ultima_actualizacion = time.time()
 
         datos["fecha"] = time.strftime(
@@ -263,11 +422,23 @@ def actualizar_datos_riot():
 # OBTENER ESTADO DE UN JUGADOR
 # ============================================================
 
-def obtener_estado_jugador(nombre, jugador):
+def obtener_estado_jugador(
+    nombre,
+    jugador
+):
 
-    puuid = jugador.get("puuid")
+    # Utilizamos directamente el Summoner ID
+    # guardado en datos.json.
 
-    if not puuid:
+    summoner_id = jugador.get(
+        "summoner_id"
+    )
+
+    if not summoner_id:
+
+        print(
+            f"{nombre}: no tiene Summoner ID guardado."
+        )
 
         return {
             "estado": "offline",
@@ -276,23 +447,26 @@ def obtener_estado_jugador(nombre, jugador):
 
     try:
 
-        partida = jugador_en_partida(puuid)
+        partida = jugador_en_partida(
+            summoner_id
+        )
 
         codigo = obtener_ultimo_codigo_http()
 
-        # ----------------------------------------------------
+        # ====================================================
         # RATE LIMIT
-        # ----------------------------------------------------
+        # ====================================================
 
         if codigo == 429:
 
-            # Si ya teníamos un estado anterior,
-            # conservarlo en vez de marcarlo offline.
             with bloqueo_estados:
 
-                anterior = cache_estados.get(nombre)
+                anterior = cache_estados.get(
+                    nombre
+                )
 
             if anterior:
+
                 return anterior
 
             return {
@@ -300,9 +474,9 @@ def obtener_estado_jugador(nombre, jugador):
                 "game_start_time": None
             }
 
-        # ----------------------------------------------------
+        # ====================================================
         # EN PARTIDA
-        # ----------------------------------------------------
+        # ====================================================
 
         if partida:
 
@@ -316,13 +490,14 @@ def obtener_estado_jugador(nombre, jugador):
             }
 
             with bloqueo_estados:
+
                 cache_estados[nombre] = estado
 
             return estado
 
-        # ----------------------------------------------------
+        # ====================================================
         # OFFLINE
-        # ----------------------------------------------------
+        # ====================================================
 
         estado = {
             "estado": "offline",
@@ -330,6 +505,7 @@ def obtener_estado_jugador(nombre, jugador):
         }
 
         with bloqueo_estados:
+
             cache_estados[nombre] = estado
 
         return estado
@@ -342,9 +518,13 @@ def obtener_estado_jugador(nombre, jugador):
         )
 
         with bloqueo_estados:
-            anterior = cache_estados.get(nombre)
+
+            anterior = cache_estados.get(
+                nombre
+            )
 
         if anterior:
+
             return anterior
 
         return {
@@ -361,7 +541,10 @@ def actualizar_estados():
 
     datos = cargar_datos()
 
-    jugadores = datos.get("jugadores", {})
+    jugadores = datos.get(
+        "jugadores",
+        {}
+    )
 
     for nombre, jugador in jugadores.items():
 
@@ -371,6 +554,7 @@ def actualizar_estados():
         )
 
         with bloqueo_estados:
+
             cache_estados[nombre] = estado
 
 
@@ -393,19 +577,17 @@ def inicio():
 @app.route("/api/jugadores")
 def api_jugadores():
 
-    global ultima_actualizacion
-
     try:
 
-        # ----------------------------------------------------
-        # Actualizar datos pesados de Riot
-        # ----------------------------------------------------
+        # ====================================================
+        # ACTUALIZAR DATOS PESADOS
+        # ====================================================
 
         actualizar_datos_riot()
 
-        # ----------------------------------------------------
-        # Actualizar estados
-        # ----------------------------------------------------
+        # ====================================================
+        # CARGAR DATOS ACTUALES
+        # ====================================================
 
         datos = cargar_datos()
 
@@ -414,15 +596,22 @@ def api_jugadores():
             {}
         )
 
-        # ----------------------------------------------------
-        # Construir respuesta
-        # ----------------------------------------------------
+        # ====================================================
+        # ACTUALIZAR ESTADOS
+        # ====================================================
+
+        actualizar_estados()
+
+        # ====================================================
+        # CONSTRUIR RESPUESTA
+        # ====================================================
 
         respuesta = {}
 
         for nombre, jugador in jugadores.items():
 
             with bloqueo_estados:
+
                 estado = cache_estados.get(
                     nombre,
                     {
@@ -464,7 +653,9 @@ def api_jugadores():
                 )
             }
 
-        return jsonify(respuesta)
+        return jsonify(
+            respuesta
+        )
 
     except Exception as e:
 
