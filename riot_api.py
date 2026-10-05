@@ -4,9 +4,16 @@ from datetime import datetime
 from urllib.parse import quote
 
 
+# =========================================================
+# CONFIGURACIÓN
+# =========================================================
+
 API_KEY = os.environ.get("RIOT_API_KEY")
 
+# Región continental para Account-V1 y Match-V5
 REGION = "americas"
+
+# Región de League of Legends LAS
 REGION_LOL = "la2"
 
 HEADERS = {
@@ -72,9 +79,25 @@ def obtener_puuid_por_riot_id(game_name, tag_line):
 
     if respuesta.status_code == 200:
 
-        datos = respuesta.json()
+        try:
 
-        return datos.get("puuid")
+            datos = respuesta.json()
+
+        except ValueError:
+
+            print("La respuesta de Riot no es JSON válido.")
+
+            return None
+
+        puuid = datos.get("puuid")
+
+        if puuid:
+
+            return puuid
+
+        print("Riot respondió correctamente pero no devolvió PUUID.")
+
+        return None
 
     print("Error al obtener PUUID por Riot ID.")
     print("Código:", respuesta.status_code)
@@ -85,6 +108,21 @@ def obtener_puuid_por_riot_id(game_name, tag_line):
 
 # =========================================================
 # OBTENER DATOS DEL SUMMONER MEDIANTE PUUID
+#
+# IMPORTANTE:
+#
+# Riot puede devolver actualmente:
+#
+# {
+#     "puuid": "...",
+#     "profileIconId": ...,
+#     "revisionDate": ...,
+#     "summonerLevel": ...
+# }
+#
+# y NO devolver "id".
+#
+# Por eso esta función ya NO depende del Summoner ID.
 # =========================================================
 
 def obtener_summoner_por_puuid(puuid):
@@ -92,7 +130,10 @@ def obtener_summoner_por_puuid(puuid):
     if not puuid:
         return None
 
-    puuid_url = quote(str(puuid), safe="")
+    puuid_url = quote(
+        str(puuid),
+        safe=""
+    )
 
     url = (
         f"https://{REGION_LOL}.api.riotgames.com/"
@@ -121,13 +162,23 @@ def obtener_summoner_por_puuid(puuid):
 
     if respuesta.status_code == 200:
 
-        datos = respuesta.json()
+        try:
+
+            datos = respuesta.json()
+
+        except ValueError:
+
+            print("La respuesta de Summoner no es JSON válido.")
+
+            return None
 
         return {
             "id": datos.get("id"),
             "puuid": datos.get("puuid", puuid),
             "name": datos.get("name"),
-            "account_id": datos.get("accountId")
+            "account_id": datos.get("accountId"),
+            "profile_icon_id": datos.get("profileIconId"),
+            "summoner_level": datos.get("summonerLevel")
         }
 
     print("Error al obtener Summoner.")
@@ -140,7 +191,9 @@ def obtener_summoner_por_puuid(puuid):
 # =========================================================
 # OBTENER SUMMONER ID
 #
-# Se utiliza principalmente durante el registro.
+# SE MANTIENE POR COMPATIBILIDAD CON CÓDIGO ANTIGUO.
+#
+# NO DEBE UTILIZARSE PARA DETECTAR PARTIDAS.
 # =========================================================
 
 def obtener_summoner_id(puuid, game_name=None):
@@ -151,57 +204,13 @@ def obtener_summoner_id(puuid, game_name=None):
 
         return datos["id"]
 
-    # Fallback antiguo por nombre
-    if game_name:
+    print(
+        "Riot no devolvió Summoner ID."
+    )
 
-        game_name_url = quote(
-            str(game_name),
-            safe=""
-        )
-
-        url = (
-            f"https://{REGION_LOL}.api.riotgames.com/"
-            f"lol/summoner/v4/summoners/by-name/"
-            f"{game_name_url}"
-        )
-
-        try:
-
-            respuesta = requests.get(
-                url,
-                headers=HEADERS,
-                timeout=TIMEOUT
-            )
-
-        except requests.RequestException as error:
-
-            print(
-                "ERROR DE CONEXIÓN AL OBTENER "
-                "SUMMONER POR NOMBRE:"
-            )
-
-            print(error)
-
-            guardar_codigo_http(None)
-
-            return None
-
-        guardar_codigo_http(
-            respuesta.status_code
-        )
-
-        print("RESPUESTA BY NAME:")
-        print(respuesta.status_code)
-        print(respuesta.text)
-
-        if respuesta.status_code == 200:
-
-            datos = respuesta.json()
-
-            if datos.get("id"):
-                return datos["id"]
-
-    print("No se pudo obtener el Summoner ID.")
+    print(
+        "El sistema utilizará PUUID directamente."
+    )
 
     return None
 
@@ -212,8 +221,8 @@ def obtener_summoner_id(puuid, game_name=None):
 # Riot ID + TAG
 #       ↓
 # PUUID
-#       ↓
-# Summoner ID
+#
+# Ya NO dependemos de Summoner ID.
 # =========================================================
 
 def registrar_cuenta_riot(
@@ -227,10 +236,6 @@ def registrar_cuenta_riot(
     print("========================================")
     print("Riot ID:", game_name)
     print("Tag:", tag_line)
-
-    # -----------------------------------------------------
-    # 1. PUUID
-    # -----------------------------------------------------
 
     puuid = obtener_puuid_por_riot_id(
         game_name,
@@ -254,52 +259,44 @@ def registrar_cuenta_riot(
         "PUUID obtenido correctamente."
     )
 
-    # -----------------------------------------------------
-    # 2. SUMMONER ID
-    # -----------------------------------------------------
+    print(
+        "PUUID:",
+        puuid
+    )
+
+    # Intentamos obtener información adicional,
+    # pero no exigimos Summoner ID.
 
     summoner = obtener_summoner_por_puuid(
         puuid
     )
 
-    if not summoner:
+    if summoner:
 
         print(
-            "NO SE PUDO OBTENER EL SUMMONER."
+            "Datos de Summoner obtenidos."
         )
 
-        return {
-            "ok": False,
-            "puuid": puuid,
-            "summoner_id": None,
-            "error": "No se pudo obtener el Summoner."
-        }
-
-    summoner_id = summoner.get(
-        "id"
-    )
-
-    if not summoner_id:
-
-        print(
-            "EL SUMMONER NO TIENE ID."
+        summoner_id = summoner.get(
+            "id"
         )
 
-        return {
-            "ok": False,
-            "puuid": puuid,
-            "summoner_id": None,
-            "error": "La cuenta no tiene Summoner ID."
-        }
+        if summoner_id:
 
-    print(
-        "Summoner ID obtenido correctamente."
-    )
+            print(
+                "Summoner ID disponible:",
+                summoner_id
+            )
 
-    print(
-        "Summoner ID:",
-        summoner_id
-    )
+        else:
+
+            print(
+                "Summoner ID no disponible."
+            )
+
+            print(
+                "Esto NO impide utilizar la cuenta."
+            )
 
     print("========================================")
     print("REGISTRO COMPLETADO")
@@ -309,8 +306,16 @@ def registrar_cuenta_riot(
     return {
         "ok": True,
         "puuid": puuid,
-        "summoner_id": summoner_id,
-        "summoner_name": summoner.get("name")
+        "summoner_id": (
+            summoner.get("id")
+            if summoner
+            else None
+        ),
+        "summoner_name": (
+            summoner.get("name")
+            if summoner
+            else None
+        )
     }
 
 
@@ -331,7 +336,6 @@ def obtener_partidas(
         safe=""
     )
 
-    # Nunca pedir más de las necesarias.
     cantidad = min(
         int(cantidad),
         MAX_PARTIDAS_GUARDADAS
@@ -375,7 +379,17 @@ def obtener_partidas(
 
     if respuesta.status_code == 200:
 
-        return respuesta.json()
+        try:
+
+            return respuesta.json()
+
+        except ValueError:
+
+            print(
+                "La respuesta de partidas no es JSON válido."
+            )
+
+            return None
 
     print("Error al obtener partidas.")
     print("Código:", respuesta.status_code)
@@ -386,9 +400,6 @@ def obtener_partidas(
 
 # =========================================================
 # OBTENER SOLO LA PARTIDA MÁS RECIENTE
-#
-# Esta es la consulta utilizada para jugadores que
-# ya tienen historial guardado.
 # =========================================================
 
 def obtener_ultima_partida_id(
@@ -401,11 +412,9 @@ def obtener_ultima_partida_id(
     )
 
     if partidas is None:
-
         return None
 
     if not partidas:
-
         return None
 
     return partidas[0]
@@ -460,7 +469,18 @@ def obtener_detalle_partida(
 
     if respuesta.status_code == 200:
 
-        return respuesta.json()
+        try:
+
+            return respuesta.json()
+
+        except ValueError:
+
+            print(
+                "La respuesta del detalle de partida "
+                "no es JSON válido."
+            )
+
+            return None
 
     print(
         "Error al obtener detalle de partida."
@@ -480,7 +500,7 @@ def obtener_detalle_partida(
 
 
 # =========================================================
-# CONVERTIR DETALLE DE PARTIDA A NUESTRO FORMATO
+# CONVERTIR DETALLE DE PARTIDA
 # =========================================================
 
 def procesar_partida(
@@ -515,7 +535,6 @@ def procesar_partida(
             break
 
     if not jugador:
-
         return None
 
     fecha = (
@@ -563,21 +582,6 @@ def procesar_partida(
 
 # =========================================================
 # ACTUALIZAR HISTORIAL DE PARTIDAS
-#
-# COMPORTAMIENTO:
-#
-# JUGADOR NUEVO:
-#   obtiene últimas 5 IDs
-#   descarga detalles de las 5
-#
-# JUGADOR EXISTENTE:
-#   obtiene solamente 1 ID
-#   compara con la última guardada
-#   si no cambió → no descarga detalles
-#   si cambió → descarga solamente las nuevas
-#
-# SIEMPRE:
-#   conserva máximo 5 partidas.
 # =========================================================
 
 def actualizar_partidas_jugador(
@@ -588,10 +592,6 @@ def actualizar_partidas_jugador(
     if not puuid:
         return None
 
-    # -----------------------------------------------------
-    # Normalizar historial existente
-    # -----------------------------------------------------
-
     if not isinstance(
         partidas_existentes,
         list
@@ -599,7 +599,6 @@ def actualizar_partidas_jugador(
 
         partidas_existentes = []
 
-    # Limitar por seguridad
     partidas_existentes = partidas_existentes[
         :MAX_PARTIDAS_GUARDADAS
     ]
@@ -626,11 +625,9 @@ def actualizar_partidas_jugador(
         )
 
         if ids is None:
-
             return None
 
         if not ids:
-
             return []
 
         resultado = []
@@ -642,7 +639,6 @@ def actualizar_partidas_jugador(
             )
 
             if not datos:
-
                 continue
 
             partida = procesar_partida(
@@ -652,7 +648,6 @@ def actualizar_partidas_jugador(
             )
 
             if partida:
-
                 resultado.append(
                     partida
                 )
@@ -678,16 +673,12 @@ def actualizar_partidas_jugador(
             "no tiene match_id."
         )
 
-        # Si el historial está corrupto/incompleto,
-        # reconstruimos las últimas 5.
-
         ids = obtener_partidas(
             puuid,
             MAX_PARTIDAS_GUARDADAS
         )
 
         if ids is None:
-
             return None
 
         resultado = []
@@ -708,7 +699,6 @@ def actualizar_partidas_jugador(
             )
 
             if partida:
-
                 resultado.append(
                     partida
                 )
@@ -730,9 +720,6 @@ def actualizar_partidas_jugador(
     )
 
     if ultimo_match_riot is None:
-
-        # No hubo respuesta válida.
-        # Conservamos lo que ya teníamos.
 
         return partidas_existentes
 
@@ -768,11 +755,6 @@ def actualizar_partidas_jugador(
 
         return partidas_existentes
 
-    # -----------------------------------------------------
-    # Encontrar únicamente las partidas que todavía
-    # no tenemos guardadas.
-    # -----------------------------------------------------
-
     ids_existentes = set()
 
     for partida in partidas_existentes:
@@ -792,16 +774,11 @@ def actualizar_partidas_jugador(
     for match_id in ids_nuevos:
 
         if match_id in ids_existentes:
-
             break
 
         nuevas.append(
             match_id
         )
-
-    # -----------------------------------------------------
-    # Descargar solamente los detalles nuevos
-    # -----------------------------------------------------
 
     nuevas_procesadas = []
 
@@ -812,7 +789,6 @@ def actualizar_partidas_jugador(
         )
 
         if not datos:
-
             continue
 
         partida = procesar_partida(
@@ -827,19 +803,11 @@ def actualizar_partidas_jugador(
                 partida
             )
 
-    # -----------------------------------------------------
-    # Nuevas primero + antiguas
-    # -----------------------------------------------------
-
     resultado = (
         nuevas_procesadas
         +
         partidas_existentes
     )
-
-    # -----------------------------------------------------
-    # Máximo 5
-    # -----------------------------------------------------
 
     resultado = resultado[
         :MAX_PARTIDAS_GUARDADAS
@@ -860,17 +828,27 @@ def actualizar_partidas_jugador(
 # =========================================================
 # DETECCIÓN DE PARTIDA ACTIVA
 #
-# Recibe directamente el Summoner ID guardado.
+# IMPORTANTE:
+#
+# Riot Spectator V5 actualmente utiliza la ruta:
+#
+# /lol/spectator/v5/active-games/by-summoner/{encryptedPUUID}
+#
+# Aunque el nombre del parámetro diga "summoner",
+# el valor que utilizamos es el PUUID.
+#
+# Esto permite eliminar completamente la dependencia
+# del Summoner ID que Riot ya no devuelve de forma fiable.
 # =========================================================
 
 def jugador_en_partida(
-    summoner_id
+    puuid
 ):
 
-    if not summoner_id:
+    if not puuid:
 
         print(
-            "No hay Summoner ID para consultar partida."
+            "No hay PUUID para consultar partida."
         )
 
         return None
@@ -880,19 +858,19 @@ def jugador_en_partida(
     )
 
     print(
-        "Summoner ID:",
-        summoner_id
+        "PUUID:",
+        puuid
     )
 
-    summoner_id_url = quote(
-        str(summoner_id),
+    puuid_url = quote(
+        str(puuid),
         safe=""
     )
 
     url = (
         f"https://{REGION_LOL}.api.riotgames.com/"
         f"lol/spectator/v5/active-games/"
-        f"by-summoner/{summoner_id_url}"
+        f"by-summoner/{puuid_url}"
     )
 
     try:
@@ -928,6 +906,10 @@ def jugador_en_partida(
         respuesta.status_code
     )
 
+    # =====================================================
+    # EN PARTIDA
+    # =====================================================
+
     if respuesta.status_code == 200:
 
         try:
@@ -951,10 +933,15 @@ def jugador_en_partida(
             "game_id": datos.get(
                 "gameId"
             ),
+
             "game_start_time": datos.get(
                 "gameStartTime"
             )
         }
+
+    # =====================================================
+    # NO ESTÁ EN PARTIDA
+    # =====================================================
 
     if respuesta.status_code == 404:
 
@@ -963,6 +950,10 @@ def jugador_en_partida(
         )
 
         return None
+
+    # =====================================================
+    # OTRO ERROR
+    # =====================================================
 
     print(
         "Error al consultar partida activa."
@@ -983,6 +974,8 @@ def jugador_en_partida(
 
 # =========================================================
 # OBTENER RANGO
+#
+# Este endpoint ya acepta PUUID.
 # =========================================================
 
 def obtener_rango(
@@ -1035,13 +1028,20 @@ def obtener_rango(
         respuesta.status_code
     )
 
-    print(
-        respuesta.text
-    )
-
     if respuesta.status_code == 200:
 
-        datos = respuesta.json()
+        try:
+
+            datos = respuesta.json()
+
+        except ValueError:
+
+            print(
+                "La respuesta de ranking "
+                "no es JSON válido."
+            )
+
+            return None
 
         for liga in datos:
 

@@ -8,7 +8,6 @@ import threading
 from riot_api import (
     jugador_en_partida,
     obtener_puuid_por_riot_id,
-    obtener_summoner_por_puuid,
     actualizar_partidas_jugador,
     obtener_rango,
     obtener_ultimo_codigo_http
@@ -21,9 +20,12 @@ from riot_api import (
 
 app = Flask(__name__)
 
-CORS(app, origins=[
-    "https://soloqchallenge-monteros.netlify.app"
-])
+CORS(
+    app,
+    origins=[
+        "https://soloqchallenge-monteros.netlify.app"
+    ]
+)
 
 ARCHIVO = "datos.json"
 
@@ -134,13 +136,24 @@ def guardar_datos(datos):
 
 # ============================================================
 # ACTUALIZAR DATOS DE RIOT
+#
+# AHORA:
+#
+# Riot ID + TAG
+#       ↓
+# PUUID
+#       ↓
+# Historial
+#       ↓
+# Rango
+#
+# NO dependemos de Summoner ID.
 # ============================================================
 
 def actualizar_datos_riot():
 
     global ultima_actualizacion
 
-    # Evitar dos actualizaciones pesadas simultáneas
     if not bloqueo_actualizacion.acquire(
         blocking=False
     ):
@@ -151,7 +164,6 @@ def actualizar_datos_riot():
 
         ahora = time.time()
 
-        # Todavía no corresponde actualizar
         if (
             ahora - ultima_actualizacion
             < INTERVALO_ACTUALIZACION
@@ -244,71 +256,24 @@ def actualizar_datos_riot():
                     nombre
                 )
 
+            else:
+
+                print(
+                    "PUUID ya guardado."
+                )
+
             # ==================================================
-            # 2. OBTENER SUMMONER ID SI NO EXISTE
+            # IMPORTANTE:
+            #
+            # YA NO INTENTAMOS OBTENER SUMMONER ID.
             # ==================================================
 
-            summoner_id = jugador.get(
-                "summoner_id"
+            print(
+                "Utilizando PUUID para las consultas de Riot."
             )
 
-            if not summoner_id:
-
-                print(
-                    "No hay Summoner ID guardado."
-                )
-
-                print(
-                    "Obteniendo Summoner ID..."
-                )
-
-                summoner = obtener_summoner_por_puuid(
-                    puuid
-                )
-
-                codigo = obtener_ultimo_codigo_http()
-
-                if codigo == 429:
-
-                    print(
-                        "RATE LIMIT al obtener Summoner ID."
-                    )
-
-                    break
-
-                if not summoner:
-
-                    print(
-                        "No se pudo obtener Summoner ID para:",
-                        nombre
-                    )
-
-                    continue
-
-                summoner_id = summoner.get(
-                    "id"
-                )
-
-                if not summoner_id:
-
-                    print(
-                        "El Summoner no tiene ID:",
-                        nombre
-                    )
-
-                    continue
-
-                jugador["summoner_id"] = summoner_id
-
-                guardar_datos(datos)
-
-                print(
-                    "Summoner ID guardado para:",
-                    nombre
-                )
-
             # ==================================================
-            # 3. ACTUALIZAR HISTORIAL DE PARTIDAS
+            # 2. ACTUALIZAR HISTORIAL DE PARTIDAS
             # ==================================================
 
             try:
@@ -352,7 +317,7 @@ def actualizar_datos_riot():
                 break
 
             # ==================================================
-            # 4. ACTUALIZAR RANGO
+            # 3. ACTUALIZAR RANGO
             # ==================================================
 
             try:
@@ -420,6 +385,8 @@ def actualizar_datos_riot():
 
 # ============================================================
 # OBTENER ESTADO DE UN JUGADOR
+#
+# AHORA UTILIZA PUUID DIRECTAMENTE.
 # ============================================================
 
 def obtener_estado_jugador(
@@ -427,17 +394,14 @@ def obtener_estado_jugador(
     jugador
 ):
 
-    # Utilizamos directamente el Summoner ID
-    # guardado en datos.json.
-
-    summoner_id = jugador.get(
-        "summoner_id"
+    puuid = jugador.get(
+        "puuid"
     )
 
-    if not summoner_id:
+    if not puuid:
 
         print(
-            f"{nombre}: no tiene Summoner ID guardado."
+            f"{nombre}: no tiene PUUID guardado."
         )
 
         return {
@@ -447,8 +411,13 @@ def obtener_estado_jugador(
 
     try:
 
+        print()
+        print(
+            f"Consultando estado de {nombre}..."
+        )
+
         partida = jugador_en_partida(
-            summoner_id
+            puuid
         )
 
         codigo = obtener_ultimo_codigo_http()
@@ -458,6 +427,10 @@ def obtener_estado_jugador(
         # ====================================================
 
         if codigo == 429:
+
+            print(
+                f"{nombre}: RATE LIMIT."
+            )
 
             with bloqueo_estados:
 
@@ -489,6 +462,10 @@ def obtener_estado_jugador(
                 "game_start_time": game_start_time
             }
 
+            print(
+                f"{nombre}: EN PARTIDA."
+            )
+
             with bloqueo_estados:
 
                 cache_estados[nombre] = estado
@@ -503,6 +480,10 @@ def obtener_estado_jugador(
             "estado": "offline",
             "game_start_time": None
         }
+
+        print(
+            f"{nombre}: OFFLINE."
+        )
 
         with bloqueo_estados:
 
