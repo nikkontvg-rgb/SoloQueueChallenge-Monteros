@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 import json
 import os
@@ -9,6 +9,7 @@ import threading
 from riot_api import (
     jugador_en_partida,
     obtener_puuid_por_riot_id,
+    registrar_cuenta_riot,
     actualizar_partidas_jugador,
     obtener_rango,
     obtener_ultimo_codigo_http
@@ -277,10 +278,6 @@ def actualizar_datos_riot():
         # ====================================================
         # TODAVÍA NO TOCA ACTUALIZAR
         # ====================================================
-
-        # Si estamos retomando después de un Rate Limit,
-        # indice_proximo_jugador será mayor que 0 y NO
-        # debemos aplicar el intervalo de 10 minutos.
 
         if indice_proximo_jugador == 0:
 
@@ -821,8 +818,6 @@ def obtener_estado_jugador(
             )
 
 
-            # Pausa global para evitar seguir golpeando
-            # la API mientras está limitando las solicitudes.
             pausa_hasta = (
                 time.time()
                 + PAUSA_RATE_LIMIT
@@ -969,6 +964,314 @@ def inicio():
     return render_template(
         "index.html"
     )
+
+
+# ============================================================
+# REGISTRO DE JUGADOR
+# ============================================================
+
+@app.route("/api/registrar", methods=["POST"])
+def registrar_jugador():
+
+    try:
+
+        datos_recibidos = request.get_json(
+            silent=True
+        )
+
+
+        if not isinstance(
+            datos_recibidos,
+            dict
+        ):
+
+            return jsonify({
+                "ok": False,
+                "error": "Datos de registro inválidos."
+            }), 400
+
+
+        nombre = str(
+            datos_recibidos.get(
+                "nombre",
+                ""
+            )
+        ).strip()
+
+
+        riot_id = str(
+            datos_recibidos.get(
+                "riot_id",
+                ""
+            )
+        ).strip()
+
+
+        riot_tag = str(
+            datos_recibidos.get(
+                "riot_tag",
+                ""
+            )
+        ).strip()
+
+
+        # ====================================================
+        # VALIDAR CAMPOS
+        # ====================================================
+
+        if not nombre:
+
+            return jsonify({
+                "ok": False,
+                "error": "Debes ingresar tu nombre."
+            }), 400
+
+
+        if not riot_id:
+
+            return jsonify({
+                "ok": False,
+                "error": "Debes ingresar tu Riot ID."
+            }), 400
+
+
+        if not riot_tag:
+
+            return jsonify({
+                "ok": False,
+                "error": "Debes ingresar tu Tag."
+            }), 400
+
+
+        # ====================================================
+        # CARGAR JUGADORES ACTUALES
+        # ====================================================
+
+        datos = cargar_datos()
+
+        jugadores = datos.get(
+            "jugadores",
+            {}
+        )
+
+
+        # ====================================================
+        # COMPROBAR NOMBRE DE PARTICIPANTE
+        # ====================================================
+
+        if nombre in jugadores:
+
+            return jsonify({
+                "ok": False,
+                "error": "Ese nombre de participante ya está registrado."
+            }), 409
+
+
+        # ====================================================
+        # COMPROBAR SI LA CUENTA RIOT YA ESTÁ REGISTRADA
+        # ====================================================
+
+        for nombre_existente, jugador_existente in jugadores.items():
+
+            riot_id_existente = str(
+                jugador_existente.get(
+                    "riot_id",
+                    ""
+                )
+            ).strip().lower()
+
+
+            riot_tag_existente = str(
+                jugador_existente.get(
+                    "riot_tag",
+                    ""
+                )
+            ).strip().lower()
+
+
+            if (
+
+                riot_id_existente == riot_id.lower()
+
+                and
+
+                riot_tag_existente == riot_tag.lower()
+
+            ):
+
+                return jsonify({
+                    "ok": False,
+                    "error":
+                        "Esa cuenta de Riot ya está registrada "
+                        f"como {nombre_existente}."
+                }), 409
+
+
+        # ====================================================
+        # VALIDAR CUENTA DIRECTAMENTE CON RIOT
+        # ====================================================
+
+        print()
+        print("========================================")
+        print("NUEVO REGISTRO DE PARTICIPANTE")
+        print("========================================")
+        print("Nombre:", nombre)
+        print("Riot ID:", riot_id)
+        print("Tag:", riot_tag)
+
+
+        registro = registrar_cuenta_riot(
+            riot_id,
+            riot_tag
+        )
+
+
+        codigo = obtener_ultimo_codigo_http()
+
+
+        # ====================================================
+        # RATE LIMIT
+        # ====================================================
+
+        if codigo == 429:
+
+            return jsonify({
+                "ok": False,
+                "error":
+                    "Riot está limitando temporalmente las consultas. "
+                    "Intenta nuevamente en unos segundos."
+            }), 429
+
+
+        # ====================================================
+        # CUENTA NO ENCONTRADA / INVÁLIDA
+        # ====================================================
+
+        if not registro or not registro.get("ok"):
+
+            return jsonify({
+                "ok": False,
+                "error":
+                    registro.get(
+                        "error",
+                        "No se pudo validar la cuenta de Riot."
+                    )
+                    if isinstance(registro, dict)
+                    else
+                    "No se pudo validar la cuenta de Riot."
+            }), 400
+
+
+        # ====================================================
+        # OBTENER PUUID
+        # ====================================================
+
+        puuid = registro.get(
+            "puuid"
+        )
+
+
+        if not puuid:
+
+            return jsonify({
+                "ok": False,
+                "error":
+                    "Riot validó la cuenta pero no devolvió el PUUID."
+            }), 500
+
+
+        # ====================================================
+        # CREAR JUGADOR
+        # ====================================================
+
+        jugadores[nombre] = {
+
+            "riot_id": riot_id,
+
+            "riot_tag": riot_tag,
+
+            "puuid": puuid,
+
+            "tiempo_usado": 0,
+
+            "sesion_activa": False,
+
+            "inicio_sesion": None,
+
+            "historial": [],
+
+            "partidas_riot": [],
+
+            "rango": None,
+
+            "ultima_partida": None
+        }
+
+
+        # ====================================================
+        # GUARDAR
+        # ====================================================
+
+        datos["jugadores"] = jugadores
+
+        guardar_datos(
+            datos
+        )
+
+
+        # ====================================================
+        # LIMPIAR CACHÉ SI FUERA NECESARIO
+        # ====================================================
+
+        with bloqueo_estados:
+
+            cache_estados.pop(
+                nombre,
+                None
+            )
+
+            ultima_consulta_estado.pop(
+                nombre,
+                None
+            )
+
+
+        print()
+        print("========================================")
+        print("REGISTRO COMPLETADO CORRECTAMENTE")
+        print("========================================")
+        print("Jugador:", nombre)
+        print("Riot ID:", riot_id)
+        print("Tag:", riot_tag)
+        print("PUUID:", puuid)
+        print()
+
+
+        return jsonify({
+            "ok": True,
+            "mensaje":
+                "Jugador registrado correctamente.",
+            "jugador": {
+                "nombre": nombre,
+                "riot_id": riot_id,
+                "riot_tag": riot_tag
+            }
+        }), 201
+
+
+    except Exception as e:
+
+        print()
+        print("ERROR EN /api/registrar:")
+        print(e)
+        print()
+
+
+        return jsonify({
+            "ok": False,
+            "error":
+                "Ocurrió un error interno al registrar el jugador."
+        }), 500
 
 
 # ============================================================
