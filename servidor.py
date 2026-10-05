@@ -29,10 +29,8 @@ CORS(
 
 ARCHIVO = "datos.json"
 
-# Actualización de datos pesados de Riot
 INTERVALO_ACTUALIZACION = 10 * 60
 
-# Comprobación del estado de los jugadores
 INTERVALO_ESTADO = 15
 
 
@@ -135,19 +133,67 @@ def guardar_datos(datos):
 
 
 # ============================================================
+# ORDENAR RANKING
+# ============================================================
+
+def ordenar_jugadores_ranking(jugadores):
+
+    orden_tier = {
+        "IRON": 1,
+        "BRONZE": 2,
+        "SILVER": 3,
+        "GOLD": 4,
+        "PLATINUM": 5,
+        "EMERALD": 6,
+        "DIAMOND": 7,
+        "MASTER": 8,
+        "GRANDMASTER": 9,
+        "CHALLENGER": 10,
+        "UNRANKED": 0
+    }
+
+    orden_division = {
+        "IV": 1,
+        "III": 2,
+        "II": 3,
+        "I": 4
+    }
+
+    jugadores_ranking = list(
+        jugadores.items()
+    )
+
+    jugadores_ranking.sort(
+        key=lambda item: (
+            orden_tier.get(
+                (item[1].get("rango") or {}).get(
+                    "tier",
+                    "UNRANKED"
+                ),
+                0
+            ),
+
+            orden_division.get(
+                (item[1].get("rango") or {}).get(
+                    "rank",
+                    ""
+                ),
+                0
+            ),
+
+            (item[1].get("rango") or {}).get(
+                "lp",
+                0
+            )
+        ),
+        reverse=True
+    )
+
+    return jugadores_ranking
+
+
+# ============================================================
 # ACTUALIZAR DATOS DE RIOT
-#
-# AHORA:
-#
-# Riot ID + TAG
-#       ↓
-# PUUID
-#       ↓
-# Historial
-#       ↓
-# Rango
-#
-# NO dependemos de Summoner ID.
 # ============================================================
 
 def actualizar_datos_riot():
@@ -189,7 +235,7 @@ def actualizar_datos_riot():
             print("Actualizando:", nombre)
 
             # ==================================================
-            # 1. OBTENER PUUID SI NO EXISTE
+            # 1. OBTENER PUUID
             # ==================================================
 
             puuid = jugador.get(
@@ -263,18 +309,12 @@ def actualizar_datos_riot():
                 )
 
             # ==================================================
-            # IMPORTANTE:
-            #
-            # YA NO INTENTAMOS OBTENER SUMMONER ID.
+            # 2. ACTUALIZAR HISTORIAL
             # ==================================================
 
             print(
                 "Utilizando PUUID para las consultas de Riot."
             )
-
-            # ==================================================
-            # 2. ACTUALIZAR HISTORIAL DE PARTIDAS
-            # ==================================================
 
             try:
 
@@ -354,15 +394,7 @@ def actualizar_datos_riot():
                     e
                 )
 
-            # ==================================================
-            # GUARDAR DESPUÉS DE CADA JUGADOR
-            # ==================================================
-
             guardar_datos(datos)
-
-        # ======================================================
-        # FINALIZAR ACTUALIZACIÓN
-        # ======================================================
 
         ultima_actualizacion = time.time()
 
@@ -384,9 +416,7 @@ def actualizar_datos_riot():
 
 
 # ============================================================
-# OBTENER ESTADO DE UN JUGADOR
-#
-# AHORA UTILIZA PUUID DIRECTAMENTE.
+# OBTENER ESTADO
 # ============================================================
 
 def obtener_estado_jugador(
@@ -422,10 +452,6 @@ def obtener_estado_jugador(
 
         codigo = obtener_ultimo_codigo_http()
 
-        # ====================================================
-        # RATE LIMIT
-        # ====================================================
-
         if codigo == 429:
 
             print(
@@ -447,10 +473,6 @@ def obtener_estado_jugador(
                 "game_start_time": None
             }
 
-        # ====================================================
-        # EN PARTIDA
-        # ====================================================
-
         if partida:
 
             game_start_time = partida.get(
@@ -471,10 +493,6 @@ def obtener_estado_jugador(
                 cache_estados[nombre] = estado
 
             return estado
-
-        # ====================================================
-        # OFFLINE
-        # ====================================================
 
         estado = {
             "estado": "offline",
@@ -540,7 +558,7 @@ def actualizar_estados():
 
 
 # ============================================================
-# RUTA PRINCIPAL
+# PÁGINA PRINCIPAL
 # ============================================================
 
 @app.route("/")
@@ -548,6 +566,132 @@ def inicio():
 
     return render_template(
         "index.html"
+    )
+
+
+# ============================================================
+# HISTORIAL DE UN JUGADOR
+# ============================================================
+
+@app.route("/historial/<nombre>")
+def historial_jugador(nombre):
+
+    datos = cargar_datos()
+
+    jugadores = datos.get(
+        "jugadores",
+        {}
+    )
+
+    jugador = jugadores.get(
+        nombre
+    )
+
+    if not jugador:
+
+        return "Jugador no encontrado", 404
+
+    # ========================================================
+    # RANKING ACTUAL
+    # ========================================================
+
+    jugadores_ranking = ordenar_jugadores_ranking(
+        jugadores
+    )
+
+    posicion = None
+
+    for index, (nombre_ranking, _) in enumerate(
+        jugadores_ranking
+    ):
+
+        if nombre_ranking == nombre:
+
+            posicion = index + 1
+
+            break
+
+    # ========================================================
+    # HISTORIAL
+    # ========================================================
+
+    partidas = jugador.get(
+        "partidas_riot",
+        []
+    )
+
+    if not isinstance(
+        partidas,
+        list
+    ):
+
+        partidas = []
+
+    partidas = partidas[:5]
+
+    # ========================================================
+    # ESTADÍSTICAS
+    #
+    # POR AHORA se calculan con las partidas almacenadas.
+    # Más adelante tendremos estadísticas acumuladas
+    # independientes del historial de 5 partidas.
+    # ========================================================
+
+    wins = 0
+    losses = 0
+
+    for partida in partidas:
+
+        resultado = str(
+            partida.get(
+                "resultado",
+                ""
+            )
+        ).upper()
+
+        if resultado == "VICTORIA":
+
+            wins += 1
+
+        elif resultado == "DERROTA":
+
+            losses += 1
+
+    partidas_totales = wins + losses
+
+    if partidas_totales > 0:
+
+        wr = round(
+            (wins / partidas_totales) * 100
+        )
+
+    else:
+
+        wr = 0
+
+    # ========================================================
+    # HORAS
+    #
+    # TEMPORALMENTE QUEDAN EN 0.
+    # El sistema acumulable de 4 horas se programa después.
+    # ========================================================
+
+    horas_jugadas = 0
+
+    horas_disponibles = 4
+
+    return render_template(
+        "historial.html",
+        nombre=nombre,
+        jugador=jugador,
+        partidas=partidas,
+        posicion=posicion,
+        wins=wins,
+        losses=losses,
+        partidas_totales=partidas_totales,
+        wr=wr,
+        horas_jugadas=horas_jugadas,
+        horas_disponibles=horas_disponibles
     )
 
 
@@ -560,15 +704,7 @@ def api_jugadores():
 
     try:
 
-        # ====================================================
-        # ACTUALIZAR DATOS PESADOS
-        # ====================================================
-
         actualizar_datos_riot()
-
-        # ====================================================
-        # CARGAR DATOS ACTUALES
-        # ====================================================
 
         datos = cargar_datos()
 
@@ -577,15 +713,7 @@ def api_jugadores():
             {}
         )
 
-        # ====================================================
-        # ACTUALIZAR ESTADOS
-        # ====================================================
-
         actualizar_estados()
-
-        # ====================================================
-        # CONSTRUIR RESPUESTA
-        # ====================================================
 
         respuesta = {}
 

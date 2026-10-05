@@ -22,6 +22,7 @@
         ========================================================= */
 
         :root {
+
             --fondo: #e8e5df;
             --fondo-claro: #efede8;
 
@@ -38,6 +39,7 @@
             --gris-oscuro: #292929;
             --gris: #7d7d7d;
             --gris-claro: #d2d2d2;
+
         }
 
 
@@ -55,10 +57,13 @@
         }
 
         body {
+
             font-family: 'Rajdhani', sans-serif;
+
             color: var(--gris-oscuro);
 
             margin: 0;
+
             padding: 30px;
 
             min-height: 100vh;
@@ -66,6 +71,7 @@
             position: relative;
 
             overflow-x: hidden;
+
         }
 
 
@@ -74,12 +80,15 @@
         ========================================================= */
 
         body::before {
+
             content: "";
 
             position: fixed;
+
             inset: -50%;
 
             width: 200%;
+
             height: 200%;
 
             pointer-events: none;
@@ -87,6 +96,7 @@
             z-index: 0;
 
             background:
+
                 repeating-linear-gradient(
                     125deg,
                     transparent 0px,
@@ -116,13 +126,16 @@
 
             animation:
                 movimientoGeometrico 20s linear infinite;
+
         }
 
 
         body::after {
+
             content: "";
 
             position: fixed;
+
             inset: 0;
 
             pointer-events: none;
@@ -130,6 +143,7 @@
             z-index: 0;
 
             background:
+
                 linear-gradient(
                     90deg,
                     transparent 0%,
@@ -152,39 +166,50 @@
 
             animation:
                 movimientoLineas 28s linear infinite;
+
         }
 
 
         @keyframes movimientoGeometrico {
 
             0% {
+
                 transform:
                     translate(-2%, -2%)
                     rotate(0deg);
+
             }
 
             25% {
+
                 transform:
                     translate(1%, -4%)
                     rotate(0.5deg);
+
             }
 
             50% {
+
                 transform:
                     translate(4%, 0%)
                     rotate(0deg);
+
             }
 
             75% {
+
                 transform:
                     translate(1%, 4%)
                     rotate(-0.5deg);
+
             }
 
             100% {
+
                 transform:
                     translate(-2%, -2%)
                     rotate(0deg);
+
             }
 
         }
@@ -193,18 +218,24 @@
         @keyframes movimientoLineas {
 
             0% {
+
                 transform:
                     translate(0%, 0%);
+
             }
 
             50% {
+
                 transform:
                     translate(-4%, 3%);
+
             }
 
             100% {
+
                 transform:
                     translate(0%, 0%);
+
             }
 
         }
@@ -215,6 +246,7 @@
         ========================================================= */
 
         .contenedor {
+
             max-width: 900px;
 
             margin: auto;
@@ -222,6 +254,7 @@
             position: relative;
 
             z-index: 1;
+
         }
 
 
@@ -230,14 +263,19 @@
         ========================================================= */
 
         .encabezado {
+
             text-align: center;
 
             margin-bottom: 25px;
+
         }
 
 
         .encabezado h1 {
-            font-family: 'Bebas Neue', sans-serif;
+
+            font-family:
+                'Bebas Neue',
+                sans-serif;
 
             font-size: 42px;
 
@@ -245,14 +283,17 @@
 
             letter-spacing: 1px;
 
-            color: var(--rojo-oscuro);
+            color:
+                var(--rojo-oscuro);
 
             margin:
                 0 0 10px;
+
         }
 
 
         .descripcion {
+
             max-width: 750px;
 
             margin: 0 auto;
@@ -264,6 +305,7 @@
             line-height: 1.5;
 
             color: #555555;
+
         }
 
 
@@ -283,7 +325,8 @@
 
             height: 100vh;
 
-            background: var(--rojo-oscuro);
+            background:
+                var(--rojo-oscuro);
 
             border-right:
                 1px solid var(--bordo);
@@ -297,11 +340,14 @@
 
             box-shadow:
                 8px 0 25px rgba(0, 0, 0, 0.25);
+
         }
 
 
         .menu-lateral.abierto {
+
             left: 0;
+
         }
 
 
@@ -364,24 +410,31 @@
                 left 0.3s ease,
                 background 0.2s ease,
                 transform 0.2s ease;
+
         }
 
 
         .menu-flecha:hover {
+
             background:
                 var(--rubí);
+
         }
 
 
         .menu-flecha:active {
+
             transform:
                 translateY(-50%)
                 scale(0.95);
+
         }
 
 
         .menu-flecha.abierto {
+
             left: 250px;
+
         }
 
 
@@ -415,6 +468,7 @@
 
             border-bottom:
                 1px solid var(--bordo);
+
         }
 
 
@@ -434,6 +488,7 @@
 
             min-height:
                 calc(100vh - 65px);
+
         }
 
 
@@ -465,6 +520,7 @@
             transition:
                 background 0.2s ease,
                 transform 0.2s ease;
+
         }
 
 
@@ -475,6 +531,7 @@
 
             transform:
                 translateX(4px);
+
         }
 
 
@@ -503,6 +560,7 @@
             transition:
                 opacity 0.3s ease,
                 visibility 0.3s ease;
+
         }
 
 
@@ -513,6 +571,7 @@
 
             visibility:
                 visible;
+
         }
 
 
@@ -527,6 +586,7 @@
 
             max-width:
                 900px;
+
         }
 
 
@@ -553,6 +613,7 @@
 
             color:
                 var(--rojo-oscuro);
+
         }
 
 
@@ -587,6 +648,7 @@
 
             text-align:
                 center;
+
         }
 
 
@@ -597,6 +659,7 @@
 
             margin-bottom:
                 10px;
+
         }
 
 
@@ -610,6 +673,7 @@
 
             color:
                 var(--rubí-claro);
+
         }
 
 
@@ -626,6 +690,7 @@
 
             max-width:
                 650px;
+
         }
 
 
@@ -637,6 +702,9 @@
 
             position:
                 relative;
+
+            display:
+                block;
 
             background:
                 var(--rojo-oscuro);
@@ -653,9 +721,19 @@
             margin-bottom:
                 15px;
 
+            text-decoration:
+                none;
+
+            color:
+                inherit;
+
+            cursor:
+                pointer;
+
             transition:
                 border-color 0.2s ease,
                 transform 0.2s ease;
+
         }
 
 
@@ -666,6 +744,7 @@
 
             transform:
                 translateX(4px);
+
         }
 
 
@@ -716,6 +795,7 @@
             transition:
                 opacity 0.2s ease,
                 transform 0.2s ease;
+
         }
 
 
@@ -727,6 +807,7 @@
             transform:
                 translateY(-50%)
                 translateX(0);
+
         }
 
 
@@ -751,6 +832,7 @@
 
             animation:
                 nombreFlotando 1s ease-in-out infinite;
+
         }
 
 
@@ -761,12 +843,14 @@
 
                 transform:
                     translateY(0);
+
             }
 
             50% {
 
                 transform:
                     translateY(-2px);
+
             }
 
         }
@@ -779,6 +863,7 @@
 
             margin-top:
                 5px;
+
         }
 
 
@@ -792,6 +877,7 @@
 
             font-size:
                 18px;
+
         }
 
 
@@ -799,6 +885,7 @@
 
             color:
                 #22c55e;
+
         }
 
 
@@ -806,6 +893,7 @@
 
             color:
                 var(--rojo-brillante);
+
         }
 
 
@@ -813,6 +901,7 @@
 
             color:
                 var(--gris);
+
         }
 
 
@@ -833,6 +922,7 @@
 
             font-weight:
                 bold;
+
         }
 
 
@@ -853,6 +943,7 @@
 
             margin-bottom:
                 55px;
+
         }
 
 
@@ -876,6 +967,7 @@
 
             border-radius:
                 12px;
+
         }
 
 
@@ -892,6 +984,7 @@
 
             color:
                 var(--blanco);
+
         }
 
 
@@ -923,6 +1016,7 @@
 
             transition:
                 border-color 0.2s ease;
+
         }
 
 
@@ -930,6 +1024,7 @@
 
             border-color:
                 var(--rubí);
+
         }
 
 
@@ -946,6 +1041,7 @@
 
             text-align:
                 center;
+
         }
 
 
@@ -959,6 +1055,7 @@
 
             color:
                 var(--blanco);
+
         }
 
 
@@ -969,6 +1066,7 @@
 
             color:
                 var(--rubí-claro);
+
         }
 
 
@@ -982,6 +1080,7 @@
 
             color:
                 var(--gris-claro);
+
         }
 
 
@@ -995,6 +1094,7 @@
 
                 padding:
                     20px 15px;
+
             }
 
 
@@ -1002,6 +1102,7 @@
 
                 font-size:
                     34px;
+
             }
 
 
@@ -1009,6 +1110,7 @@
 
                 font-size:
                     18px;
+
             }
 
 
@@ -1016,6 +1118,7 @@
 
                 min-height:
                     280px;
+
             }
 
 
@@ -1023,6 +1126,7 @@
 
                 gap:
                     7px;
+
             }
 
 
@@ -1030,6 +1134,7 @@
 
                 font-size:
                     14px;
+
             }
 
 
@@ -1040,6 +1145,7 @@
 
                 font-size:
                     14px;
+
             }
 
 
@@ -1049,6 +1155,7 @@
 
                 display:
                     none;
+
             }
 
 
@@ -1062,6 +1169,7 @@
 
                 font-size:
                     25px;
+
             }
 
 
@@ -1069,6 +1177,7 @@
 
                 left:
                     250px;
+
             }
 
         }
@@ -1111,9 +1220,7 @@
         >
 
             <div class="menu-titulo">
-
                 ☰ MENÚ
-
             </div>
 
 
@@ -1149,7 +1256,9 @@
             aria-label="Abrir menú"
             tabindex="0"
         >
+
             →
+
         </div>
 
 
@@ -1376,7 +1485,9 @@
         function fechaUltimaPartida(jugador) {
 
             if (!jugador.ultima_partida) {
+
                 return 0;
+
             }
 
             const fecha =
@@ -1424,9 +1535,7 @@
                     const ordenEstado = {
 
                         "in_game": 1,
-
                         "online": 2,
-
                         "offline": 3
 
                     };
@@ -1603,12 +1712,15 @@
 
 
                         /* =================================================
-                           TARJETA
+                           TARJETA DEL JUGADOR
                         ================================================= */
 
                         contenedor.innerHTML += `
 
-                            <div class="jugador">
+                            <a
+                                href="https://soloqueuechallenge-monteros.onrender.com/historial/${encodeURIComponent(nombre)}"
+                                class="jugador"
+                            >
 
                                 <div class="nombre">
 
@@ -1634,7 +1746,7 @@
 
                                 ${contador}
 
-                            </div>
+                            </a>
 
                         `;
 
@@ -1915,7 +2027,9 @@
 
 
                     if (!jugadorElemento) {
+
                         return;
+
                     }
 
 
@@ -1926,7 +2040,9 @@
 
 
                     if (!nombreElemento) {
+
                         return;
+
                     }
 
 
