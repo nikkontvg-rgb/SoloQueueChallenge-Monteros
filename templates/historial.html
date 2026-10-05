@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ nombre }} - SoloQ Challenge Monteros</title>
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@400;500;600;700&family=Press+Start+2P&family=Rajdhani:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        :root {
+
+            --fondo: #e8e5df;
+            --fondo-claro: #efede8;
+
+            --rojo-oscuro: #35151c;
+            --bordo-oscuro: #541020;
+            --bordo: #70152b;
+            --rubí: #941b3a;
+            --rubí-claro: #b52a4b;
+            --rojo-brillante: #d63b5c;
+
+            --texto: #24191c;
+            --texto-suave: #665b5d;
+
+        }
+
+
+        body {
+
+            min-height: 100vh;
+
+            font-family: "Rajdhani", sans-serif;
+
+            color: var(--texto);
+
+            background:
+                linear-gradient(
+                    120deg,
+                    #e8e5df,
+                    #f1efeb,
+                    #ddd9d3,
+                    #eeeae5
+                );
+
+            background-size: 400% 400%;
+
+            animation: fondoMovimiento 15s ease infinite;
+
+            padding: 30px 15px;
+
+            position: relative;
+
+            overflow-x: hidden;
+
+        }
+
+
+        body::before {
+
+            content: "";
+
+            position: fixed;
+
+            width: 500px;
+            height: 500px;
+
+            top: -200px;
+            right: -150px;
+
+            border: 1px solid rgba(112, 21, 43, 0.08);
+
+            transform: rotate(35deg);
+
+            pointer-events: none;
+
+        }
+
+
+        body::after {
+
+            content: "";
+
+            position: fixed;
+
+            width: 700px;
+            height: 700px;
+
+            bottom: -400px;
+            left: -300px;
+
+            border: 1px solid rgba(112, 21, 43, 0.06);
+
+            transform: rotate(25deg);
+
+            pointer-events: none;
+
+        }
+
+
+        @keyframes fondoMovimiento {
+
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+
+        }
+
+
+        .contenedor {
+
+            width: 100%;
+
+            max-width: 950px;
+
+            margin: auto;
+
+            position: relative;
+
+            z-index: 1;
+
+        }
+
+
+        /* BOTÓN VOLVER */
+
+        .volver {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            margin-bottom: 25px;
+
+            padding: 10px 18px;
+
+            text-decoration: none;
+
+            color: white;
+
+            background: var(--bordo);
+
+            border: 1px solid var(--rubí);
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 12px;
+
+            letter-spacing: 1px;
+
+            transition: 0.25s ease;
+
+        }
+
+
+        .volver:hover {
+
+            background: var(--rubí);
+
+            transform: translateX(-4px);
+
+        }
+
+
+        /* CABECERA */
+
+        .cabecera {
+
+            text-align: center;
+
+            margin-bottom: 30px;
+
+        }
+
+
+        .cabecera h1 {
+
+            font-family: "Bebas Neue", sans-serif;
+
+            font-size: clamp(48px, 8vw, 76px);
+
+            letter-spacing: 3px;
+
+            color: var(--rojo-oscuro);
+
+            line-height: 0.95;
+
+        }
+
+
+        .cabecera h1 span {
+
+            color: var(--rubí);
+
+        }
+
+
+        .cabecera p {
+
+            margin-top: 12px;
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 13px;
+
+            color: var(--texto-suave);
+
+            letter-spacing: 1px;
+
+        }
+
+
+        /* ESTADÍSTICAS */
+
+        .estadisticas {
+
+            display: grid;
+
+            grid-template-columns: 150px 1fr 220px;
+
+            min-height: 180px;
+
+            background: rgba(255, 255, 255, 0.72);
+
+            border: 1px solid rgba(112, 21, 43, 0.25);
+
+            box-shadow:
+                0 10px 30px rgba(53, 21, 28, 0.10),
+                inset 0 0 30px rgba(255, 255, 255, 0.4);
+
+            margin-bottom: 35px;
+
+            overflow: hidden;
+
+        }
+
+
+        /* PUESTO */
+
+        .puesto {
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background: var(--bordo);
+
+            color: white;
+
+            position: relative;
+
+        }
+
+
+        .puesto::after {
+
+            content: "";
+
+            position: absolute;
+
+            right: -25px;
+
+            top: 0;
+
+            width: 50px;
+
+            height: 100%;
+
+            background: var(--bordo);
+
+            transform: skewX(-10deg);
+
+        }
+
+
+        .numero-puesto {
+
+            font-family: "Bebas Neue", sans-serif;
+
+            font-size: 82px;
+
+            line-height: 0.8;
+
+            position: relative;
+
+            z-index: 2;
+
+        }
+
+
+        .texto-puesto {
+
+            margin-top: 12px;
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 10px;
+
+            letter-spacing: 1px;
+
+            position: relative;
+
+            z-index: 2;
+
+        }
+
+
+        /* CENTRO */
+
+        .estadisticas-centro {
+
+            padding: 25px 35px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: center;
+
+        }
+
+
+        .estadisticas-principales {
+
+            display: grid;
+
+            grid-template-columns: repeat(3, 1fr);
+
+            gap: 20px;
+
+            text-align: center;
+
+        }
+
+
+        .estadistica {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 5px;
+
+        }
+
+
+        .estadistica .numero {
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 27px;
+
+            font-weight: 700;
+
+            color: var(--bordo);
+
+        }
+
+
+        .estadistica .etiqueta {
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 9px;
+
+            color: var(--texto-suave);
+
+            letter-spacing: 1px;
+
+        }
+
+
+        .wr {
+
+            margin-top: 20px;
+
+            padding-top: 15px;
+
+            border-top: 1px solid rgba(112, 21, 43, 0.15);
+
+            text-align: center;
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 14px;
+
+            color: var(--bordo);
+
+        }
+
+
+        /* HORAS */
+
+        .tiempo {
+
+            padding: 25px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: center;
+
+            gap: 18px;
+
+            background: rgba(112, 21, 43, 0.05);
+
+            border-left: 1px solid rgba(112, 21, 43, 0.15);
+
+        }
+
+
+        .tiempo-item {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 4px;
+
+        }
+
+
+        .tiempo-item .etiqueta {
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 9px;
+
+            color: var(--texto-suave);
+
+            letter-spacing: 0.8px;
+
+        }
+
+
+        .tiempo-item .valor {
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 18px;
+
+            font-weight: 700;
+
+            color: var(--bordo);
+
+        }
+
+
+        /* PARTIDAS */
+
+        .titulo-partidas {
+
+            margin-bottom: 18px;
+
+            font-family: "Bebas Neue", sans-serif;
+
+            font-size: 34px;
+
+            letter-spacing: 2px;
+
+            color: var(--rojo-oscuro);
+
+        }
+
+
+        .partidas {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 10px;
+
+        }
+
+
+        .partida {
+
+            display: grid;
+
+            grid-template-columns: 170px 1fr 100px 160px;
+
+            align-items: center;
+
+            min-height: 70px;
+
+            padding: 12px 20px;
+
+            background: rgba(255, 255, 255, 0.72);
+
+            border: 1px solid rgba(112, 21, 43, 0.15);
+
+            transition: 0.2s ease;
+
+        }
+
+
+        .partida:hover {
+
+            transform: translateX(5px);
+
+            border-color: rgba(112, 21, 43, 0.4);
+
+            box-shadow: 0 5px 20px rgba(53, 21, 28, 0.08);
+
+        }
+
+
+        .resultado {
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            letter-spacing: 0.5px;
+
+        }
+
+
+        .victoria {
+
+            color: #23733a;
+
+        }
+
+
+        .derrota {
+
+            color: var(--rubí);
+
+        }
+
+
+        .campeon {
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 12px;
+
+            font-weight: 600;
+
+        }
+
+
+        .duracion {
+
+            font-family: "Rajdhani", sans-serif;
+
+            font-size: 15px;
+
+            font-weight: 600;
+
+            color: var(--texto-suave);
+
+        }
+
+
+        .fecha {
+
+            text-align: right;
+
+            font-size: 12px;
+
+            color: var(--texto-suave);
+
+        }
+
+
+        .sin-partidas {
+
+            padding: 35px;
+
+            text-align: center;
+
+            background: rgba(255, 255, 255, 0.65);
+
+            border: 1px solid rgba(112, 21, 43, 0.15);
+
+            color: var(--texto-suave);
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 11px;
+
+            letter-spacing: 0.5px;
+
+        }
+
+
+        /* RESPONSIVE */
+
+        @media (max-width: 750px) {
+
+            body {
+                padding: 20px 10px;
+            }
+
+
+            .estadisticas {
+
+                grid-template-columns: 100px 1fr;
+
+            }
+
+
+            .puesto {
+
+                grid-row: span 2;
+
+            }
+
+
+            .tiempo {
+
+                grid-column: 2;
+
+                border-left: none;
+
+                border-top: 1px solid rgba(112, 21, 43, 0.15);
+
+                flex-direction: row;
+
+                justify-content: space-around;
+
+            }
+
+
+            .estadisticas-centro {
+
+                padding: 20px 15px;
+
+            }
+
+
+            .estadisticas-principales {
+
+                gap: 8px;
+
+            }
+
+
+            .estadistica .numero {
+
+                font-size: 20px;
+
+            }
+
+
+            .partida {
+
+                grid-template-columns: 1fr 1fr;
+
+                gap: 8px;
+
+            }
+
+
+            .fecha {
+
+                text-align: left;
+
+            }
+
+        }
+
+
+        @media (max-width: 500px) {
+
+            .cabecera h1 {
+                font-size: 48px;
+            }
+
+
+            .estadisticas {
+
+                grid-template-columns: 85px 1fr;
+
+            }
+
+
+            .numero-puesto {
+                font-size: 60px;
+            }
+
+
+            .texto-puesto {
+                font-size: 8px;
+            }
+
+
+            .estadisticas-principales {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+
+            .estadistica .numero {
+                font-size: 17px;
+            }
+
+
+            .estadistica .etiqueta {
+                font-size: 7px;
+            }
+
+
+            .tiempo {
+                padding: 15px;
+            }
+
+
+            .tiempo-item .valor {
+                font-size: 15px;
+            }
+
+
+            .partida {
+                grid-template-columns: 1fr;
+            }
+
+
+            .fecha {
+                text-align: left;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <div class="contenedor">
+
+
+        <a href="/" class="volver">
+            ← VOLVER AL CHALLENGE
+        </a>
+
+
+        <header class="cabecera">
+
+            <h1>
+                <span>{{ nombre }}</span>
+            </h1>
+
+            <p>
+                HISTORIAL Y ESTADÍSTICAS DEL SOLOQ CHALLENGE
+            </p>
+
+        </header>
+
+
+        <!-- ESTADÍSTICAS DEL JUGADOR -->
+
+        <section class="estadisticas">
+
+
+            <!-- PUESTO -->
+
+            <div class="puesto">
+
+                <div class="numero-puesto">
+                    {{ posicion if posicion else "-" }}
+                </div>
+
+                <div class="texto-puesto">
+                    ° PUESTO
+                </div>
+
+            </div>
+
+
+            <!-- WINS / LOSSES / PARTIDAS -->
+
+            <div class="estadisticas-centro">
+
+
+                <div class="estadisticas-principales">
+
+
+                    <div class="estadistica">
+
+                        <div class="numero">
+                            {{ wins }}
+                        </div>
+
+                        <div class="etiqueta">
+                            WINS
+                        </div>
+
+                    </div>
+
+
+                    <div class="estadistica">
+
+                        <div class="numero">
+                            {{ losses }}
+                        </div>
+
+                        <div class="etiqueta">
+                            LOSSES
+                        </div>
+
+                    </div>
+
+
+                    <div class="estadistica">
+
+                        <div class="numero">
+                            {{ partidas_totales }}
+                        </div>
+
+                        <div class="etiqueta">
+                            PARTIDAS
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="wr">
+
+                    WR:
+                    <strong>{{ wr }}%</strong>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- HORAS -->
+
+            <div class="tiempo">
+
+
+                <div class="tiempo-item">
+
+                    <div class="etiqueta">
+                        ⏱️ HORAS JUGADAS
+                    </div>
+
+                    <div class="valor">
+                        {{ horas_jugadas }}h
+                    </div>
+
+                </div>
+
+
+                <div class="tiempo-item">
+
+                    <div class="etiqueta">
+                        ⌛ HORAS DISPONIBLES
+                    </div>
+
+                    <div class="valor">
+                        {{ horas_disponibles }}h
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ÚLTIMAS PARTIDAS -->
+
+        <h2 class="titulo-partidas">
+            🎮 ÚLTIMAS 5 PARTIDAS
+        </h2>
+
+
+        {% if partidas %}
+
+
+            <section class="partidas">
+
+
+                {% for partida in partidas %}
+
+
+                    <div class="partida">
+
+
+                        <div
+                            class="resultado {% if partida.resultado == 'VICTORIA' %}victoria{% else %}derrota{% endif %}"
+                        >
+
+                            {% if partida.resultado == "VICTORIA" %}
+
+                                🏆 VICTORIA
+
+                            {% else %}
+
+                                ❌ DERROTA
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <div class="campeon">
+
+                            {{ partida.campeon }}
+
+                        </div>
+
+
+                        <div class="duracion">
+
+                            ⏱️ {{ partida.duracion }}
+
+                        </div>
+
+
+                        <div class="fecha">
+
+                            {{ partida.fecha }}
+
+                        </div>
+
+
+                    </div>
+
+
+                {% endfor %}
+
+
+            </section>
+
+
+        {% else %}
+
+
+            <div class="sin-partidas">
+
+                Todavía no hay partidas registradas.
+
+            </div>
+
+
+        {% endif %}
+
+
+    </div>
+
+
+</body>
+
+</html>
