@@ -536,6 +536,26 @@ def procesar_partida(
 
     if not jugador:
         return None
+    # =====================================================
+    # FILTRO SOLO / DUOQ
+    #
+    # 420 = Ranked Solo/Duo
+    # =====================================================
+
+    queue_id = info.get("queueId")
+
+    if queue_id != 420:
+
+        print(
+            "Partida ignorada por no ser Solo/DuoQ."
+        )
+
+        print(
+            "Queue ID:",
+            queue_id
+        )
+
+        return None
 
     fecha = (
         info.get(
@@ -565,6 +585,8 @@ def procesar_partida(
             "gameMode"
         ),
 
+        "queue_id": queue_id,
+
         "duracion": info.get(
             "gameDuration"
         ),
@@ -576,7 +598,9 @@ def procesar_partida(
 
         "campeon": jugador.get(
             "championName"
-        )
+        ),
+
+        "lp_cambio": None
     }
 
 

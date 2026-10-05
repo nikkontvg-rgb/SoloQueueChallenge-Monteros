@@ -555,6 +555,23 @@
         }
 
 
+        /* LP GANADO / PERDIDO */
+
+        .lp-cambio {
+
+            margin-top: 5px;
+
+            font-family: "Orbitron", sans-serif;
+
+            font-size: 10px;
+
+            font-weight: 700;
+
+            color: var(--bordo);
+
+        }
+
+
         .victoria {
 
             color: #23733a;
@@ -928,6 +945,8 @@
                     <div class="partida">
 
 
+                        <!-- RESULTADO + LP -->
+
                         <div
                             class="resultado {% if partida.resultado == 'VICTORIA' %}victoria{% else %}derrota{% endif %}"
                         >
@@ -942,8 +961,33 @@
 
                             {% endif %}
 
+
+                            {% if partida.lp_cambio is not none %}
+
+                                <div class="lp-cambio">
+
+                                    {% if partida.lp_cambio > 0 %}
+
+                                        +{{ partida.lp_cambio }} LP
+
+                                    {% elif partida.lp_cambio < 0 %}
+
+                                        {{ partida.lp_cambio }} LP
+
+                                    {% else %}
+
+                                        ±0 LP
+
+                                    {% endif %}
+
+                                </div>
+
+                            {% endif %}
+
                         </div>
 
+
+                        <!-- CAMPEÓN -->
 
                         <div class="campeon">
 
@@ -952,12 +996,22 @@
                         </div>
 
 
+                        <!-- DURACIÓN -->
+
                         <div class="duracion">
 
-                            ⏱️ {{ partida.duracion }}
+                            ⏱️
+
+                            {% set segundos = partida.duracion | int %}
+                            {% set minutos = segundos // 60 %}
+                            {% set segundos_restantes = segundos % 60 %}
+
+                            {{ "%02d:%02d" | format(minutos, segundos_restantes) }}
 
                         </div>
 
+
+                        <!-- FECHA -->
 
                         <div class="fecha">
 

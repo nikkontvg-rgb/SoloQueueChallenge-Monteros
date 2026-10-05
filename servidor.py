@@ -5,6 +5,7 @@ import os
 import time
 import threading
 
+
 from riot_api import (
     jugador_en_partida,
     obtener_puuid_por_riot_id,
@@ -88,6 +89,7 @@ def cargar_datos():
 
         return datos
 
+
     except (
         json.JSONDecodeError,
         OSError
@@ -124,6 +126,7 @@ def guardar_datos(datos):
                 indent=4
             )
 
+
     except OSError as e:
 
         print(
@@ -139,6 +142,7 @@ def guardar_datos(datos):
 def ordenar_jugadores_ranking(jugadores):
 
     orden_tier = {
+
         "IRON": 1,
         "BRONZE": 2,
         "SILVER": 3,
@@ -152,42 +156,56 @@ def ordenar_jugadores_ranking(jugadores):
         "UNRANKED": 0
     }
 
+
     orden_division = {
+
         "IV": 1,
         "III": 2,
         "II": 3,
         "I": 4
     }
 
+
     jugadores_ranking = list(
         jugadores.items()
     )
 
+
     jugadores_ranking.sort(
+
         key=lambda item: (
+
             orden_tier.get(
+
                 (item[1].get("rango") or {}).get(
                     "tier",
                     "UNRANKED"
                 ),
+
                 0
             ),
 
+
             orden_division.get(
+
                 (item[1].get("rango") or {}).get(
                     "rank",
                     ""
                 ),
+
                 0
             ),
+
 
             (item[1].get("rango") or {}).get(
                 "lp",
                 0
             )
         ),
+
         reverse=True
     )
+
 
     return jugadores_ranking
 
@@ -200,15 +218,18 @@ def actualizar_datos_riot():
 
     global ultima_actualizacion
 
+
     if not bloqueo_actualizacion.acquire(
         blocking=False
     ):
 
         return
 
+
     try:
 
         ahora = time.time()
+
 
         if (
             ahora - ultima_actualizacion
@@ -217,22 +238,27 @@ def actualizar_datos_riot():
 
             return
 
+
         print()
         print("===================================")
         print("ACTUALIZANDO DATOS DE RIOT")
         print("===================================")
 
+
         datos = cargar_datos()
+
 
         jugadores = datos.get(
             "jugadores",
             {}
         )
 
+
         for nombre, jugador in jugadores.items():
 
             print()
             print("Actualizando:", nombre)
+
 
             # ==================================================
             # 1. OBTENER PUUID
@@ -242,15 +268,18 @@ def actualizar_datos_riot():
                 "puuid"
             )
 
+
             if not puuid:
 
                 riot_id = jugador.get(
                     "riot_id"
                 )
 
+
                 riot_tag = jugador.get(
                     "riot_tag"
                 )
+
 
                 if not riot_id or not riot_tag:
 
@@ -261,16 +290,20 @@ def actualizar_datos_riot():
 
                     continue
 
+
                 print(
                     "Obteniendo PUUID mediante Riot ID..."
                 )
+
 
                 puuid = obtener_puuid_por_riot_id(
                     riot_id,
                     riot_tag
                 )
 
+
                 codigo = obtener_ultimo_codigo_http()
+
 
                 if codigo == 429:
 
@@ -284,6 +317,7 @@ def actualizar_datos_riot():
 
                     break
 
+
                 if not puuid:
 
                     print(
@@ -293,20 +327,27 @@ def actualizar_datos_riot():
 
                     continue
 
+
                 jugador["puuid"] = puuid
 
-                guardar_datos(datos)
+
+                guardar_datos(
+                    datos
+                )
+
 
                 print(
                     "PUUID guardado para:",
                     nombre
                 )
 
+
             else:
 
                 print(
                     "PUUID ya guardado."
                 )
+
 
             # ==================================================
             # 2. ACTUALIZAR HISTORIAL
@@ -316,12 +357,14 @@ def actualizar_datos_riot():
                 "Utilizando PUUID para las consultas de Riot."
             )
 
+
             try:
 
                 historial_actual = jugador.get(
                     "partidas_riot",
                     []
                 )
+
 
                 if not isinstance(
                     historial_actual,
@@ -330,14 +373,31 @@ def actualizar_datos_riot():
 
                     historial_actual = []
 
+
+                # =================================================
+                # GUARDAR IDS DE LAS PARTIDAS YA CONOCIDAS
+                # =================================================
+
+                ids_partidas_anteriores = {
+
+                    partida.get("match_id")
+
+                    for partida in historial_actual
+
+                    if partida.get("match_id")
+                }
+
+
                 partidas = actualizar_partidas_jugador(
                     puuid,
                     historial_actual
                 )
 
+
                 if partidas is not None:
 
                     jugador["partidas_riot"] = partidas
+
 
             except Exception as e:
 
@@ -346,7 +406,9 @@ def actualizar_datos_riot():
                     e
                 )
 
+
             codigo = obtener_ultimo_codigo_http()
+
 
             if codigo == 429:
 
@@ -356,17 +418,46 @@ def actualizar_datos_riot():
 
                 break
 
+
             # ==================================================
             # 3. ACTUALIZAR RANGO
             # ==================================================
 
             try:
 
+                # =================================================
+                # GUARDAR LP ANTERIOR
+                # =================================================
+
+                rango_anterior = jugador.get(
+                    "rango"
+                )
+
+
+                lp_anterior = None
+
+
+                if isinstance(
+                    rango_anterior,
+                    dict
+                ):
+
+                    lp_anterior = rango_anterior.get(
+                        "lp"
+                    )
+
+
+                # =================================================
+                # OBTENER RANGO ACTUAL
+                # =================================================
+
                 rango = obtener_rango(
                     puuid
                 )
 
+
                 codigo = obtener_ultimo_codigo_http()
+
 
                 if codigo == 429:
 
@@ -376,9 +467,16 @@ def actualizar_datos_riot():
 
                     break
 
+
                 if rango:
 
                     jugador["rango"] = rango
+
+
+                    lp_nuevo = rango.get(
+                        "lp"
+                    )
+
 
                     print(
                         f"Rango actualizado para {nombre}: "
@@ -387,6 +485,57 @@ def actualizar_datos_riot():
                         f"{rango.get('lp', 0)} LP"
                     )
 
+
+                    # =================================================
+                    # CALCULAR CAMBIO DE LP
+                    # =================================================
+
+                    if (
+
+                        partidas is not None
+
+                        and lp_anterior is not None
+
+                        and lp_nuevo is not None
+
+                    ):
+
+                        nuevas_partidas = [
+
+                            partida
+
+                            for partida in partidas
+
+                            if partida.get("match_id")
+                            not in ids_partidas_anteriores
+
+                        ]
+
+
+                        if nuevas_partidas:
+
+                            cambio_lp = (
+                                lp_nuevo
+                                - lp_anterior
+                            )
+
+
+                            # =================================================
+                            # ASIGNAR EL CAMBIO DE LP
+                            # A LA PARTIDA MÁS RECIENTE
+                            # =================================================
+
+                            nuevas_partidas[0][
+                                "lp_cambio"
+                            ] = cambio_lp
+
+
+                            print(
+                                f"LP cambiado para {nombre}: "
+                                f"{cambio_lp:+d} LP"
+                            )
+
+
             except Exception as e:
 
                 print(
@@ -394,21 +543,31 @@ def actualizar_datos_riot():
                     e
                 )
 
-            guardar_datos(datos)
+
+            guardar_datos(
+                datos
+            )
+
 
         ultima_actualizacion = time.time()
+
 
         datos["fecha"] = time.strftime(
             "%Y-%m-%d %H:%M:%S"
         )
 
-        guardar_datos(datos)
+
+        guardar_datos(
+            datos
+        )
+
 
         print()
         print("===================================")
         print("ACTUALIZACIÓN FINALIZADA")
         print("===================================")
         print()
+
 
     finally:
 
@@ -428,6 +587,7 @@ def obtener_estado_jugador(
         "puuid"
     )
 
+
     if not puuid:
 
         print(
@@ -439,6 +599,7 @@ def obtener_estado_jugador(
             "game_start_time": None
         }
 
+
     try:
 
         print()
@@ -446,11 +607,14 @@ def obtener_estado_jugador(
             f"Consultando estado de {nombre}..."
         )
 
+
         partida = jugador_en_partida(
             puuid
         )
 
+
         codigo = obtener_ultimo_codigo_http()
+
 
         if codigo == 429:
 
@@ -458,20 +622,24 @@ def obtener_estado_jugador(
                 f"{nombre}: RATE LIMIT."
             )
 
+
             with bloqueo_estados:
 
                 anterior = cache_estados.get(
                     nombre
                 )
 
+
             if anterior:
 
                 return anterior
+
 
             return {
                 "estado": "offline",
                 "game_start_time": None
             }
+
 
         if partida:
 
@@ -479,35 +647,44 @@ def obtener_estado_jugador(
                 "game_start_time"
             )
 
+
             estado = {
                 "estado": "in_game",
                 "game_start_time": game_start_time
             }
 
+
             print(
                 f"{nombre}: EN PARTIDA."
             )
+
 
             with bloqueo_estados:
 
                 cache_estados[nombre] = estado
 
+
             return estado
+
 
         estado = {
             "estado": "offline",
             "game_start_time": None
         }
 
+
         print(
             f"{nombre}: OFFLINE."
         )
+
 
         with bloqueo_estados:
 
             cache_estados[nombre] = estado
 
+
         return estado
+
 
     except Exception as e:
 
@@ -516,15 +693,18 @@ def obtener_estado_jugador(
             e
         )
 
+
         with bloqueo_estados:
 
             anterior = cache_estados.get(
                 nombre
             )
 
+
         if anterior:
 
             return anterior
+
 
         return {
             "estado": "offline",
@@ -540,10 +720,12 @@ def actualizar_estados():
 
     datos = cargar_datos()
 
+
     jugadores = datos.get(
         "jugadores",
         {}
     )
+
 
     for nombre, jugador in jugadores.items():
 
@@ -551,6 +733,7 @@ def actualizar_estados():
             nombre,
             jugador
         )
+
 
         with bloqueo_estados:
 
@@ -578,18 +761,22 @@ def historial_jugador(nombre):
 
     datos = cargar_datos()
 
+
     jugadores = datos.get(
         "jugadores",
         {}
     )
 
+
     jugador = jugadores.get(
         nombre
     )
 
+
     if not jugador:
 
         return "Jugador no encontrado", 404
+
 
     # ========================================================
     # RANKING ACTUAL
@@ -599,7 +786,9 @@ def historial_jugador(nombre):
         jugadores
     )
 
+
     posicion = None
+
 
     for index, (nombre_ranking, _) in enumerate(
         jugadores_ranking
@@ -611,6 +800,7 @@ def historial_jugador(nombre):
 
             break
 
+
     # ========================================================
     # HISTORIAL
     # ========================================================
@@ -620,6 +810,7 @@ def historial_jugador(nombre):
         []
     )
 
+
     if not isinstance(
         partidas,
         list
@@ -627,7 +818,9 @@ def historial_jugador(nombre):
 
         partidas = []
 
+
     partidas = partidas[:5]
+
 
     # ========================================================
     # ESTADÍSTICAS
@@ -640,6 +833,7 @@ def historial_jugador(nombre):
     wins = 0
     losses = 0
 
+
     for partida in partidas:
 
         resultado = str(
@@ -649,15 +843,19 @@ def historial_jugador(nombre):
             )
         ).upper()
 
+
         if resultado == "VICTORIA":
 
             wins += 1
+
 
         elif resultado == "DERROTA":
 
             losses += 1
 
+
     partidas_totales = wins + losses
+
 
     if partidas_totales > 0:
 
@@ -669,6 +867,7 @@ def historial_jugador(nombre):
 
         wr = 0
 
+
     # ========================================================
     # HORAS
     #
@@ -679,6 +878,7 @@ def historial_jugador(nombre):
     horas_jugadas = 0
 
     horas_disponibles = 4
+
 
     return render_template(
         "historial.html",
@@ -706,28 +906,36 @@ def api_jugadores():
 
         actualizar_datos_riot()
 
+
         datos = cargar_datos()
+
 
         jugadores = datos.get(
             "jugadores",
             {}
         )
 
+
         actualizar_estados()
 
+
         respuesta = {}
+
 
         for nombre, jugador in jugadores.items():
 
             with bloqueo_estados:
 
                 estado = cache_estados.get(
+
                     nombre,
+
                     {
                         "estado": "offline",
                         "game_start_time": None
                     }
                 )
+
 
             respuesta[nombre] = {
 
@@ -762,9 +970,11 @@ def api_jugadores():
                 )
             }
 
+
         return jsonify(
             respuesta
         )
+
 
     except Exception as e:
 
@@ -772,6 +982,7 @@ def api_jugadores():
         print("ERROR EN /api/jugadores:")
         print(e)
         print()
+
 
         return jsonify({
             "error": "Error interno del servidor"
@@ -790,6 +1001,7 @@ if __name__ == "__main__":
             5000
         )
     )
+
 
     app.run(
         host="0.0.0.0",
