@@ -30,9 +30,16 @@ CORS(
 
 ARCHIVO = "datos.json"
 
+# Actualización de historial + ranking cada 10 minutos
 INTERVALO_ACTUALIZACION = 10 * 60
 
+# Estado de partida: máximo 1 consulta cada 15 segundos
+# por jugador
 INTERVALO_ESTADO = 15
+
+# Cuando Riot devuelve 429, esperamos 60 segundos
+# antes de volver a consultar.
+PAUSA_RATE_LIMIT = 60
 
 
 # ============================================================
@@ -43,9 +50,27 @@ ultima_actualizacion = 0
 
 bloqueo_actualizacion = threading.Lock()
 
+# ------------------------------------------------------------
+# Estado de jugadores
+# ------------------------------------------------------------
+
 cache_estados = {}
 
+# Guarda cuándo se hizo la última consulta REAL a Riot
+ultima_consulta_estado = {}
+
 bloqueo_estados = threading.Lock()
+
+# ------------------------------------------------------------
+# Control de actualización de Riot
+# ------------------------------------------------------------
+
+# Índice del jugador donde debemos continuar después
+# de un Rate Limit.
+indice_proximo_jugador = 0
+
+# Momento hasta el cual debemos esperar después de un 429.
+pausa_hasta = 0
 
 
 # ============================================================
@@ -185,7 +210,6 @@ def ordenar_jugadores_ranking(jugadores):
                 0
             ),
 
-
             orden_division.get(
 
                 (item[1].get("rango") or {}).get(
@@ -195,7 +219,6 @@ def ordenar_jugadores_ranking(jugadores):
 
                 0
             ),
-
 
             (item[1].get("rango") or {}).get(
                 "lp",
@@ -217,6 +240,8 @@ def ordenar_jugadores_ranking(jugadores):
 def actualizar_datos_riot():
 
     global ultima_actualizacion
+    global indice_proximo_jugador
+    global pausa_hasta
 
 
     if not bloqueo_actualizacion.acquire(
@@ -231,12 +256,40 @@ def actualizar_datos_riot():
         ahora = time.time()
 
 
-        if (
-            ahora - ultima_actualizacion
-            < INTERVALO_ACTUALIZACION
-        ):
+        # ====================================================
+        # PAUSA POR RATE LIMIT
+        # ====================================================
+
+        if ahora < pausa_hasta:
+
+            segundos = int(
+                pausa_hasta - ahora
+            )
+
+            print(
+                f"Riot en pausa por Rate Limit. "
+                f"Reanudando en aproximadamente {segundos}s."
+            )
 
             return
+
+
+        # ====================================================
+        # TODAVÍA NO TOCA ACTUALIZAR
+        # ====================================================
+
+        # Si estamos retomando después de un Rate Limit,
+        # indice_proximo_jugador será mayor que 0 y NO
+        # debemos aplicar el intervalo de 10 minutos.
+
+        if indice_proximo_jugador == 0:
+
+            if (
+                ahora - ultima_actualizacion
+                < INTERVALO_ACTUALIZACION
+            ):
+
+                return
 
 
         print()
@@ -254,10 +307,51 @@ def actualizar_datos_riot():
         )
 
 
-        for nombre, jugador in jugadores.items():
+        lista_jugadores = list(
+            jugadores.items()
+        )
+
+
+        total_jugadores = len(
+            lista_jugadores
+        )
+
+
+        if total_jugadores == 0:
+
+            ultima_actualizacion = time.time()
+
+            return
+
+
+        # ====================================================
+        # PROTEGER EL ÍNDICE
+        # ====================================================
+
+        if indice_proximo_jugador >= total_jugadores:
+
+            indice_proximo_jugador = 0
+
+
+        # ====================================================
+        # RECORRER JUGADORES
+        # ====================================================
+
+        for indice in range(
+            indice_proximo_jugador,
+            total_jugadores
+        ):
+
+            nombre, jugador = lista_jugadores[
+                indice
+            ]
+
 
             print()
-            print("Actualizando:", nombre)
+            print(
+                f"Actualizando: {nombre} "
+                f"({indice + 1}/{total_jugadores})"
+            )
 
 
             # ==================================================
@@ -274,7 +368,6 @@ def actualizar_datos_riot():
                 riot_id = jugador.get(
                     "riot_id"
                 )
-
 
                 riot_tag = jugador.get(
                     "riot_tag"
@@ -311,11 +404,23 @@ def actualizar_datos_riot():
                         "RATE LIMIT al obtener PUUID."
                     )
 
-                    print(
-                        "ACTUALIZACIÓN DETENIDA."
+                    indice_proximo_jugador = indice
+
+                    pausa_hasta = (
+                        time.time()
+                        + PAUSA_RATE_LIMIT
                     )
 
-                    break
+                    print(
+                        f"Actualización pausada durante "
+                        f"{PAUSA_RATE_LIMIT} segundos."
+                    )
+
+                    print(
+                        f"Se retomará desde: {nombre}"
+                    )
+
+                    return
 
 
                 if not puuid:
@@ -374,10 +479,7 @@ def actualizar_datos_riot():
                     historial_actual = []
 
 
-                # =================================================
-                # GUARDAR IDS DE LAS PARTIDAS YA CONOCIDAS
-                # =================================================
-
+                # IDs de partidas anteriores
                 ids_partidas_anteriores = {
 
                     partida.get("match_id")
@@ -416,7 +518,27 @@ def actualizar_datos_riot():
                     "RATE LIMIT al actualizar partidas."
                 )
 
-                break
+                indice_proximo_jugador = indice
+
+                pausa_hasta = (
+                    time.time()
+                    + PAUSA_RATE_LIMIT
+                )
+
+                print(
+                    f"Actualización pausada durante "
+                    f"{PAUSA_RATE_LIMIT} segundos."
+                )
+
+                print(
+                    f"Se retomará desde: {nombre}"
+                )
+
+                guardar_datos(
+                    datos
+                )
+
+                return
 
 
             # ==================================================
@@ -425,9 +547,9 @@ def actualizar_datos_riot():
 
             try:
 
-                # =================================================
-                # GUARDAR LP ANTERIOR
-                # =================================================
+                # ------------------------------------------------
+                # LP ANTERIOR
+                # ------------------------------------------------
 
                 rango_anterior = jugador.get(
                     "rango"
@@ -447,9 +569,9 @@ def actualizar_datos_riot():
                     )
 
 
-                # =================================================
-                # OBTENER RANGO ACTUAL
-                # =================================================
+                # ------------------------------------------------
+                # RANGO ACTUAL
+                # ------------------------------------------------
 
                 rango = obtener_rango(
                     puuid
@@ -465,7 +587,27 @@ def actualizar_datos_riot():
                         "RATE LIMIT al obtener rango."
                     )
 
-                    break
+                    indice_proximo_jugador = indice
+
+                    pausa_hasta = (
+                        time.time()
+                        + PAUSA_RATE_LIMIT
+                    )
+
+                    print(
+                        f"Actualización pausada durante "
+                        f"{PAUSA_RATE_LIMIT} segundos."
+                    )
+
+                    print(
+                        f"Se retomará desde: {nombre}"
+                    )
+
+                    guardar_datos(
+                        datos
+                    )
+
+                    return
 
 
                 if rango:
@@ -508,7 +650,6 @@ def actualizar_datos_riot():
 
                             if partida.get("match_id")
                             not in ids_partidas_anteriores
-
                         ]
 
 
@@ -519,11 +660,6 @@ def actualizar_datos_riot():
                                 - lp_anterior
                             )
 
-
-                            # =================================================
-                            # ASIGNAR EL CAMBIO DE LP
-                            # A LA PARTIDA MÁS RECIENTE
-                            # =================================================
 
                             nuevas_partidas[0][
                                 "lp_cambio"
@@ -549,6 +685,12 @@ def actualizar_datos_riot():
             )
 
 
+        # ====================================================
+        # TODOS LOS JUGADORES TERMINARON
+        # ====================================================
+
+        indice_proximo_jugador = 0
+
         ultima_actualizacion = time.time()
 
 
@@ -564,7 +706,7 @@ def actualizar_datos_riot():
 
         print()
         print("===================================")
-        print("ACTUALIZACIÓN FINALIZADA")
+        print("ACTUALIZACIÓN COMPLETA FINALIZADA")
         print("===================================")
         print()
 
@@ -583,6 +725,9 @@ def obtener_estado_jugador(
     jugador
 ):
 
+    global pausa_hasta
+
+
     puuid = jugador.get(
         "puuid"
     )
@@ -600,6 +745,54 @@ def obtener_estado_jugador(
         }
 
 
+    ahora = time.time()
+
+
+    # ========================================================
+    # CACHÉ DE 15 SEGUNDOS
+    # ========================================================
+
+    with bloqueo_estados:
+
+        estado_anterior = cache_estados.get(
+            nombre
+        )
+
+        ultima_consulta = ultima_consulta_estado.get(
+            nombre,
+            0
+        )
+
+
+    if (
+
+        estado_anterior is not None
+
+        and (
+            ahora - ultima_consulta
+        ) < INTERVALO_ESTADO
+
+    ):
+
+        return estado_anterior
+
+
+    # ========================================================
+    # SI ESTAMOS EN PAUSA POR RATE LIMIT
+    # ========================================================
+
+    if ahora < pausa_hasta:
+
+        if estado_anterior:
+
+            return estado_anterior
+
+        return {
+            "estado": "offline",
+            "game_start_time": None
+        }
+
+
     try:
 
         print()
@@ -607,6 +800,11 @@ def obtener_estado_jugador(
             f"Consultando estado de {nombre}..."
         )
 
+
+        # ====================================================
+        # ESTA ES LA ÚNICA CONSULTA REAL A SPECTATOR
+        # CUANDO EL CACHÉ DE 15 SEGUNDOS EXPIRO
+        # ====================================================
 
         partida = jugador_en_partida(
             puuid
@@ -623,16 +821,23 @@ def obtener_estado_jugador(
             )
 
 
-            with bloqueo_estados:
+            # Pausa global para evitar seguir golpeando
+            # la API mientras está limitando las solicitudes.
+            pausa_hasta = (
+                time.time()
+                + PAUSA_RATE_LIMIT
+            )
 
-                anterior = cache_estados.get(
-                    nombre
-                )
+
+            print(
+                f"Consultas de estado pausadas "
+                f"durante {PAUSA_RATE_LIMIT} segundos."
+            )
 
 
-            if anterior:
+            if estado_anterior:
 
-                return anterior
+                return estado_anterior
 
 
             return {
@@ -640,6 +845,16 @@ def obtener_estado_jugador(
                 "game_start_time": None
             }
 
+
+        # Registrar el momento de la consulta REAL
+        with bloqueo_estados:
+
+            ultima_consulta_estado[nombre] = time.time()
+
+
+        # ====================================================
+        # EN PARTIDA
+        # ====================================================
 
         if partida:
 
@@ -666,6 +881,10 @@ def obtener_estado_jugador(
 
             return estado
 
+
+        # ====================================================
+        # OFFLINE
+        # ====================================================
 
         estado = {
             "estado": "offline",
@@ -824,10 +1043,6 @@ def historial_jugador(nombre):
 
     # ========================================================
     # ESTADÍSTICAS
-    #
-    # POR AHORA se calculan con las partidas almacenadas.
-    # Más adelante tendremos estadísticas acumuladas
-    # independientes del historial de 5 partidas.
     # ========================================================
 
     wins = 0
@@ -870,9 +1085,6 @@ def historial_jugador(nombre):
 
     # ========================================================
     # HORAS
-    #
-    # TEMPORALMENTE QUEDAN EN 0.
-    # El sistema acumulable de 4 horas se programa después.
     # ========================================================
 
     horas_jugadas = 0
@@ -904,6 +1116,8 @@ def api_jugadores():
 
     try:
 
+        # Actualización de historial/ranking.
+        # Solo se ejecutará cuando corresponda.
         actualizar_datos_riot()
 
 
@@ -916,6 +1130,9 @@ def api_jugadores():
         )
 
 
+        # Estado de partida.
+        # Cada jugador solamente genera una consulta REAL
+        # cuando su caché de 15 segundos expiró.
         actualizar_estados()
 
 
