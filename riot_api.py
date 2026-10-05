@@ -4,13 +4,10 @@ from datetime import datetime
 from urllib.parse import quote
 
 
-# =========================================================
-# CONFIGURACIÓN
-# =========================================================
-
 API_KEY = os.environ.get("RIOT_API_KEY")
 
 REGION = "americas"
+REGION_LOL = "la2"
 
 HEADERS = {
     "X-Riot-Token": API_KEY
@@ -22,7 +19,7 @@ TIMEOUT = 15
 
 
 # =========================================================
-# CONTROL HTTP
+# CONTROL DE CÓDIGOS HTTP
 # =========================================================
 
 def guardar_codigo_http(codigo):
@@ -35,7 +32,7 @@ def obtener_ultimo_codigo_http():
 
 
 # =========================================================
-# CUENTA RIOT
+# OBTENER PUUID MEDIANTE RIOT ID + TAG
 # =========================================================
 
 def obtener_puuid_por_riot_id(game_name, tag_line):
@@ -43,24 +40,16 @@ def obtener_puuid_por_riot_id(game_name, tag_line):
     if not game_name or not tag_line:
         return None
 
-    game_name = quote(
-        str(game_name),
-        safe=""
-    )
-
-    tag_line = quote(
-        str(tag_line),
-        safe=""
-    )
+    game_name = quote(str(game_name), safe="")
+    tag_line = quote(str(tag_line), safe="")
 
     url = (
-        f"https://americas.api.riotgames.com"
-        f"/riot/account/v1/accounts/by-riot-id/"
+        f"https://{REGION}.api.riotgames.com/"
+        f"riot/account/v1/accounts/by-riot-id/"
         f"{game_name}/{tag_line}"
     )
 
     try:
-
         respuesta = requests.get(
             url,
             headers=HEADERS,
@@ -76,9 +65,7 @@ def obtener_puuid_por_riot_id(game_name, tag_line):
 
         return None
 
-    guardar_codigo_http(
-        respuesta.status_code
-    )
+    guardar_codigo_http(respuesta.status_code)
 
     if respuesta.status_code == 200:
 
@@ -94,7 +81,7 @@ def obtener_puuid_por_riot_id(game_name, tag_line):
 
 
 # =========================================================
-# SUMMONER
+# OBTENER DATOS DEL SUMMONER MEDIANTE PUUID
 # =========================================================
 
 def obtener_summoner_por_puuid(puuid):
@@ -102,14 +89,11 @@ def obtener_summoner_por_puuid(puuid):
     if not puuid:
         return None
 
-    puuid_url = quote(
-        str(puuid),
-        safe=""
-    )
+    puuid_url = quote(str(puuid), safe="")
 
     url = (
-        f"https://la2.api.riotgames.com"
-        f"/lol/summoner/v4/summoners/by-puuid/"
+        f"https://{REGION_LOL}.api.riotgames.com/"
+        f"lol/summoner/v4/summoners/by-puuid/"
         f"{puuid_url}"
     )
 
@@ -130,9 +114,7 @@ def obtener_summoner_por_puuid(puuid):
 
         return None
 
-    guardar_codigo_http(
-        respuesta.status_code
-    )
+    guardar_codigo_http(respuesta.status_code)
 
     if respuesta.status_code == 200:
 
@@ -140,11 +122,9 @@ def obtener_summoner_por_puuid(puuid):
 
         return {
             "id": datos.get("id"),
-            "puuid": datos.get(
-                "puuid",
-                puuid
-            ),
-            "name": datos.get("name")
+            "puuid": datos.get("puuid", puuid),
+            "name": datos.get("name"),
+            "account_id": datos.get("accountId")
         }
 
     print("Error al obtener Summoner.")
@@ -154,29 +134,30 @@ def obtener_summoner_por_puuid(puuid):
     return None
 
 
-def obtener_summoner_id(
-    puuid,
-    game_name=None
-):
+# =========================================================
+# OBTENER SUMMONER ID
+#
+# Esta función se mantiene para compatibilidad.
+# La idea es utilizarla solamente al registrar/refrescar
+# un jugador, NO en cada consulta de estado.
+# =========================================================
 
-    datos = obtener_summoner_por_puuid(
-        puuid
-    )
+def obtener_summoner_id(puuid, game_name=None):
+
+    datos = obtener_summoner_por_puuid(puuid)
 
     if datos and datos.get("id"):
 
         return datos["id"]
 
+    # Fallback antiguo por nombre
     if game_name:
 
-        game_name_url = quote(
-            str(game_name),
-            safe=""
-        )
+        game_name_url = quote(str(game_name), safe="")
 
         url = (
-            f"https://la2.api.riotgames.com"
-            f"/lol/summoner/v4/summoners/by-name/"
+            f"https://{REGION_LOL}.api.riotgames.com/"
+            f"lol/summoner/v4/summoners/by-name/"
             f"{game_name_url}"
         )
 
@@ -201,9 +182,7 @@ def obtener_summoner_id(
 
             return None
 
-        guardar_codigo_http(
-            respuesta.status_code
-        )
+        guardar_codigo_http(respuesta.status_code)
 
         print("RESPUESTA BY NAME:")
         print(respuesta.status_code)
@@ -216,33 +195,115 @@ def obtener_summoner_id(
             if datos.get("id"):
                 return datos["id"]
 
-    print(
-        "No se pudo obtener el Summoner ID."
-    )
+    print("No se pudo obtener el Summoner ID.")
 
     return None
 
 
 # =========================================================
-# PARTIDAS
+# REGISTRO COMPLETO DE UNA CUENTA
+#
+# Riot ID + Tag
+#       ↓
+# PUUID
+#       ↓
+# Summoner ID
+#
+# Devuelve ambos datos para que servidor.py pueda
+# guardarlos en datos.json.
 # =========================================================
 
-def obtener_partidas(
-    puuid,
-    cantidad=20
-):
+def registrar_cuenta_riot(game_name, tag_line):
+
+    print()
+    print("========================================")
+    print("REGISTRANDO CUENTA RIOT")
+    print("========================================")
+    print("Riot ID:", game_name)
+    print("Tag:", tag_line)
+
+    # -----------------------------------------
+    # 1. Obtener PUUID
+    # -----------------------------------------
+
+    puuid = obtener_puuid_por_riot_id(
+        game_name,
+        tag_line
+    )
+
+    if not puuid:
+
+        print("NO SE PUDO OBTENER EL PUUID.")
+
+        return {
+            "ok": False,
+            "puuid": None,
+            "summoner_id": None,
+            "error": "No se pudo obtener el PUUID."
+        }
+
+    print("PUUID obtenido correctamente.")
+
+    # -----------------------------------------
+    # 2. Obtener Summoner ID
+    # -----------------------------------------
+
+    summoner = obtener_summoner_por_puuid(puuid)
+
+    if not summoner:
+
+        print("NO SE PUDO OBTENER EL SUMMONER.")
+
+        return {
+            "ok": False,
+            "puuid": puuid,
+            "summoner_id": None,
+            "error": "No se pudo obtener el Summoner."
+        }
+
+    summoner_id = summoner.get("id")
+
+    if not summoner_id:
+
+        print("EL SUMMONER NO TIENE ID.")
+
+        return {
+            "ok": False,
+            "puuid": puuid,
+            "summoner_id": None,
+            "error": "La cuenta no tiene Summoner ID."
+        }
+
+    print("Summoner ID obtenido correctamente.")
+    print("Summoner ID:", summoner_id)
+
+    print("========================================")
+    print("REGISTRO COMPLETADO")
+    print("========================================")
+    print()
+
+    return {
+        "ok": True,
+        "puuid": puuid,
+        "summoner_id": summoner_id,
+        "summoner_name": summoner.get("name")
+    }
+
+
+# =========================================================
+# PARTIDAS DEL JUGADOR
+# =========================================================
+
+def obtener_partidas(puuid, cantidad=20):
 
     if not puuid:
         return None
 
-    puuid_url = quote(
-        str(puuid),
-        safe=""
-    )
+    puuid_url = quote(str(puuid), safe="")
 
     url = (
-        f"https://{REGION}.api.riotgames.com"
-        f"/lol/match/v5/matches/by-puuid/"
+        f"https://{REGION}.api.riotgames.com/"
+        f"lol/match/v5/matches/by-puuid/"
         f"{puuid_url}/ids"
     )
 
@@ -262,56 +323,40 @@ def obtener_partidas(
 
     except requests.RequestException as error:
 
-        print(
-            "ERROR DE CONEXIÓN AL OBTENER PARTIDAS:"
-        )
-
+        print("ERROR DE CONEXIÓN AL OBTENER PARTIDAS:")
         print(error)
 
         guardar_codigo_http(None)
 
         return None
 
-    guardar_codigo_http(
-        respuesta.status_code
-    )
+    guardar_codigo_http(respuesta.status_code)
 
     if respuesta.status_code == 200:
 
         return respuesta.json()
 
-    print(
-        "Error al obtener partidas."
-    )
-
-    print(
-        "Código:",
-        respuesta.status_code
-    )
-
-    print(
-        "Respuesta:",
-        respuesta.text
-    )
+    print("Error al obtener partidas.")
+    print("Código:", respuesta.status_code)
+    print("Respuesta:", respuesta.text)
 
     return None
 
 
-def obtener_detalle_partida(
-    match_id
-):
+# =========================================================
+# DETALLE DE UNA PARTIDA
+# =========================================================
+
+def obtener_detalle_partida(match_id):
 
     if not match_id:
         return None
 
-    match_id_url = quote(
-        str(match_id),
-        safe=""
-    )
+    match_id_url = quote(str(match_id), safe="")
 
     url = (
-        f"https://{REGION}.api.riotgames.com"
-        f"/lol/match/v5/matches/"
+        f"https://{REGION}.api.riotgames.com/"
+        f"lol/match/v5/matches/"
         f"{match_id_url}"
     )
 
@@ -336,75 +381,48 @@ def obtener_detalle_partida(
 
         return None
 
-    guardar_codigo_http(
-        respuesta.status_code
-    )
+    guardar_codigo_http(respuesta.status_code)
 
     if respuesta.status_code == 200:
 
         return respuesta.json()
 
-    print(
-        "Error al obtener detalle de partida."
-    )
-
-    print(
-        "Código:",
-        respuesta.status_code
-    )
-
-    print(
-        "Respuesta:",
-        respuesta.text
-    )
+    print("Error al obtener detalle de partida.")
+    print("Código:", respuesta.status_code)
+    print("Respuesta:", respuesta.text)
 
     return None
 
 
 # =========================================================
-# PARTIDA ACTIVA
+# DETECCIÓN DE PARTIDA ACTIVA
+#
+# IMPORTANTE:
+# Esta función YA NO busca el Summoner ID.
+#
+# Recibe directamente el Summoner ID guardado.
+#
+# Esto evita:
+#
+# PUUID → Summoner ID → Spectator
+#
+# en cada consulta.
+#
+# Ahora hacemos directamente:
+#
+# Summoner ID → Spectator V5
 # =========================================================
 
-def jugador_en_partida(puuid):
-
-    if not puuid:
-        return None
-
-    print(
-        "Consultando partida activa..."
-    )
-
-    # -----------------------------------------------------
-    # Obtener Summoner ID
-    # -----------------------------------------------------
-
-    summoner = obtener_summoner_por_puuid(
-        puuid
-    )
-
-    if not summoner:
-
-        print(
-            "No se pudo obtener el Summoner."
-        )
-
-        return None
-
-    summoner_id = summoner.get(
-        "id"
-    )
+def jugador_en_partida(summoner_id):
 
     if not summoner_id:
 
-        print(
-            "El Summoner no tiene ID."
-        )
+        print("No hay Summoner ID para consultar partida.")
 
         return None
 
-    # -----------------------------------------------------
-    # Spectator
-    # -----------------------------------------------------
+    print("Consultando partida activa...")
+    print("Summoner ID:", summoner_id)
 
     summoner_id_url = quote(
         str(summoner_id),
@@ -412,8 +430,8 @@ def jugador_en_partida(puuid):
     )
 
     url = (
-        f"https://la2.api.riotgames.com"
-        f"/lol/spectator/v5/active-games/"
+        f"https://{REGION_LOL}.api.riotgames.com/"
+        f"lol/spectator/v5/active-games/"
         f"by-summoner/{summoner_id_url}"
     )
 
@@ -438,70 +456,44 @@ def jugador_en_partida(puuid):
 
         return None
 
-    guardar_codigo_http(
-        respuesta.status_code
-    )
+    guardar_codigo_http(respuesta.status_code)
 
-    print(
-        "RESPUESTA SPECTATOR:"
-    )
-
-    print(
-        respuesta.status_code
-    )
-
-    print(
-        respuesta.text
-    )
-
-    # -----------------------------------------------------
-    # Está en partida
-    # -----------------------------------------------------
+    print("RESPUESTA SPECTATOR:")
+    print(respuesta.status_code)
 
     if respuesta.status_code == 200:
 
-        datos = respuesta.json()
+        try:
+            datos = respuesta.json()
+
+        except ValueError:
+
+            print("La respuesta de Spectator no es JSON válido.")
+
+            return None
+
+        print("PARTIDA ACTIVA DETECTADA.")
 
         return {
-            "game_id": datos.get(
-                "gameId"
-            ),
-            "game_start_time": datos.get(
-                "gameStartTime"
-            )
+            "game_id": datos.get("gameId"),
+            "game_start_time": datos.get("gameStartTime")
         }
-
-    # -----------------------------------------------------
-    # No está en partida
-    # -----------------------------------------------------
 
     if respuesta.status_code == 404:
 
+        print("El jugador NO está en partida.")
+
         return None
 
-    # -----------------------------------------------------
-    # Otro error
-    # -----------------------------------------------------
-
-    print(
-        "Error al consultar partida activa."
-    )
-
-    print(
-        "Código:",
-        respuesta.status_code
-    )
-
-    print(
-        "Respuesta:",
-        respuesta.text
-    )
+    print("Error al consultar partida activa.")
+    print("Código:", respuesta.status_code)
+    print("Respuesta:", respuesta.text)
 
     return None
 
 
 # =========================================================
-# RANGO
+# OBTENER RANGO
 # =========================================================
 
 def obtener_rango(puuid):
@@ -509,14 +501,11 @@ def obtener_rango(puuid):
     if not puuid:
         return None
 
-    puuid_url = quote(
-        str(puuid),
-        safe=""
-    )
+    puuid_url = quote(str(puuid), safe="")
 
     url = (
-        f"https://la2.api.riotgames.com"
-        f"/lol/league/v4/entries/by-puuid/"
+        f"https://{REGION_LOL}.api.riotgames.com/"
+        f"lol/league/v4/entries/by-puuid/"
         f"{puuid_url}"
     )
 
@@ -530,31 +519,18 @@ def obtener_rango(puuid):
 
     except requests.RequestException as error:
 
-        print(
-            "ERROR DE CONEXIÓN AL OBTENER RANGO:"
-        )
-
+        print("ERROR DE CONEXIÓN AL OBTENER RANGO:")
         print(error)
 
         guardar_codigo_http(None)
 
         return None
 
-    guardar_codigo_http(
-        respuesta.status_code
-    )
+    guardar_codigo_http(respuesta.status_code)
 
-    print(
-        "RESPUESTA RANKING:"
-    )
-
-    print(
-        respuesta.status_code
-    )
-
-    print(
-        respuesta.text
-    )
+    print("RESPUESTA RANKING:")
+    print(respuesta.status_code)
+    print(respuesta.text)
 
     if respuesta.status_code == 200:
 
@@ -562,27 +538,14 @@ def obtener_rango(puuid):
 
         for liga in datos:
 
-            if (
-                liga.get("queueType")
-                == "RANKED_SOLO_5x5"
-            ):
+            if liga.get("queueType") == "RANKED_SOLO_5x5":
 
                 return {
-                    "tier": liga.get(
-                        "tier"
-                    ),
-                    "rank": liga.get(
-                        "rank"
-                    ),
-                    "lp": liga.get(
-                        "leaguePoints"
-                    ),
-                    "wins": liga.get(
-                        "wins"
-                    ),
-                    "losses": liga.get(
-                        "losses"
-                    )
+                    "tier": liga.get("tier"),
+                    "rank": liga.get("rank"),
+                    "lp": liga.get("leaguePoints"),
+                    "wins": liga.get("wins"),
+                    "losses": liga.get("losses")
                 }
 
         return {
@@ -593,31 +556,18 @@ def obtener_rango(puuid):
             "losses": 0
         }
 
-    print(
-        "Error al obtener rango."
-    )
-
-    print(
-        "Código:",
-        respuesta.status_code
-    )
-
-    print(
-        "Respuesta:",
-        respuesta.text
-    )
+    print("Error al obtener rango.")
+    print("Código:", respuesta.status_code)
+    print("Respuesta:", respuesta.text)
 
     return None
 
 
 # =========================================================
-# ACTUALIZAR HISTORIAL
+# ACTUALIZAR HISTORIAL DEL JUGADOR
 # =========================================================
 
-def actualizar_partidas_jugador(
-    puuid,
-    cantidad=10
-):
+def actualizar_partidas_jugador(puuid, cantidad=10):
 
     partidas = obtener_partidas(
         puuid,
@@ -655,24 +605,19 @@ def actualizar_partidas_jugador(
 
         for participante in participantes:
 
-            if (
-                participante.get("puuid")
-                == puuid
-            ):
+            if participante.get("puuid") == puuid:
 
                 jugador = participante
+
                 break
 
         if not jugador:
             continue
 
         fecha = (
-            info.get(
-                "gameEndTimestamp"
-            )
-            or info.get(
-                "gameCreation"
-            )
+            info.get("gameEndTimestamp")
+            or
+            info.get("gameCreation")
         )
 
         if fecha:
@@ -702,10 +647,9 @@ def actualizar_partidas_jugador(
                 if jugador.get("win")
                 else "DERROTA",
 
-            "campeon":
-                jugador.get(
-                    "championName"
-                )
+            "campeon": jugador.get(
+                "championName"
+            )
         })
 
     return resultado
