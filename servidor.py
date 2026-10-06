@@ -1,6 +1,12 @@
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
-import json
+
+try:
+    import psycopg
+    from psycopg.types.json import Jsonb
+except ImportError:
+    psycopg = None
+    Jsonb = None
 import os
 import time
 import threading
@@ -29,6 +35,9 @@ CORS(
     ]
 )
 
+# PostgreSQL en Render.
+# Si DATABASE_URL no existe, se permite trabajar localmente con datos.json.
+DATABASE_URL = os.environ.get("DATABASE_URL")
 ARCHIVO = "datos.json"
 
 # Actualización de historial + ranking cada 10 minutos
@@ -75,10 +84,86 @@ pausa_hasta = 0
 
 
 # ============================================================
-# CARGAR DATOS
+# BASE DE DATOS
 # ============================================================
 
+def inicializar_base_datos():
+
+    if not DATABASE_URL:
+
+        print("DATABASE_URL no configurada. Se utilizará datos.json localmente.")
+        return
+
+    if psycopg is None:
+
+        raise RuntimeError(
+            "Falta el paquete psycopg. Revisá requirements.txt."
+        )
+
+    try:
+
+        with psycopg.connect(DATABASE_URL) as conexion:
+
+            conexion.execute("""
+                CREATE TABLE IF NOT EXISTS app_data (
+                    id INTEGER PRIMARY KEY,
+                    datos JSONB NOT NULL
+                )
+            """)
+
+        print("PostgreSQL conectado correctamente.")
+
+    except Exception as e:
+
+        print("ERROR AL INICIALIZAR POSTGRESQL:", e)
+        raise
+
+
 def cargar_datos():
+
+    # --------------------------------------------------------
+    # RENDER / POSTGRESQL
+    # --------------------------------------------------------
+
+    if DATABASE_URL:
+
+        try:
+
+            with psycopg.connect(DATABASE_URL) as conexion:
+
+                fila = conexion.execute(
+                    "SELECT datos FROM app_data WHERE id = 1"
+                ).fetchone()
+
+            if not fila:
+
+                return {
+                    "jugadores": {}
+                }
+
+            datos = fila[0]
+
+            if not isinstance(datos, dict):
+
+                return {
+                    "jugadores": {}
+                }
+
+            if not isinstance(datos.get("jugadores"), dict):
+
+                datos["jugadores"] = {}
+
+            return datos
+
+        except Exception as e:
+
+            print("ERROR AL CARGAR DATOS DESDE POSTGRESQL:", e)
+            raise
+
+
+    # --------------------------------------------------------
+    # DESARROLLO LOCAL SIN DATABASE_URL
+    # --------------------------------------------------------
 
     try:
 
@@ -87,6 +172,8 @@ def cargar_datos():
             return {
                 "jugadores": {}
             }
+
+        import json
 
         with open(
             ARCHIVO,
@@ -102,42 +189,58 @@ def cargar_datos():
                 "jugadores": {}
             }
 
-        if "jugadores" not in datos:
-
-            datos["jugadores"] = {}
-
-        if not isinstance(
-            datos["jugadores"],
-            dict
-        ):
+        if not isinstance(datos.get("jugadores"), dict):
 
             datos["jugadores"] = {}
 
         return datos
 
+    except Exception as e:
 
-    except (
-        json.JSONDecodeError,
-        OSError
-    ) as e:
-
-        print(
-            "ERROR AL CARGAR DATOS:",
-            e
-        )
+        print("ERROR AL CARGAR DATOS LOCALES:", e)
 
         return {
             "jugadores": {}
         }
 
 
-# ============================================================
-# GUARDAR DATOS
-# ============================================================
-
 def guardar_datos(datos):
 
+    # --------------------------------------------------------
+    # RENDER / POSTGRESQL
+    # --------------------------------------------------------
+
+    if DATABASE_URL:
+
+        try:
+
+            with psycopg.connect(DATABASE_URL) as conexion:
+
+                conexion.execute(
+                    """
+                    INSERT INTO app_data (id, datos)
+                    VALUES (1, %s)
+                    ON CONFLICT (id)
+                    DO UPDATE SET datos = EXCLUDED.datos
+                    """,
+                    (Jsonb(datos),)
+                )
+
+            return
+
+        except Exception as e:
+
+            print("ERROR AL GUARDAR DATOS EN POSTGRESQL:", e)
+            raise
+
+
+    # --------------------------------------------------------
+    # DESARROLLO LOCAL SIN DATABASE_URL
+    # --------------------------------------------------------
+
     try:
+
+        import json
 
         with open(
             ARCHIVO,
@@ -152,13 +255,14 @@ def guardar_datos(datos):
                 indent=4
             )
 
-
     except OSError as e:
 
-        print(
-            "ERROR AL GUARDAR DATOS:",
-            e
-        )
+        print("ERROR AL GUARDAR DATOS LOCALES:", e)
+        raise
+
+
+# Crear la tabla automáticamente al iniciar el servidor.
+inicializar_base_datos()
 
 
 # ============================================================
