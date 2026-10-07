@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración · SoloQ Challenge Monteros</title>
+    <style>
+        :root {
+            --fondo: #e8e5df;
+            --fondo-claro: #f4f1eb;
+            --bordo: #70152b;
+            --bordo-oscuro: #35151c;
+            --rojo: #941b3a;
+            --verde: #23633b;
+            --rojo-error: #8d2020;
+            --texto: #292929;
+            --gris: #777;
+            --blanco: #fff;
+            --borde: #d1ccc4;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 30px;
+            background: linear-gradient(135deg, var(--fondo), var(--fondo-claro));
+            color: var(--texto);
+            font-family: Arial, sans-serif;
+        }
+
+        .contenedor {
+            width: min(1150px, 100%);
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--bordo-oscuro);
+            font-size: clamp(28px, 4vw, 46px);
+            letter-spacing: 1px;
+        }
+
+        .subtitulo {
+            margin: 7px 0 0;
+            color: var(--gris);
+        }
+
+        button {
+            border: 0;
+            border-radius: 7px;
+            padding: 11px 16px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .actualizar {
+            background: var(--bordo);
+            color: var(--blanco);
+        }
+
+        .seccion {
+            background: rgba(255,255,255,.72);
+            border: 1px solid var(--borde);
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,.06);
+        }
+
+        .seccion h2 {
+            margin: 0 0 18px;
+            color: var(--bordo-oscuro);
+        }
+
+        .cantidad {
+            display: inline-block;
+            min-width: 28px;
+            padding: 3px 8px;
+            margin-left: 5px;
+            border-radius: 20px;
+            background: var(--bordo);
+            color: white;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .lista {
+            display: grid;
+            gap: 12px;
+        }
+
+        .tarjeta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 16px;
+            background: var(--fondo-claro);
+            border: 1px solid var(--borde);
+            border-radius: 9px;
+        }
+
+        .datos {
+            min-width: 0;
+        }
+
+        .nombre {
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--bordo-oscuro);
+        }
+
+        .riot {
+            margin-top: 5px;
+            color: #555;
+        }
+
+        .fecha {
+            margin-top: 5px;
+            color: var(--gris);
+            font-size: 13px;
+        }
+
+        .acciones {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .aprobar { background: var(--verde); color: white; }
+        .rechazar, .borrar { background: var(--rojo-error); color: white; }
+
+        .vacio {
+            padding: 25px;
+            text-align: center;
+            color: var(--gris);
+            border: 1px dashed var(--borde);
+            border-radius: 8px;
+        }
+
+        #mensaje {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            max-width: min(420px, calc(100% - 40px));
+            padding: 13px 17px;
+            border-radius: 8px;
+            color: white;
+            background: var(--bordo);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: .2s;
+        }
+
+        #mensaje.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 700px) {
+            body { padding: 16px; }
+            header { align-items: flex-start; flex-direction: column; }
+            .tarjeta { align-items: flex-start; flex-direction: column; }
+            .acciones { justify-content: flex-start; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="contenedor">
+    <header>
+        <div>
+            <h1>ADMINISTRACIÓN</h1>
+            <p class="subtitulo">SoloQ Challenge Monteros · Gestión de registros</p>
+        </div>
+        <button class="actualizar" onclick="cargarTodo()">↻ ACTUALIZAR</button>
+    </header>
+
+    <section class="seccion">
+        <h2>SOLICITUDES PENDIENTES <span class="cantidad" id="cantidadSolicitudes">0</span></h2>
+        <div class="lista" id="listaSolicitudes"></div>
+    </section>
+
+    <section class="seccion">
+        <h2>JUGADORES REGISTRADOS <span class="cantidad" id="cantidadJugadores">0</span></h2>
+        <div class="lista" id="listaJugadores"></div>
+    </section>
+</div>
+
+<div id="mensaje"></div>
+
+<script>
+    const mensaje = document.getElementById("mensaje");
+
+    function mostrarMensaje(texto) {
+        mensaje.textContent = texto;
+        mensaje.classList.add("visible");
+        setTimeout(() => mensaje.classList.remove("visible"), 2500);
+    }
+
+    async function cargarSolicitudes() {
+        const respuesta = await fetch("/api/admin/solicitudes");
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok || !resultado.ok) {
+            throw new Error(resultado.error || "No se pudieron cargar las solicitudes.");
+        }
+
+        const solicitudes = resultado.solicitudes || [];
+        document.getElementById("cantidadSolicitudes").textContent = solicitudes.length;
+
+        const contenedor = document.getElementById("listaSolicitudes");
+
+        if (!solicitudes.length) {
+            contenedor.innerHTML = '<div class="vacio">No hay solicitudes pendientes.</div>';
+            return;
+        }
+
+        contenedor.innerHTML = solicitudes.map(solicitud => `
+            <div class="tarjeta">
+                <div class="datos">
+                    <div class="nombre">${escapar(solicitud.nombre)}</div>
+                    <div class="riot">${escapar(solicitud.riot_id)} #${escapar(solicitud.riot_tag)}</div>
+                    <div class="fecha">Solicitud: ${escapar(solicitud.fecha_solicitud || "Sin fecha")}</div>
+                </div>
+                <div class="acciones">
+                    <button class="aprobar" onclick="aprobar('${escaparJs(solicitud.nombre)}')">✓ APROBAR</button>
+                    <button class="rechazar" onclick="rechazar('${escaparJs(solicitud.nombre)}')">✕ RECHAZAR</button>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    async function cargarJugadores() {
+        const respuesta = await fetch("/api/admin/jugadores");
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok || !resultado.ok) {
+            throw new Error(resultado.error || "No se pudieron cargar los jugadores.");
+        }
+
+        const jugadores = resultado.jugadores || [];
+        document.getElementById("cantidadJugadores").textContent = jugadores.length;
+
+        const contenedor = document.getElementById("listaJugadores");
+
+        if (!jugadores.length) {
+            contenedor.innerHTML = '<div class="vacio">No hay jugadores registrados.</div>';
+            return;
+        }
+
+        contenedor.innerHTML = jugadores.map(jugador => `
+            <div class="tarjeta">
+                <div class="datos">
+                    <div class="nombre">${escapar(jugador.nombre)}</div>
+                    <div class="riot">${escapar(jugador.riot_id || "")} #${escapar(jugador.riot_tag || "")}</div>
+                </div>
+                <div class="acciones">
+                    <button class="borrar" onclick="borrarJugador('${escaparJs(jugador.nombre)}')">🗑 BORRAR JUGADOR</button>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    async function aprobar(nombre) {
+        if (!confirm(`¿Aprobar a ${nombre}?`)) return;
+
+        const respuesta = await fetch("/api/admin/solicitudes/aprobar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nombre })
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok || !resultado.ok) {
+            mostrarMensaje("❌ " + (resultado.error || "No se pudo aprobar."));
+            return;
+        }
+
+        mostrarMensaje("✅ " + resultado.mensaje);
+        await cargarTodo();
+    }
+
+    async function rechazar(nombre) {
+        if (!confirm(`¿Rechazar la solicitud de ${nombre}?`)) return;
+
+        const respuesta = await fetch("/api/admin/solicitudes/rechazar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nombre })
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok || !resultado.ok) {
+            mostrarMensaje("❌ " + (resultado.error || "No se pudo rechazar."));
+            return;
+        }
+
+        mostrarMensaje("✅ " + resultado.mensaje);
+        await cargarSolicitudes();
+    }
+
+    async function borrarJugador(nombre) {
+        if (!confirm(`¿ESTÁS SEGURO de borrar a ${nombre}?\n\nSe eliminará del ranking y de la lista de jugadores.`)) return;
+
+        const respuesta = await fetch(`/api/admin/jugadores/${encodeURIComponent(nombre)}`, {
+            method: "DELETE"
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok || !resultado.ok) {
+            mostrarMensaje("❌ " + (resultado.error || "No se pudo borrar el jugador."));
+            return;
+        }
+
+        mostrarMensaje("✅ " + resultado.mensaje);
+        await cargarJugadores();
+    }
+
+    async function cargarTodo() {
+        try {
+            await Promise.all([
+                cargarSolicitudes(),
+                cargarJugadores()
+            ]);
+        } catch (error) {
+            mostrarMensaje("❌ " + error.message);
+        }
+    }
+
+    function escapar(valor) {
+        return String(valor ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function escaparJs(valor) {
+        return String(valor ?? "")
+            .replaceAll("\\", "\\\\")
+            .replaceAll("'", "\\'")
+            .replaceAll("\n", "\\n")
+            .replaceAll("\r", "\\r");
+    }
+
+    cargarTodo();
+    setInterval(cargarTodo, 15000);
+</script>
+</body>
+</html>
