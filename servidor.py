@@ -138,7 +138,8 @@ def cargar_datos():
             if not fila:
 
                 return {
-                    "jugadores": {}
+                    "jugadores": {},
+                    "solicitudes_registro": []
                 }
 
             datos = fila[0]
@@ -146,12 +147,17 @@ def cargar_datos():
             if not isinstance(datos, dict):
 
                 return {
-                    "jugadores": {}
+                    "jugadores": {},
+                    "solicitudes_registro": []
                 }
 
             if not isinstance(datos.get("jugadores"), dict):
 
                 datos["jugadores"] = {}
+
+            if not isinstance(datos.get("solicitudes_registro"), list):
+
+                datos["solicitudes_registro"] = []
 
             return datos
 
@@ -170,7 +176,8 @@ def cargar_datos():
         if not os.path.exists(ARCHIVO):
 
             return {
-                "jugadores": {}
+                "jugadores": {},
+                "solicitudes_registro": []
             }
 
         import json
@@ -186,12 +193,17 @@ def cargar_datos():
         if not isinstance(datos, dict):
 
             return {
-                "jugadores": {}
+                "jugadores": {},
+                "solicitudes_registro": []
             }
 
         if not isinstance(datos.get("jugadores"), dict):
 
             datos["jugadores"] = {}
+
+        if not isinstance(datos.get("solicitudes_registro"), list):
+
+            datos["solicitudes_registro"] = []
 
         return datos
 
@@ -200,7 +212,8 @@ def cargar_datos():
         print("ERROR AL CARGAR DATOS LOCALES:", e)
 
         return {
-            "jugadores": {}
+            "jugadores": {},
+            "solicitudes_registro": []
         }
 
 
@@ -1079,130 +1092,63 @@ def registrar_jugador():
 
     try:
 
-        datos_recibidos = request.get_json(
-            silent=True
-        )
+        datos_recibidos = request.get_json(silent=True)
 
-
-        if not isinstance(
-            datos_recibidos,
-            dict
-        ):
+        if not isinstance(datos_recibidos, dict):
 
             return jsonify({
                 "ok": False,
                 "error": "Datos de registro inválidos."
             }), 400
 
-
-        nombre = str(
-            datos_recibidos.get(
-                "nombre",
-                ""
-            )
-        ).strip()
-
-
-        riot_id = str(
-            datos_recibidos.get(
-                "riot_id",
-                ""
-            )
-        ).strip()
-
-
-        riot_tag = str(
-            datos_recibidos.get(
-                "riot_tag",
-                ""
-            )
-        ).strip()
-
-
-        # ====================================================
-        # VALIDAR CAMPOS
-        # ====================================================
+        nombre = str(datos_recibidos.get("nombre", "")).strip()
+        riot_id = str(datos_recibidos.get("riot_id", "")).strip()
+        riot_tag = str(datos_recibidos.get("riot_tag", "")).strip()
 
         if not nombre:
-
-            return jsonify({
-                "ok": False,
-                "error": "Debes ingresar tu nombre."
-            }), 400
-
+            return jsonify({"ok": False, "error": "Debes ingresar tu nombre."}), 400
 
         if not riot_id:
-
-            return jsonify({
-                "ok": False,
-                "error": "Debes ingresar tu Riot ID."
-            }), 400
-
+            return jsonify({"ok": False, "error": "Debes ingresar tu Riot ID."}), 400
 
         if not riot_tag:
-
-            return jsonify({
-                "ok": False,
-                "error": "Debes ingresar tu Tag."
-            }), 400
-
-
-        # ====================================================
-        # CARGAR JUGADORES ACTUALES
-        # ====================================================
+            return jsonify({"ok": False, "error": "Debes ingresar tu Tag."}), 400
 
         datos = cargar_datos()
+        jugadores = datos.get("jugadores", {})
+        solicitudes = datos.get("solicitudes_registro", [])
 
-        jugadores = datos.get(
-            "jugadores",
-            {}
-        )
-
-
-        # ====================================================
-        # COMPROBAR NOMBRE DE PARTICIPANTE
-        # ====================================================
+        if not isinstance(solicitudes, list):
+            solicitudes = []
 
         if nombre in jugadores:
-
             return jsonify({
                 "ok": False,
                 "error": "Ese nombre de participante ya está registrado."
             }), 409
 
+        for solicitud in solicitudes:
 
-        # ====================================================
-        # COMPROBAR SI LA CUENTA RIOT YA ESTÁ REGISTRADA
-        # ====================================================
+            if str(solicitud.get("nombre", "")).strip().lower() == nombre.lower():
+                return jsonify({
+                    "ok": False,
+                    "error": "Ya existe una solicitud pendiente con ese nombre."
+                }), 409
 
         for nombre_existente, jugador_existente in jugadores.items():
 
             riot_id_existente = str(
-                jugador_existente.get(
-                    "riot_id",
-                    ""
-                )
+                jugador_existente.get("riot_id", "")
             ).strip().lower()
-
 
             riot_tag_existente = str(
-                jugador_existente.get(
-                    "riot_tag",
-                    ""
-                )
+                jugador_existente.get("riot_tag", "")
             ).strip().lower()
 
-
             if (
-
                 riot_id_existente == riot_id.lower()
-
-                and
-
-                riot_tag_existente == riot_tag.lower()
-
+                and riot_tag_existente == riot_tag.lower()
             ):
-
                 return jsonify({
                     "ok": False,
                     "error":
@@ -1210,35 +1156,34 @@ def registrar_jugador():
                         f"como {nombre_existente}."
                 }), 409
 
+        for solicitud in solicitudes:
 
-        # ====================================================
-        # VALIDAR CUENTA DIRECTAMENTE CON RIOT
-        # ====================================================
+            if (
+                str(solicitud.get("riot_id", "")).strip().lower() == riot_id.lower()
+                and
+                str(solicitud.get("riot_tag", "")).strip().lower() == riot_tag.lower()
+            ):
+                return jsonify({
+                    "ok": False,
+                    "error": "Esa cuenta de Riot ya tiene una solicitud pendiente."
+                }), 409
 
         print()
         print("========================================")
-        print("NUEVO REGISTRO DE PARTICIPANTE")
+        print("NUEVA SOLICITUD DE REGISTRO")
         print("========================================")
         print("Nombre:", nombre)
         print("Riot ID:", riot_id)
         print("Tag:", riot_tag)
-
 
         registro = registrar_cuenta_riot(
             riot_id,
             riot_tag
         )
 
-
         codigo = obtener_ultimo_codigo_http()
 
-
-        # ====================================================
-        # RATE LIMIT
-        # ====================================================
-
         if codigo == 429:
-
             return jsonify({
                 "ok": False,
                 "error":
@@ -1246,122 +1191,50 @@ def registrar_jugador():
                     "Intenta nuevamente en unos segundos."
             }), 429
 
-
-        # ====================================================
-        # CUENTA NO ENCONTRADA / INVÁLIDA
-        # ====================================================
-
         if not registro or not registro.get("ok"):
-
             return jsonify({
                 "ok": False,
                 "error":
-                    registro.get(
-                        "error",
-                        "No se pudo validar la cuenta de Riot."
-                    )
+                    registro.get("error", "No se pudo validar la cuenta de Riot.")
                     if isinstance(registro, dict)
-                    else
-                    "No se pudo validar la cuenta de Riot."
+                    else "No se pudo validar la cuenta de Riot."
             }), 400
 
-
-        # ====================================================
-        # OBTENER PUUID
-        # ====================================================
-
-        puuid = registro.get(
-            "puuid"
-        )
-
+        puuid = registro.get("puuid")
 
         if not puuid:
-
             return jsonify({
                 "ok": False,
-                "error":
-                    "Riot validó la cuenta pero no devolvió el PUUID."
+                "error": "Riot validó la cuenta pero no devolvió el PUUID."
             }), 500
 
-
-        # ====================================================
-        # CREAR JUGADOR
-        # ====================================================
-
-        jugadores[nombre] = {
-
+        solicitudes.append({
+            "nombre": nombre,
             "riot_id": riot_id,
-
             "riot_tag": riot_tag,
-
             "puuid": puuid,
+            "fecha_solicitud": time.strftime("%Y-%m-%d %H:%M:%S")
+        })
 
-            "tiempo_usado": 0,
-
-            "sesion_activa": False,
-
-            "inicio_sesion": None,
-
-            "historial": [],
-
-            "partidas_riot": [],
-
-            "rango": None,
-
-            "ultima_partida": None
-        }
-
-
-        # ====================================================
-        # GUARDAR
-        # ====================================================
-
-        datos["jugadores"] = jugadores
-
-        guardar_datos(
-            datos
-        )
-
-
-        # ====================================================
-        # LIMPIAR CACHÉ SI FUERA NECESARIO
-        # ====================================================
-
-        with bloqueo_estados:
-
-            cache_estados.pop(
-                nombre,
-                None
-            )
-
-            ultima_consulta_estado.pop(
-                nombre,
-                None
-            )
-
+        datos["solicitudes_registro"] = solicitudes
+        guardar_datos(datos)
 
         print()
         print("========================================")
-        print("REGISTRO COMPLETADO CORRECTAMENTE")
+        print("SOLICITUD GUARDADA CORRECTAMENTE")
         print("========================================")
-        print("Jugador:", nombre)
-        print("Riot ID:", riot_id)
-        print("Tag:", riot_tag)
-        print("PUUID:", puuid)
+        print("Solicitante:", nombre)
         print()
-
 
         return jsonify({
             "ok": True,
-            "mensaje":
-                "Jugador registrado correctamente.",
-            "jugador": {
+            "mensaje": "Solicitud enviada correctamente. Queda pendiente de aprobación.",
+            "solicitud": {
                 "nombre": nombre,
                 "riot_id": riot_id,
                 "riot_tag": riot_tag
             }
-        }), 201
-
+        }), 202
 
     except Exception as e:
 
@@ -1370,11 +1243,266 @@ def registrar_jugador():
         print(e)
         print()
 
+        return jsonify({
+            "ok": False,
+            "error": "Ocurrió un error interno al enviar la solicitud."
+        }), 500
+
+
+# ============================================================
+# ADMINISTRACIÓN
+# ============================================================
+
+# Esta página no aparece en ningún menú de la web pública.
+# Se accede directamente mediante su URL.
+
+@app.route("/admin-soloq-monteros")
+def pagina_admin():
+
+    return render_template("admin.html")
+
+
+@app.route("/api/admin/jugadores", methods=["GET"])
+def admin_jugadores():
+
+    try:
+
+        datos = cargar_datos()
+        jugadores = datos.get("jugadores", {})
+
+        resultado = []
+
+        for nombre, jugador in jugadores.items():
+            resultado.append({
+                "nombre": nombre,
+                "riot_id": jugador.get("riot_id", ""),
+                "riot_tag": jugador.get("riot_tag", "")
+            })
+
+        return jsonify({
+            "ok": True,
+            "jugadores": resultado
+        })
+
+    except Exception as e:
+
+        print("ERROR EN /api/admin/jugadores:", e)
 
         return jsonify({
             "ok": False,
-            "error":
-                "Ocurrió un error interno al registrar el jugador."
+            "error": "No se pudieron cargar los jugadores."
+        }), 500
+
+
+@app.route("/api/admin/solicitudes", methods=["GET"])
+def admin_solicitudes():
+
+    try:
+
+        datos = cargar_datos()
+        solicitudes = datos.get("solicitudes_registro", [])
+
+        if not isinstance(solicitudes, list):
+            solicitudes = []
+
+        return jsonify({
+            "ok": True,
+            "solicitudes": solicitudes
+        })
+
+    except Exception as e:
+
+        print("ERROR EN /api/admin/solicitudes:", e)
+
+        return jsonify({
+            "ok": False,
+            "error": "No se pudieron cargar las solicitudes."
+        }), 500
+
+
+@app.route("/api/admin/solicitudes/aprobar", methods=["POST"])
+def admin_aprobar_solicitud():
+
+    try:
+
+        datos_recibidos = request.get_json(silent=True) or {}
+        nombre = str(datos_recibidos.get("nombre", "")).strip()
+
+        if not nombre:
+            return jsonify({
+                "ok": False,
+                "error": "Falta el nombre de la solicitud."
+            }), 400
+
+        datos = cargar_datos()
+        jugadores = datos.get("jugadores", {})
+        solicitudes = datos.get("solicitudes_registro", [])
+
+        solicitud_encontrada = None
+
+        for solicitud in solicitudes:
+            if str(solicitud.get("nombre", "")).strip().lower() == nombre.lower():
+                solicitud_encontrada = solicitud
+                break
+
+        if not solicitud_encontrada:
+            return jsonify({
+                "ok": False,
+                "error": "La solicitud ya no existe."
+            }), 404
+
+        if nombre in jugadores:
+            return jsonify({
+                "ok": False,
+                "error": "Ese nombre ya está registrado como jugador."
+            }), 409
+
+        riot_id = solicitud_encontrada.get("riot_id", "")
+        riot_tag = solicitud_encontrada.get("riot_tag", "")
+        puuid = solicitud_encontrada.get("puuid")
+
+        for nombre_existente, jugador_existente in jugadores.items():
+
+            if (
+                str(jugador_existente.get("riot_id", "")).strip().lower() == str(riot_id).strip().lower()
+                and
+                str(jugador_existente.get("riot_tag", "")).strip().lower() == str(riot_tag).strip().lower()
+            ):
+                return jsonify({
+                    "ok": False,
+                    "error": f"Esa cuenta ya está registrada como {nombre_existente}."
+                }), 409
+
+        if not puuid:
+            return jsonify({
+                "ok": False,
+                "error": "La solicitud no tiene PUUID."
+            }), 400
+
+        jugadores[nombre] = {
+            "riot_id": riot_id,
+            "riot_tag": riot_tag,
+            "puuid": puuid,
+            "tiempo_usado": 0,
+            "sesion_activa": False,
+            "inicio_sesion": None,
+            "historial": [],
+            "partidas_riot": [],
+            "rango": None,
+            "ultima_partida": None
+        }
+
+        solicitudes = [
+            solicitud
+            for solicitud in solicitudes
+            if str(solicitud.get("nombre", "")).strip().lower() != nombre.lower()
+        ]
+
+        datos["jugadores"] = jugadores
+        datos["solicitudes_registro"] = solicitudes
+        guardar_datos(datos)
+
+        with bloqueo_estados:
+            cache_estados.pop(nombre, None)
+            ultima_consulta_estado.pop(nombre, None)
+
+        return jsonify({
+            "ok": True,
+            "mensaje": f"{nombre} aprobado correctamente."
+        })
+
+    except Exception as e:
+
+        print("ERROR EN /api/admin/solicitudes/aprobar:", e)
+
+        return jsonify({
+            "ok": False,
+            "error": "No se pudo aprobar la solicitud."
+        }), 500
+
+
+@app.route("/api/admin/solicitudes/rechazar", methods=["POST"])
+def admin_rechazar_solicitud():
+
+    try:
+
+        datos_recibidos = request.get_json(silent=True) or {}
+        nombre = str(datos_recibidos.get("nombre", "")).strip()
+
+        if not nombre:
+            return jsonify({
+                "ok": False,
+                "error": "Falta el nombre de la solicitud."
+            }), 400
+
+        datos = cargar_datos()
+        solicitudes = datos.get("solicitudes_registro", [])
+
+        nuevas_solicitudes = [
+            solicitud
+            for solicitud in solicitudes
+            if str(solicitud.get("nombre", "")).strip().lower() != nombre.lower()
+        ]
+
+        if len(nuevas_solicitudes) == len(solicitudes):
+            return jsonify({
+                "ok": False,
+                "error": "La solicitud ya no existe."
+            }), 404
+
+        datos["solicitudes_registro"] = nuevas_solicitudes
+        guardar_datos(datos)
+
+        return jsonify({
+            "ok": True,
+            "mensaje": f"Solicitud de {nombre} rechazada."
+        })
+
+    except Exception as e:
+
+        print("ERROR EN /api/admin/solicitudes/rechazar:", e)
+
+        return jsonify({
+            "ok": False,
+            "error": "No se pudo rechazar la solicitud."
+        }), 500
+
+
+@app.route("/api/admin/jugadores/<path:nombre>", methods=["DELETE"])
+def admin_borrar_jugador(nombre):
+
+    try:
+
+        nombre = nombre.strip()
+        datos = cargar_datos()
+        jugadores = datos.get("jugadores", {})
+
+        if nombre not in jugadores:
+            return jsonify({
+                "ok": False,
+                "error": "Jugador no encontrado."
+            }), 404
+
+        del jugadores[nombre]
+        datos["jugadores"] = jugadores
+        guardar_datos(datos)
+
+        with bloqueo_estados:
+            cache_estados.pop(nombre, None)
+            ultima_consulta_estado.pop(nombre, None)
+
+        return jsonify({
+            "ok": True,
+            "mensaje": f"{nombre} eliminado correctamente."
+        })
+
+    except Exception as e:
+
+        print("ERROR EN /api/admin/jugadores:", e)
+
+        return jsonify({
+            "ok": False,
+            "error": "No se pudo eliminar el jugador."
         }), 500
 
 
