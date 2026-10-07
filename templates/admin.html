@@ -131,6 +131,36 @@
             font-size: 13px;
         }
 
+        .stream {
+            margin-top: 8px;
+        }
+
+        .stream a, .comprobante a {
+            color: var(--bordo);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .stream a:hover, .comprobante a:hover {
+            text-decoration: underline;
+        }
+
+        .comprobante {
+            margin-top: 8px;
+        }
+
+        .comprobante img {
+            display: block;
+            max-width: 180px;
+            max-height: 130px;
+            margin-top: 8px;
+            border: 1px solid var(--borde);
+            border-radius: 6px;
+            cursor: pointer;
+            object-fit: contain;
+            background: white;
+        }
+
         .acciones {
             display: flex;
             flex-wrap: wrap;
@@ -233,6 +263,8 @@
                     <div class="nombre">${escapar(solicitud.nombre)}</div>
                     <div class="riot">${escapar(solicitud.riot_id)} #${escapar(solicitud.riot_tag)}</div>
                     <div class="fecha">Solicitud: ${escapar(solicitud.fecha_solicitud || "Sin fecha")}</div>
+                    ${solicitud.stream_url ? `<div class="stream">📺 <a href="${escapar(solicitud.stream_url)}" target="_blank" rel="noopener noreferrer">Ver stream</a></div>` : `<div class="stream">📺 Sin link de stream</div>`}
+                    ${solicitud.comprobante && solicitud.comprobante.tipo === "postgres" ? `<div class="comprobante">💳 <a href="/api/admin/comprobantes/${encodeURIComponent(solicitud.comprobante.id)}" target="_blank">Ver comprobante</a><a href="/api/admin/comprobantes/${encodeURIComponent(solicitud.comprobante.id)}" target="_blank"><img src="/api/admin/comprobantes/${encodeURIComponent(solicitud.comprobante.id)}" alt="Comprobante"></a></div>` : `<div class="comprobante">💳 Comprobante no disponible</div>`}
                 </div>
                 <div class="acciones">
                     <button class="aprobar" onclick="aprobar('${escaparJs(solicitud.nombre)}')">✓ APROBAR</button>
@@ -265,6 +297,7 @@
                 <div class="datos">
                     <div class="nombre">${escapar(jugador.nombre)}</div>
                     <div class="riot">${escapar(jugador.riot_id || "")} #${escapar(jugador.riot_tag || "")}</div>
+                    ${jugador.stream_url ? `<div class="stream">📺 <a href="${escapar(jugador.stream_url)}" target="_blank" rel="noopener noreferrer">${escapar(jugador.stream_url)}</a></div>` : `<div class="stream">📺 Sin link de stream</div>`}
                 </div>
                 <div class="acciones">
                     <button class="borrar" onclick="borrarJugador('${escaparJs(jugador.nombre)}')">🗑 BORRAR JUGADOR</button>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_file, send_from_directory
 from flask_cors import CORS
 
 try:
@@ -10,6 +10,8 @@ except ImportError:
 import os
 import time
 import threading
+import uuid
+from io import BytesIO
 
 
 from riot_api import (
@@ -39,6 +41,8 @@ CORS(
 # Si DATABASE_URL no existe, se permite trabajar localmente con datos.json.
 DATABASE_URL = os.environ.get("DATABASE_URL")
 ARCHIVO = "datos.json"
+COMPROBANTES_DIR = "comprobantes"
+MAX_COMPROBANTE_BYTES = 5 * 1024 * 1024
 
 # Actualización de historial + ranking cada 10 minutos
 INTERVALO_ACTUALIZACION = 10 * 60
@@ -111,12 +115,116 @@ def inicializar_base_datos():
                 )
             """)
 
+            conexion.execute("""
+                CREATE TABLE IF NOT EXISTS comprobantes_registro (
+                    id SERIAL PRIMARY KEY,
+                    nombre TEXT NOT NULL UNIQUE,
+                    mime_type TEXT NOT NULL,
+                    archivo BYTEA NOT NULL,
+                    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+        os.makedirs(COMPROBANTES_DIR, exist_ok=True)
+
         print("PostgreSQL conectado correctamente.")
 
     except Exception as e:
 
         print("ERROR AL INICIALIZAR POSTGRESQL:", e)
         raise
+
+
+
+def guardar_comprobante(nombre, contenido, mime_type, extension):
+
+    if DATABASE_URL:
+
+        with psycopg.connect(DATABASE_URL) as conexion:
+
+            fila = conexion.execute(
+                """
+                INSERT INTO comprobantes_registro (nombre, mime_type, archivo)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (nombre) DO UPDATE SET
+                    mime_type = EXCLUDED.mime_type,
+                    archivo = EXCLUDED.archivo,
+                    creado_en = CURRENT_TIMESTAMP
+                RETURNING id
+                """,
+                (nombre, mime_type, contenido)
+            ).fetchone()
+
+        return {"tipo": "postgres", "id": fila[0]}
+
+    os.makedirs(COMPROBANTES_DIR, exist_ok=True)
+    nombre_archivo = f"{uuid.uuid4().hex}.{extension}"
+    ruta = os.path.join(COMPROBANTES_DIR, nombre_archivo)
+
+    with open(ruta, "wb") as archivo:
+        archivo.write(contenido)
+
+    return {"tipo": "local", "archivo": nombre_archivo}
+
+
+def obtener_comprobante(referencia):
+
+    if not referencia:
+        return None
+
+    if isinstance(referencia, dict) and referencia.get("tipo") == "postgres":
+
+        if not DATABASE_URL:
+            return None
+
+        with psycopg.connect(DATABASE_URL) as conexion:
+            return conexion.execute(
+                "SELECT mime_type, archivo FROM comprobantes_registro WHERE id = %s",
+                (referencia.get("id"),)
+            ).fetchone()
+
+    if isinstance(referencia, dict) and referencia.get("tipo") == "local":
+
+        nombre_archivo = os.path.basename(str(referencia.get("archivo", "")))
+        ruta = os.path.join(COMPROBANTES_DIR, nombre_archivo)
+
+        if not os.path.exists(ruta):
+            return None
+
+        mime_type = "image/png" if nombre_archivo.lower().endswith(".png") else "image/jpeg"
+        return mime_type, ruta
+
+    return None
+
+
+def eliminar_comprobante(referencia):
+
+    if not referencia:
+        return
+
+    try:
+
+        if isinstance(referencia, dict) and referencia.get("tipo") == "postgres":
+
+            if DATABASE_URL:
+                with psycopg.connect(DATABASE_URL) as conexion:
+                    conexion.execute(
+                        "DELETE FROM comprobantes_registro WHERE id = %s",
+                        (referencia.get("id"),)
+                    )
+
+            return
+
+        if isinstance(referencia, dict) and referencia.get("tipo") == "local":
+
+            nombre_archivo = os.path.basename(str(referencia.get("archivo", "")))
+            ruta = os.path.join(COMPROBANTES_DIR, nombre_archivo)
+
+            if os.path.exists(ruta):
+                os.remove(ruta)
+
+    except Exception as e:
+        print("ERROR AL ELIMINAR COMPROBANTE:", e)
 
 
 def cargar_datos():
@@ -1075,6 +1183,12 @@ def actualizar_estados():
 # PÁGINA PRINCIPAL
 # ============================================================
 
+@app.route("/reglas")
+def reglas():
+
+    return render_template("reglas.html")
+
+
 @app.route("/")
 def inicio():
 
@@ -1092,18 +1206,11 @@ def registrar_jugador():
 
     try:
 
-        datos_recibidos = request.get_json(silent=True)
-
-        if not isinstance(datos_recibidos, dict):
-
-            return jsonify({
-                "ok": False,
-                "error": "Datos de registro inválidos."
-            }), 400
-
-        nombre = str(datos_recibidos.get("nombre", "")).strip()
-        riot_id = str(datos_recibidos.get("riot_id", "")).strip()
-        riot_tag = str(datos_recibidos.get("riot_tag", "")).strip()
+        nombre = str(request.form.get("nombre", "")).strip()
+        riot_id = str(request.form.get("riot_id", "")).strip()
+        riot_tag = str(request.form.get("riot_tag", "")).strip()
+        stream_url = str(request.form.get("stream_url", "")).strip()
+        comprobante = request.files.get("comprobante")
 
         if not nombre:
             return jsonify({"ok": False, "error": "Debes ingresar tu nombre."}), 400
@@ -1114,6 +1221,27 @@ def registrar_jugador():
         if not riot_tag:
             return jsonify({"ok": False, "error": "Debes ingresar tu Tag."}), 400
 
+        if not comprobante or not comprobante.filename:
+            return jsonify({"ok": False, "error": "Debes subir el comprobante de inscripción."}), 400
+
+        extension = comprobante.filename.rsplit(".", 1)[-1].lower() if "." in comprobante.filename else ""
+        extensiones_validas = {"jpg", "jpeg", "png"}
+        tipos_validos = {"image/jpeg", "image/png"}
+
+        if extension not in extensiones_validas or comprobante.mimetype not in tipos_validos:
+            return jsonify({"ok": False, "error": "El comprobante debe ser una imagen JPG, JPEG o PNG."}), 400
+
+        contenido_comprobante = comprobante.read()
+
+        if not contenido_comprobante:
+            return jsonify({"ok": False, "error": "El comprobante está vacío."}), 400
+
+        if len(contenido_comprobante) > MAX_COMPROBANTE_BYTES:
+            return jsonify({"ok": False, "error": "El comprobante no puede superar los 5 MB."}), 400
+
+        if stream_url and not (stream_url.startswith("http://") or stream_url.startswith("https://")):
+            return jsonify({"ok": False, "error": "El link del stream debe comenzar con http:// o https://."}), 400
+
         datos = cargar_datos()
         jugadores = datos.get("jugadores", {})
         solicitudes = datos.get("solicitudes_registro", [])
@@ -1122,131 +1250,78 @@ def registrar_jugador():
             solicitudes = []
 
         if nombre in jugadores:
-            return jsonify({
-                "ok": False,
-                "error": "Ese nombre de participante ya está registrado."
-            }), 409
+            return jsonify({"ok": False, "error": "Ese nombre de participante ya está registrado."}), 409
 
         for solicitud in solicitudes:
-
             if str(solicitud.get("nombre", "")).strip().lower() == nombre.lower():
-                return jsonify({
-                    "ok": False,
-                    "error": "Ya existe una solicitud pendiente con ese nombre."
-                }), 409
+                return jsonify({"ok": False, "error": "Ya existe una solicitud pendiente con ese nombre."}), 409
 
         for nombre_existente, jugador_existente in jugadores.items():
-
-            riot_id_existente = str(
-                jugador_existente.get("riot_id", "")
-            ).strip().lower()
-
-            riot_tag_existente = str(
-                jugador_existente.get("riot_tag", "")
-            ).strip().lower()
-
             if (
-                riot_id_existente == riot_id.lower()
-                and riot_tag_existente == riot_tag.lower()
+                str(jugador_existente.get("riot_id", "")).strip().lower() == riot_id.lower()
+                and str(jugador_existente.get("riot_tag", "")).strip().lower() == riot_tag.lower()
             ):
-                return jsonify({
-                    "ok": False,
-                    "error":
-                        "Esa cuenta de Riot ya está registrada "
-                        f"como {nombre_existente}."
-                }), 409
+                return jsonify({"ok": False, "error": f"Esa cuenta de Riot ya está registrada como {nombre_existente}."}), 409
 
         for solicitud in solicitudes:
-
             if (
                 str(solicitud.get("riot_id", "")).strip().lower() == riot_id.lower()
-                and
-                str(solicitud.get("riot_tag", "")).strip().lower() == riot_tag.lower()
+                and str(solicitud.get("riot_tag", "")).strip().lower() == riot_tag.lower()
             ):
-                return jsonify({
-                    "ok": False,
-                    "error": "Esa cuenta de Riot ya tiene una solicitud pendiente."
-                }), 409
+                return jsonify({"ok": False, "error": "Esa cuenta de Riot ya tiene una solicitud pendiente."}), 409
 
-        print()
-        print("========================================")
-        print("NUEVA SOLICITUD DE REGISTRO")
-        print("========================================")
-        print("Nombre:", nombre)
-        print("Riot ID:", riot_id)
-        print("Tag:", riot_tag)
+        print("Nueva solicitud:", nombre, riot_id, riot_tag)
 
-        registro = registrar_cuenta_riot(
-            riot_id,
-            riot_tag
-        )
-
+        registro = registrar_cuenta_riot(riot_id, riot_tag)
         codigo = obtener_ultimo_codigo_http()
 
         if codigo == 429:
-            return jsonify({
-                "ok": False,
-                "error":
-                    "Riot está limitando temporalmente las consultas. "
-                    "Intenta nuevamente en unos segundos."
-            }), 429
+            return jsonify({"ok": False, "error": "Riot está limitando temporalmente las consultas. Intenta nuevamente en unos segundos."}), 429
 
         if not registro or not registro.get("ok"):
             return jsonify({
                 "ok": False,
-                "error":
-                    registro.get("error", "No se pudo validar la cuenta de Riot.")
-                    if isinstance(registro, dict)
-                    else "No se pudo validar la cuenta de Riot."
+                "error": registro.get("error", "No se pudo validar la cuenta de Riot.") if isinstance(registro, dict) else "No se pudo validar la cuenta de Riot."
             }), 400
 
         puuid = registro.get("puuid")
 
         if not puuid:
-            return jsonify({
-                "ok": False,
-                "error": "Riot validó la cuenta pero no devolvió el PUUID."
-            }), 500
+            return jsonify({"ok": False, "error": "Riot validó la cuenta pero no devolvió el PUUID."}), 500
+
+        referencia_comprobante = guardar_comprobante(
+            nombre,
+            contenido_comprobante,
+            comprobante.mimetype,
+            extension
+        )
 
         solicitudes.append({
             "nombre": nombre,
             "riot_id": riot_id,
             "riot_tag": riot_tag,
             "puuid": puuid,
+            "stream_url": stream_url,
+            "comprobante": referencia_comprobante,
             "fecha_solicitud": time.strftime("%Y-%m-%d %H:%M:%S")
         })
 
-        datos["solicitudes_registro"] = solicitudes
-        guardar_datos(datos)
-
-        print()
-        print("========================================")
-        print("SOLICITUD GUARDADA CORRECTAMENTE")
-        print("========================================")
-        print("Solicitante:", nombre)
-        print()
+        try:
+            datos["solicitudes_registro"] = solicitudes
+            guardar_datos(datos)
+        except Exception:
+            eliminar_comprobante(referencia_comprobante)
+            raise
 
         return jsonify({
             "ok": True,
             "mensaje": "Solicitud enviada correctamente. Queda pendiente de aprobación.",
-            "solicitud": {
-                "nombre": nombre,
-                "riot_id": riot_id,
-                "riot_tag": riot_tag
-            }
+            "solicitud": {"nombre": nombre, "riot_id": riot_id, "riot_tag": riot_tag}
         }), 202
 
     except Exception as e:
-
-        print()
-        print("ERROR EN /api/registrar:")
-        print(e)
-        print()
-
-        return jsonify({
-            "ok": False,
-            "error": "Ocurrió un error interno al enviar la solicitud."
-        }), 500
+        print("ERROR EN /api/registrar:", e)
+        return jsonify({"ok": False, "error": "Ocurrió un error interno al enviar la solicitud."}), 500
 
 
 # ============================================================
@@ -1276,7 +1351,8 @@ def admin_jugadores():
             resultado.append({
                 "nombre": nombre,
                 "riot_id": jugador.get("riot_id", ""),
-                "riot_tag": jugador.get("riot_tag", "")
+                "riot_tag": jugador.get("riot_tag", ""),
+                "stream_url": jugador.get("stream_url", "")
             })
 
         return jsonify({
@@ -1383,6 +1459,7 @@ def admin_aprobar_solicitud():
             "riot_id": riot_id,
             "riot_tag": riot_tag,
             "puuid": puuid,
+            "stream_url": solicitud_encontrada.get("stream_url", ""),
             "tiempo_usado": 0,
             "sesion_activa": False,
             "inicio_sesion": None,
@@ -1401,6 +1478,8 @@ def admin_aprobar_solicitud():
         datos["jugadores"] = jugadores
         datos["solicitudes_registro"] = solicitudes
         guardar_datos(datos)
+
+        eliminar_comprobante(solicitud_encontrada.get("comprobante"))
 
         with bloqueo_estados:
             cache_estados.pop(nombre, None)
@@ -1438,6 +1517,12 @@ def admin_rechazar_solicitud():
         datos = cargar_datos()
         solicitudes = datos.get("solicitudes_registro", [])
 
+        solicitud_rechazada = next(
+            (solicitud for solicitud in solicitudes
+             if str(solicitud.get("nombre", "")).strip().lower() == nombre.lower()),
+            None
+        )
+
         nuevas_solicitudes = [
             solicitud
             for solicitud in solicitudes
@@ -1453,6 +1538,9 @@ def admin_rechazar_solicitud():
         datos["solicitudes_registro"] = nuevas_solicitudes
         guardar_datos(datos)
 
+        if solicitud_rechazada:
+            eliminar_comprobante(solicitud_rechazada.get("comprobante"))
+
         return jsonify({
             "ok": True,
             "mensaje": f"Solicitud de {nombre} rechazada."
@@ -1466,6 +1554,33 @@ def admin_rechazar_solicitud():
             "ok": False,
             "error": "No se pudo rechazar la solicitud."
         }), 500
+
+
+@app.route("/api/admin/comprobantes/<int:comprobante_id>")
+def admin_ver_comprobante(comprobante_id):
+
+    try:
+        if not DATABASE_URL:
+            return jsonify({"ok": False, "error": "Comprobante no disponible."}), 404
+
+        with psycopg.connect(DATABASE_URL) as conexion:
+            fila = conexion.execute(
+                "SELECT mime_type, archivo FROM comprobantes_registro WHERE id = %s",
+                (comprobante_id,)
+            ).fetchone()
+
+        if not fila:
+            return jsonify({"ok": False, "error": "Comprobante no encontrado."}), 404
+
+        return send_file(
+            BytesIO(bytes(fila[1])),
+            mimetype=fila[0],
+            download_name="comprobante.jpg" if fila[0] == "image/jpeg" else "comprobante.png"
+        )
+
+    except Exception as e:
+        print("ERROR AL MOSTRAR COMPROBANTE:", e)
+        return jsonify({"ok": False, "error": "No se pudo mostrar el comprobante."}), 500
 
 
 @app.route("/api/admin/jugadores/<path:nombre>", methods=["DELETE"])
