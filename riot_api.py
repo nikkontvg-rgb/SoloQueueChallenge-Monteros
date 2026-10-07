@@ -28,6 +28,89 @@ MAX_PARTIDAS_GUARDADAS = 5
 
 
 # =========================================================
+# MEDICIÓN DE REQUESTS A RIOT
+#
+# SOLO CUENTA REQUESTS REALES.
+# NO CAMBIA ENDPOINTS, INTERVALOS NI LÓGICA.
+# =========================================================
+
+from collections import deque
+import time as _time
+import threading as _threading
+
+REQUESTS_TOTALES = 0
+REQUESTS_429 = 0
+REQUESTS_SEGUNDO = deque()
+REQUESTS_DOS_MINUTOS = deque()
+BLOQUEO_MEDICION = _threading.Lock()
+
+_REQUESTS_GET_ORIGINAL = requests.get
+
+
+def _requests_get_medicion(*args, **kwargs):
+
+    global REQUESTS_TOTALES
+    global REQUESTS_429
+
+    respuesta = _REQUESTS_GET_ORIGINAL(
+        *args,
+        **kwargs
+    )
+
+    ahora = _time.time()
+
+    with BLOQUEO_MEDICION:
+
+        REQUESTS_TOTALES += 1
+
+        if respuesta.status_code == 429:
+            REQUESTS_429 += 1
+
+        REQUESTS_SEGUNDO.append(ahora)
+        REQUESTS_DOS_MINUTOS.append(ahora)
+
+        while (
+            REQUESTS_SEGUNDO
+            and ahora - REQUESTS_SEGUNDO[0] >= 1
+        ):
+            REQUESTS_SEGUNDO.popleft()
+
+        while (
+            REQUESTS_DOS_MINUTOS
+            and ahora - REQUESTS_DOS_MINUTOS[0] >= 120
+        ):
+            REQUESTS_DOS_MINUTOS.popleft()
+
+        url = (
+            getattr(
+                respuesta,
+                "url",
+                None
+            )
+            or (
+                args[0]
+                if args
+                else "URL desconocida"
+            )
+        )
+
+        print(
+            f"[RIOT REQUEST #{REQUESTS_TOTALES}] "
+            f"HTTP {respuesta.status_code} | "
+            f"último 1s: {len(REQUESTS_SEGUNDO)}/20 | "
+            f"últimos 2min: {len(REQUESTS_DOS_MINUTOS)}/100 | "
+            f"429 acumulados: {REQUESTS_429} | "
+            f"{url}"
+        )
+
+    return respuesta
+
+
+requests.get = _requests_get_medicion
+
+
+
+# =========================================================
 # CONTROL DE CÓDIGOS HTTP
 # =========================================================
 
