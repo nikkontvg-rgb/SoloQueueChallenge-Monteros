@@ -4,7 +4,6 @@
 
 <head>
 
-```
 <meta charset="UTF-8">
 
 <meta
@@ -17,7 +16,6 @@
 <style>
 
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@400;500;600;700;800&family=Press+Start+2P&family=Rajdhani:wght@400;500;600;700&display=swap');
-
 
     /* =========================================================
        VARIABLES
@@ -37,7 +35,6 @@
         --gris: #7d7d7d;
         --gris-claro: #d2d2d2;
     }
-
 
     /* =========================================================
        BASE
@@ -61,7 +58,6 @@
         position: relative;
         overflow-x: hidden;
     }
-
 
     /* =========================================================
        FONDO ANIMADO
@@ -107,7 +103,6 @@
             movimientoGeometrico 20s linear infinite;
     }
 
-
     body::after {
         content: "";
         position: fixed;
@@ -138,7 +133,6 @@
         animation:
             movimientoLineas 28s linear infinite;
     }
-
 
     @keyframes movimientoGeometrico {
 
@@ -173,7 +167,6 @@
         }
     }
 
-
     @keyframes movimientoLineas {
 
         0% {
@@ -192,7 +185,6 @@
         }
     }
 
-
     /* =========================================================
        CONTENEDOR
     ========================================================= */
@@ -203,7 +195,6 @@
         position: relative;
         z-index: 1;
     }
-
 
     /* =========================================================
        ENCABEZADO
@@ -222,9 +213,7 @@
         font-size: 42px;
         font-weight: 700;
         letter-spacing: 1px;
-
-        color:
-            var(--rojo-oscuro);
+        color: var(--rojo-oscuro);
 
         margin:
             0 0 10px;
@@ -238,7 +227,6 @@
         line-height: 1.5;
         color: #555555;
     }
-
 
     /* =========================================================
        MENÚ LATERAL
@@ -271,7 +259,6 @@
     .menu-lateral.abierto {
         left: 0;
     }
-
 
     /* =========================================================
        BOTÓN / FLECHA
@@ -343,7 +330,6 @@
         left: 250px;
     }
 
-
     /* =========================================================
        TÍTULO DEL MENÚ
     ========================================================= */
@@ -372,7 +358,6 @@
         border-bottom:
             1px solid var(--bordo);
     }
-
 
     /* =========================================================
        CONTENIDO DEL MENÚ
@@ -428,7 +413,6 @@
             translateX(4px);
     }
 
-
     /* =========================================================
        OVERLAY
     ========================================================= */
@@ -461,7 +445,6 @@
         visibility:
             visible;
     }
-
 
     /* =========================================================
        STREAMERS
@@ -564,7 +547,6 @@
             650px;
     }
 
-
     /* =========================================================
        JUGADORES
     ========================================================= */
@@ -612,7 +594,6 @@
         transform:
             translateX(4px);
     }
-
 
     /* =========================================================
        HISTORIAL
@@ -670,7 +651,6 @@
             translateY(-50%)
             translateX(0);
     }
-
 
     /* =========================================================
        NOMBRE
@@ -742,7 +722,6 @@
             var(--gris);
     }
 
-
     /* =========================================================
        CONTADOR
     ========================================================= */
@@ -761,7 +740,6 @@
             bold;
     }
 
-
     /* =========================================================
        ACTUALIZACIÓN
     ========================================================= */
@@ -779,7 +757,6 @@
         margin-bottom:
             55px;
     }
-
 
     /* =========================================================
        RANKING
@@ -894,7 +871,6 @@
             var(--gris-claro);
     }
 
-
     /* =========================================================
        REGISTRO
     ========================================================= */
@@ -928,7 +904,8 @@
     }
 
     .registro-contenido {
-        width: min(460px, 100%);
+        width:
+            min(460px, 100%);
 
         background:
             var(--rojo-oscuro);
@@ -1181,7 +1158,6 @@
             #ff8da5;
     }
 
-
     /* =========================================================
        RESPONSIVE
     ========================================================= */
@@ -1249,15 +1225,12 @@
     }
 
 </style>
-```
 
 </head>
 
 <body>
 
-```
 <div class="contenedor">
-
 
     <!-- ================= ENCABEZADO ================= -->
 
@@ -1276,7 +1249,6 @@
         </div>
 
     </div>
-
 
     <!-- ================= MENÚ ================= -->
 
@@ -1311,7 +1283,6 @@
 
     </div>
 
-
     <!-- BOTÓN ÚNICO -->
 
     <div
@@ -1324,14 +1295,12 @@
         →
     </div>
 
-
     <!-- OSCURECER FONDO -->
 
     <div
         class="menu-overlay"
         id="menuOverlay"
     ></div>
-
 
     <!-- ================= STREAMERS ================= -->
 
@@ -1360,20 +1329,17 @@
 
     </div>
 
-
     <!-- ================= JUGADORES ================= -->
 
     <div id="jugadores">
         Cargando jugadores...
     </div>
 
-
     <!-- ================= ACTUALIZACIÓN ================= -->
 
     <div class="actualizacion">
         🔄 Actualizando automáticamente...
     </div>
-
 
     <!-- ================= RANKING ================= -->
 
@@ -1388,7 +1354,6 @@
     </div>
 
 </div>
-
 
 <!-- ================= REGISTRO ================= -->
 
@@ -1413,7 +1378,7 @@
         </h2>
 
         <p class="registro-descripcion">
-            Registrá tu cuenta para participar en el SoloQ Challenge Monteros.
+            Enviá tu cuenta para participar en el SoloQ Challenge Monteros. Un administrador deberá aprobar tu solicitud.
         </p>
 
         <form
@@ -1434,7 +1399,6 @@
                 required
             >
 
-
             <label for="registroRiotId">
                 Riot ID
             </label>
@@ -1447,7 +1411,6 @@
                 placeholder="Ej: Iron King"
                 required
             >
-
 
             <label for="registroRiotTag">
                 Tag
@@ -1462,20 +1425,17 @@
                 required
             >
 
-
             <div class="registro-ayuda">
                 Escribí el Riot ID y Tag exactamente como aparecen en tu cuenta.
             </div>
-
 
             <button
                 class="registro-boton"
                 id="botonRegistro"
                 type="submit"
             >
-                REGISTRAR CUENTA
+                ENVIAR SOLICITUD
             </button>
-
 
             <div
                 class="registro-mensaje"
@@ -1488,13 +1448,11 @@
 
 </div>
 
-
 <!-- =========================================================
      JAVASCRIPT
 ========================================================= -->
 
 <script>
-
 
     /* =========================================================
        URL DEL BACKEND
@@ -1502,7 +1460,6 @@
 
     const API_URL =
         "https://soloqueuechallenge-monteros.onrender.com";
-
 
     /* =========================================================
        MENÚ LATERAL
@@ -1517,7 +1474,6 @@
     const menuOverlay =
         document.getElementById("menuOverlay");
 
-
     function abrirMenu() {
 
         menuLateral.classList.add("abierto");
@@ -1527,7 +1483,6 @@
         menuFlecha.textContent = "←";
     }
 
-
     function cerrarMenu() {
 
         menuLateral.classList.remove("abierto");
@@ -1536,7 +1491,6 @@
 
         menuFlecha.textContent = "→";
     }
-
 
     function alternarMenu() {
 
@@ -1553,12 +1507,10 @@
         }
     }
 
-
     menuFlecha.addEventListener(
         "click",
         alternarMenu
     );
-
 
     menuFlecha.addEventListener(
         "keydown",
@@ -1570,18 +1522,17 @@
             ) {
 
                 evento.preventDefault();
-
                 alternarMenu();
+
             }
+
         }
     );
-
 
     menuOverlay.addEventListener(
         "click",
         cerrarMenu
     );
-
 
     document
         .querySelectorAll(".menu-contenido a")
@@ -1594,13 +1545,11 @@
 
         });
 
-
     /* =========================================================
        VARIABLES DE PARTIDA
     ========================================================= */
 
     let tiemposPartida = {};
-
 
     /* =========================================================
        FORMATEAR TIEMPO
@@ -1618,7 +1567,6 @@
             .toString()
             .padStart(2, "0")}`;
     }
-
 
     /* =========================================================
        FECHA ÚLTIMA PARTIDA
@@ -1642,7 +1590,6 @@
             : tiempo;
     }
 
-
     /* =========================================================
        CARGAR JUGADORES
     ========================================================= */
@@ -1664,7 +1611,6 @@
 
                 contenedor.innerHTML = "";
 
-
                 /* =================================================
                    ORDEN DE ESTADOS
                 ================================================= */
@@ -1677,10 +1623,8 @@
 
                 };
 
-
                 const jugadoresOrdenados =
                     Object.entries(jugadores);
-
 
                 jugadoresOrdenados.sort(
                     ([nombreA, jugadorA],
@@ -1696,7 +1640,6 @@
                                 jugadorB.estado
                             ] || 3;
 
-
                         if (
                             estadoA !==
                             estadoB
@@ -1706,8 +1649,8 @@
                                 estadoA -
                                 estadoB
                             );
-                        }
 
+                        }
 
                         if (
                             jugadorA.estado ===
@@ -1724,7 +1667,6 @@
                                     jugadorB
                                 );
 
-
                             if (
                                 fechaA !==
                                 fechaB
@@ -1734,15 +1676,15 @@
                                     fechaB -
                                     fechaA
                                 );
-                            }
-                        }
 
+                            }
+
+                        }
 
                         return 0;
 
                     }
                 );
-
 
                 /* =================================================
                    MOSTRAR JUGADORES
@@ -1762,7 +1704,6 @@
                     let contador =
                         "";
 
-
                     if (
                         jugador.estado ===
                         "online"
@@ -1775,7 +1716,6 @@
                             "online";
                     }
 
-
                     if (
                         jugador.estado ===
                         "in_game"
@@ -1787,14 +1727,12 @@
                         claseEstado =
                             "partida";
 
-
                         if (
                             jugador.game_start_time
                         ) {
 
                             tiemposPartida[nombre] =
                                 jugador.game_start_time;
-
 
                             const segundos =
                                 Math.max(
@@ -1807,7 +1745,6 @@
                                     )
                                 );
 
-
                             contador = `
 
                                 <div class="contador">
@@ -1819,6 +1756,7 @@
                                 </div>
 
                             `;
+
                         }
 
                     } else {
@@ -1827,7 +1765,6 @@
 
                     }
 
-
                     /* =================================================
                        TARJETA DEL JUGADOR
                     ================================================= */
@@ -1835,14 +1772,13 @@
                     contenedor.innerHTML += `
 
                         <a
-                            href="https://soloqueuechallenge-monteros.onrender.com/historial/${encodeURIComponent(nombre)}"
+                            href="${API_URL}/historial/${encodeURIComponent(nombre)}"
                             class="jugador"
                         >
 
                             <div class="nombre">
                                 ${nombre}
                             </div>
-
 
                             <div class="riot">
 
@@ -1851,21 +1787,19 @@
 
                             </div>
 
-
                             <div class="estado ${claseEstado}">
 
                                 ${estadoTexto}
 
                             </div>
 
-
                             ${contador}
 
                         </a>
 
                     `;
-                }
 
+                }
 
                 /* =================================================
                    RANKING
@@ -1875,7 +1809,6 @@
                     document.getElementById(
                         "ranking"
                     );
-
 
                 const ordenTier = {
 
@@ -1893,7 +1826,6 @@
 
                 };
 
-
                 const ordenDivision = {
 
                     "IV": 1,
@@ -1903,10 +1835,8 @@
 
                 };
 
-
                 const jugadoresRanking =
                     Object.entries(jugadores);
-
 
                 jugadoresRanking.sort(
                     (a, b) => {
@@ -1917,7 +1847,6 @@
                         const rangoB =
                             b[1].rango;
 
-
                         const tierA =
                             rangoA?.tier ||
                             "UNRANKED";
@@ -1925,7 +1854,6 @@
                         const tierB =
                             rangoB?.tier ||
                             "UNRANKED";
-
 
                         if (
                             ordenTier[tierA] !==
@@ -1936,8 +1864,8 @@
                                 ordenTier[tierB] -
                                 ordenTier[tierA]
                             );
-                        }
 
+                        }
 
                         const divisionA =
                             ordenDivision[
@@ -1949,7 +1877,6 @@
                                 rangoB?.rank
                             ] || 0;
 
-
                         if (
                             divisionA !==
                             divisionB
@@ -1959,15 +1886,14 @@
                                 divisionB -
                                 divisionA
                             );
-                        }
 
+                        }
 
                         const lpA =
                             rangoA?.lp || 0;
 
                         const lpB =
                             rangoB?.lp || 0;
-
 
                         return (
                             lpB -
@@ -1977,9 +1903,7 @@
                     }
                 );
 
-
                 ranking.innerHTML = "";
-
 
                 jugadoresRanking.forEach(
                     ([nombre, jugador], index) => {
@@ -1987,13 +1911,11 @@
                         const rango =
                             jugador.rango;
 
-
                         let textoRango =
                             "UNRANKED";
 
                         let lp =
                             "";
-
 
                         if (
                             rango &&
@@ -2007,12 +1929,11 @@
 
                             lp =
                                 `${rango.lp} LP`;
-                        }
 
+                        }
 
                         let posicion =
                             `${index + 1}°`;
-
 
                         if (index === 0) {
 
@@ -2028,38 +1949,27 @@
 
                             posicion =
                                 "🥉";
-                        }
 
+                        }
 
                         ranking.innerHTML += `
 
                             <div class="ranking-item">
 
                                 <div class="ranking-posicion">
-
                                     ${posicion}
-
                                 </div>
-
 
                                 <div class="ranking-nombre">
-
                                     ${nombre}
-
                                 </div>
-
 
                                 <div class="ranking-rango">
-
                                     ${textoRango}
-
                                 </div>
 
-
                                 <div class="ranking-lp">
-
                                     ${lp}
-
                                 </div>
 
                             </div>
@@ -2079,8 +1989,8 @@
                 );
 
             });
-    }
 
+    }
 
     /* =========================================================
        REGISTRO
@@ -2104,7 +2014,6 @@
     const mensajeRegistro =
         document.getElementById("mensajeRegistro");
 
-
     function mostrarRegistro() {
 
         modalRegistro.classList.add("visible");
@@ -2112,14 +2021,14 @@
         document.getElementById(
             "registroNombre"
         ).focus();
-    }
 
+    }
 
     function ocultarRegistro() {
 
         modalRegistro.classList.remove("visible");
-    }
 
+    }
 
     abrirRegistro.addEventListener(
         "click",
@@ -2130,15 +2039,14 @@
             mostrarRegistro();
 
             cerrarMenu();
+
         }
     );
-
 
     cerrarRegistro.addEventListener(
         "click",
         ocultarRegistro
     );
-
 
     modalRegistro.addEventListener(
         "click",
@@ -2150,10 +2058,11 @@
             ) {
 
                 ocultarRegistro();
+
             }
+
         }
     );
-
 
     document.addEventListener(
         "keydown",
@@ -2165,10 +2074,11 @@
             ) {
 
                 ocultarRegistro();
+
             }
+
         }
     );
-
 
     formularioRegistro.addEventListener(
         "submit",
@@ -2176,31 +2086,26 @@
 
             evento.preventDefault();
 
-
             const nombre =
                 document.getElementById(
                     "registroNombre"
                 ).value.trim();
-
 
             const riotId =
                 document.getElementById(
                     "registroRiotId"
                 ).value.trim();
 
-
             const riotTag =
                 document.getElementById(
                     "registroRiotTag"
                 ).value.trim();
-
 
             mensajeRegistro.className =
                 "registro-mensaje";
 
             mensajeRegistro.textContent =
                 "";
-
 
             if (
                 !nombre ||
@@ -2215,15 +2120,14 @@
                     "Completá todos los campos.";
 
                 return;
-            }
 
+            }
 
             botonRegistro.disabled =
                 true;
 
             botonRegistro.textContent =
                 "VALIDANDO CUENTA...";
-
 
             try {
 
@@ -2240,6 +2144,7 @@
 
                             body:
                                 JSON.stringify({
+
                                     nombre:
                                         nombre,
 
@@ -2248,14 +2153,13 @@
 
                                     riot_tag:
                                         riotTag
+
                                 })
                         }
                     );
 
-
                 const resultado =
                     await respuesta.json();
-
 
                 if (!respuesta.ok) {
 
@@ -2264,30 +2168,29 @@
                         resultado.mensaje ||
                         "No se pudo registrar la cuenta."
                     );
+
                 }
 
+                /* =================================================
+                   SOLICITUD ENVIADA
+                ================================================= */
 
                 mensajeRegistro.className =
                     "registro-mensaje visible exito";
 
                 mensajeRegistro.textContent =
-                    "✅ Cuenta registrada correctamente.";
-
+                    "📋 Solicitud enviada. Queda pendiente de aprobación.";
 
                 formularioRegistro.reset();
-
 
                 setTimeout(
                     function() {
 
                         ocultarRegistro();
 
-                        cargarJugadores();
-
                     },
-                    1200
+                    1800
                 );
-
 
             } catch (error) {
 
@@ -2303,19 +2206,18 @@
                     false;
 
                 botonRegistro.textContent =
-                    "REGISTRAR CUENTA";
+                    "ENVIAR SOLICITUD";
+
             }
 
         }
     );
-
 
     /* =========================================================
        CARGA INICIAL
     ========================================================= */
 
     cargarJugadores();
-
 
     /* =========================================================
        ACTUALIZAR CADA 15 SEGUNDOS
@@ -2325,7 +2227,6 @@
         cargarJugadores,
         15000
     );
-
 
     /* =========================================================
        ACTUALIZAR CONTADORES CADA SEGUNDO
@@ -2338,7 +2239,6 @@
                 ".contador"
             );
 
-
         elementos.forEach(
             elemento => {
 
@@ -2347,28 +2247,23 @@
                         ".jugador"
                     );
 
-
                 if (!jugadorElemento) {
                     return;
                 }
-
 
                 const nombreElemento =
                     jugadorElemento.querySelector(
                         ".nombre"
                     );
 
-
                 if (!nombreElemento) {
                     return;
                 }
-
 
                 const nombre =
                     nombreElemento
                         .textContent
                         .trim();
-
 
                 if (
                     tiemposPartida[nombre]
@@ -2385,11 +2280,11 @@
                             )
                         );
 
-
                     elemento.textContent =
                         `⏱️ ${formatearTiempo(
                             segundos
                         )}`;
+
                 }
 
             }
@@ -2398,7 +2293,6 @@
     }, 1000);
 
 </script>
-```
 
 </body>
 
