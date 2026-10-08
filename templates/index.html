@@ -1614,6 +1614,103 @@ body::after {
     .streamers h2::after { width: 35px; margin: 0 8px; }
 }
 
+    
+/* =========================================================
+   FONDO INDUSTRIAL VISIBLE + MOVIMIENTO SUTIL
+   ========================================================= */
+html {
+    background: #171a1b !important;
+}
+
+body {
+    position: relative;
+    overflow-x: hidden;
+    background:
+        radial-gradient(circle at 18% 18%, rgba(148,27,58,.16), transparent 27%),
+        radial-gradient(circle at 82% 72%, rgba(148,27,58,.12), transparent 29%),
+        linear-gradient(135deg, #242728 0%, #171a1b 42%, #202324 70%, #111415 100%) !important;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: -18%;
+    width: 136%;
+    height: 136%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: .78;
+    background:
+        radial-gradient(circle at 22% 28%, rgba(148,27,58,.22), transparent 14%),
+        radial-gradient(circle at 76% 68%, rgba(148,27,58,.17), transparent 17%),
+        repeating-linear-gradient(
+            60deg,
+            transparent 0 46px,
+            rgba(255,255,255,.035) 47px 48px,
+            transparent 49px 94px
+        ),
+        repeating-linear-gradient(
+            -60deg,
+            transparent 0 46px,
+            rgba(255,255,255,.025) 47px 48px,
+            transparent 49px 94px
+        ),
+        linear-gradient(
+            125deg,
+            transparent 0 43%,
+            rgba(148,27,58,.11) 43.3%,
+            transparent 43.8% 67%,
+            rgba(148,27,58,.07) 67.3%,
+            transparent 67.8% 100%
+        );
+    background-size: auto, auto, 188px 188px, 188px 188px, 900px 900px;
+    animation: fondoIndustrialVisible 26s ease-in-out infinite;
+    will-change: transform;
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    inset: -10%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: .52;
+    background:
+        linear-gradient(
+            115deg,
+            transparent 0 17%,
+            rgba(148,27,58,.12) 17.2%,
+            transparent 17.7% 100%
+        ),
+        linear-gradient(
+            295deg,
+            transparent 0 73%,
+            rgba(180,180,180,.045) 73.2%,
+            transparent 73.7% 100%
+        );
+    background-size: 820px 820px, 1050px 1050px;
+    animation: lineasIndustrialesVisibles 34s ease-in-out infinite;
+    will-change: transform;
+}
+
+@keyframes fondoIndustrialVisible {
+    0%, 100% {
+        transform: translate3d(-2%, -1.5%, 0) rotate(0deg);
+    }
+    50% {
+        transform: translate3d(2%, 1.5%, 0) rotate(.45deg);
+    }
+}
+
+@keyframes lineasIndustrialesVisibles {
+    0%, 100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(-2%, 1.5%, 0);
+    }
+}
+
     </style>
 
 </head>
