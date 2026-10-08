@@ -125,6 +125,15 @@ def inicializar_base_datos():
                 )
             """)
 
+            conexion.execute("""
+                CREATE TABLE IF NOT EXISTS consultas_registro (
+                    id SERIAL PRIMARY KEY,
+                    nombre TEXT NOT NULL,
+                    consulta TEXT NOT NULL,
+                    creada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
         os.makedirs(COMPROBANTES_DIR, exist_ok=True)
 
         print("PostgreSQL conectado correctamente.")
@@ -1563,6 +1572,196 @@ def admin_rechazar_solicitud():
         return jsonify({
             "ok": False,
             "error": "No se pudo rechazar la solicitud."
+        }), 500
+
+
+@app.route("/api/consultas", methods=["POST"])
+def recibir_consulta():
+
+    try:
+
+        datos_recibidos = request.get_json(silent=True) or {}
+        nombre = str(datos_recibidos.get("nombre", "")).strip()
+        consulta = str(datos_recibidos.get("consulta", "")).strip()
+
+        if not nombre:
+            return jsonify({
+                "ok": False,
+                "error": "Debes ingresar tu nombre."
+            }), 400
+
+        if not consulta:
+            return jsonify({
+                "ok": False,
+                "error": "Debes escribir tu consulta."
+            }), 400
+
+        if len(nombre) > 100:
+            return jsonify({
+                "ok": False,
+                "error": "El nombre es demasiado largo."
+            }), 400
+
+        if len(consulta) > 2000:
+            return jsonify({
+                "ok": False,
+                "error": "La consulta no puede superar los 2000 caracteres."
+            }), 400
+
+        if DATABASE_URL:
+
+            with psycopg.connect(DATABASE_URL) as conexion:
+                fila = conexion.execute(
+                    """
+                    INSERT INTO consultas_registro (nombre, consulta)
+                    VALUES (%s, %s)
+                    RETURNING id, creada_en
+                    """,
+                    (nombre, consulta)
+                ).fetchone()
+
+            return jsonify({
+                "ok": True,
+                "mensaje": "Consulta enviada correctamente.",
+                "id": fila[0]
+            }), 201
+
+        # Desarrollo local sin PostgreSQL.
+        datos = cargar_datos()
+        consultas = datos.get("consultas", [])
+
+        if not isinstance(consultas, list):
+            consultas = []
+
+        consultas.append({
+            "id": int(time.time() * 1000),
+            "nombre": nombre,
+            "consulta": consulta,
+            "creada_en": time.strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+        datos["consultas"] = consultas
+        guardar_datos(datos)
+
+        return jsonify({
+            "ok": True,
+            "mensaje": "Consulta enviada correctamente."
+        }), 201
+
+    except Exception as e:
+
+        print("ERROR EN /api/consultas:", e)
+
+        return jsonify({
+            "ok": False,
+            "error": "No se pudo enviar la consulta."
+        }), 500
+
+
+@app.route("/api/admin/consultas", methods=["GET"])
+def admin_consultas():
+
+    try:
+
+        if DATABASE_URL:
+
+            with psycopg.connect(DATABASE_URL) as conexion:
+                filas = conexion.execute(
+                    """
+                    SELECT id, nombre, consulta,
+                           TO_CHAR(creada_en, 'YYYY-MM-DD HH24:MI:SS')
+                    FROM consultas_registro
+                    ORDER BY creada_en DESC
+                    """
+                ).fetchall()
+
+            consultas = [
+                {
+                    "id": fila[0],
+                    "nombre": fila[1],
+                    "consulta": fila[2],
+                    "creada_en": fila[3]
+                }
+                for fila in filas
+            ]
+
+        else:
+
+            datos = cargar_datos()
+            consultas = datos.get("consultas", [])
+
+            if not isinstance(consultas, list):
+                consultas = []
+
+        return jsonify({
+            "ok": True,
+            "consultas": consultas
+        })
+
+    except Exception as e:
+
+        print("ERROR EN /api/admin/consultas:", e)
+
+        return jsonify({
+            "ok": False,
+            "error": "No se pudieron cargar las consultas."
+        }), 500
+
+
+@app.route("/api/admin/consultas/<int:consulta_id>", methods=["DELETE"])
+def admin_borrar_consulta(consulta_id):
+
+    try:
+
+        if DATABASE_URL:
+
+            with psycopg.connect(DATABASE_URL) as conexion:
+                fila = conexion.execute(
+                    "DELETE FROM consultas_registro WHERE id = %s RETURNING id",
+                    (consulta_id,)
+                ).fetchone()
+
+            if not fila:
+                return jsonify({
+                    "ok": False,
+                    "error": "Consulta no encontrada."
+                }), 404
+
+        else:
+
+            datos = cargar_datos()
+            consultas = datos.get("consultas", [])
+
+            if not isinstance(consultas, list):
+                consultas = []
+
+            nuevas_consultas = [
+                consulta
+                for consulta in consultas
+                if int(consulta.get("id", -1)) != consulta_id
+            ]
+
+            if len(nuevas_consultas) == len(consultas):
+                return jsonify({
+                    "ok": False,
+                    "error": "Consulta no encontrada."
+                }), 404
+
+            datos["consultas"] = nuevas_consultas
+            guardar_datos(datos)
+
+        return jsonify({
+            "ok": True,
+            "mensaje": "Consulta eliminada correctamente."
+        })
+
+    except Exception as e:
+
+        print("ERROR EN /api/admin/consultas/<id>:", e)
+
+        return jsonify({
+            "ok": False,
+            "error": "No se pudo eliminar la consulta."
         }), 500
 
 

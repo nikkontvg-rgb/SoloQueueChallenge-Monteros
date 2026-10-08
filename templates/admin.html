@@ -354,6 +354,11 @@ body::after {
         <h2>JUGADORES REGISTRADOS <span class="cantidad" id="cantidadJugadores">0</span></h2>
         <div class="lista" id="listaJugadores"></div>
     </section>
+
+    <section class="seccion">
+        <h2>CONSULTAS <span class="cantidad" id="cantidadConsultas">0</span></h2>
+        <div class="lista" id="listaConsultas"></div>
+    </section>
 </div>
 
 <div id="mensaje"></div>
@@ -494,11 +499,62 @@ body::after {
         await cargarJugadores();
     }
 
+    async function cargarConsultas() {
+        const respuesta = await fetch("/api/admin/consultas");
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok || !resultado.ok) {
+            throw new Error(resultado.error || "No se pudieron cargar las consultas.");
+        }
+
+        const consultas = resultado.consultas || [];
+        document.getElementById("cantidadConsultas").textContent = consultas.length;
+
+        const contenedor = document.getElementById("listaConsultas");
+
+        if (!consultas.length) {
+            contenedor.innerHTML = '<div class="vacio">No hay consultas pendientes.</div>';
+            return;
+        }
+
+        contenedor.innerHTML = consultas.map(consulta => `
+            <div class="tarjeta">
+                <div class="datos">
+                    <div class="nombre">💬 ${escapar(consulta.nombre)}</div>
+                    <div class="fecha">Fecha: ${escapar(consulta.creada_en || "Sin fecha")}</div>
+                    <div class="stream" style="white-space:pre-wrap; margin-top:10px;">${escapar(consulta.consulta)}</div>
+                </div>
+                <div class="acciones">
+                    <button class="borrar" onclick="borrarConsulta(${Number(consulta.id)})">🗑 ELIMINAR</button>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    async function borrarConsulta(id) {
+        if (!confirm("¿Eliminar esta consulta?")) return;
+
+        const respuesta = await fetch(`/api/admin/consultas/${encodeURIComponent(id)}`, {
+            method: "DELETE"
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok || !resultado.ok) {
+            mostrarMensaje("❌ " + (resultado.error || "No se pudo eliminar la consulta."));
+            return;
+        }
+
+        mostrarMensaje("✅ " + resultado.mensaje);
+        await cargarConsultas();
+    }
+
     async function cargarTodo() {
         try {
             await Promise.all([
                 cargarSolicitudes(),
-                cargarJugadores()
+                cargarJugadores(),
+                cargarConsultas()
             ]);
         } catch (error) {
             mostrarMensaje("❌ " + error.message);
