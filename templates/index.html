@@ -1131,12 +1131,13 @@
         .modal-registro {
             position: fixed;
             inset: 0;
+            z-index: 5000;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             padding: 20px;
+            overflow-y: auto;
             background: rgba(0, 0, 0, 0.60);
-            z-index: 5000;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.25s ease, visibility 0.25s ease;
@@ -1149,12 +1150,15 @@
 
         .registro-contenido {
             width: min(460px, 100%);
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
             background: var(--rojo-oscuro);
             border: 1px solid var(--bordo);
             border-radius: 14px;
             padding: 28px;
             box-shadow: 0 15px 45px rgba(0, 0, 0, 0.40);
             position: relative;
+            margin: auto 0;
         }
 
         .registro-contenido h2 {
