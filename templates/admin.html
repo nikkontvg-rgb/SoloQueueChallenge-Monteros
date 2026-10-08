@@ -210,6 +210,32 @@
             .tarjeta { align-items: flex-start; flex-direction: column; }
             .acciones { justify-content: flex-start; width: 100%; }
         }
+    
+
+/* TEMA VISUAL · INDUSTRIAL / ESPORTS */
+html, body { background:#080a0b !important; color:#d7d7d7 !important; }
+body { position:relative; overflow-x:hidden; background:radial-gradient(circle at 50% 10%,rgba(112,21,43,.14),transparent 32%),linear-gradient(180deg,#0b0d0e,#111415 50%,#080a0b) !important; }
+body::before { content:""; position:fixed; inset:-35%; pointer-events:none; z-index:0; background:radial-gradient(circle at 20% 25%,rgba(148,27,58,.15),transparent 17%),radial-gradient(circle at 80% 70%,rgba(148,27,58,.09),transparent 18%),repeating-radial-gradient(circle at 0 0,rgba(255,255,255,.045) 0 2px,transparent 2px 24px); background-size:auto,auto,48px 48px; opacity:.5; animation:adminFondo 30s linear infinite; }
+@keyframes adminFondo { 0%,100%{transform:translate(-1%,-1%)} 50%{transform:translate(1%,1%)} }
+.contenedor { position:relative; z-index:1; }
+header, .seccion { background:linear-gradient(145deg,rgba(29,32,33,.97),rgba(13,15,16,.98)) !important; border:1px solid rgba(126,130,130,.45) !important; border-radius:8px !important; box-shadow:0 18px 45px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.035) !important; }
+header { padding:22px 26px; position:relative; overflow:hidden; }
+header::before, .seccion::before, .tarjeta::before { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,#941b3a 0 45px,transparent 45px) top left/45px 2px no-repeat,linear-gradient(90deg,#941b3a 0 45px,transparent 45px) bottom right/45px 2px no-repeat,linear-gradient(#941b3a 0 20px,transparent 20px) top left/2px 20px no-repeat,linear-gradient(#941b3a 0 20px,transparent 20px) bottom right/2px 20px no-repeat; opacity:.85; }
+.seccion { padding:22px; position:relative; overflow:hidden; }
+h1, .seccion h2 { color:#e3e3e3 !important; }
+.subtitulo, .fecha, .vacio { color:#8f8f8f !important; }
+.tarjeta { position:relative; overflow:hidden; background:linear-gradient(145deg,#242728,#151718) !important; border:1px solid #484c4d !important; border-radius:7px !important; }
+.nombre { color:#eee !important; }
+.email, .riot { color:#bdbdbd !important; }
+.stream a, .comprobante a { color:#d3ad78 !important; }
+.comprobante img { border-color:#555 !important; background:#0d0f10 !important; }
+.actualizar { background:#70152b !important; border:1px solid #941b3a !important; }
+.cantidad { background:#70152b !important; }
+.aprobar { background:#245a3a !important; }
+.rechazar, .borrar { background:#761e2c !important; }
+.vacio { border-color:#4a4d4e !important; }
+#mensaje { background:#70152b !important; border:1px solid #941b3a; box-shadow:0 10px 25px rgba(0,0,0,.4); }
+
     </style>
 </head>
 <body>

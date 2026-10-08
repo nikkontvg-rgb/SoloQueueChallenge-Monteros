@@ -26,6 +26,23 @@
         .pendiente { text-align:center; color:var(--gris); }
         .volver { display:inline-block; margin-top:10px; padding:11px 16px; border-radius:7px; background:var(--bordo); color:var(--blanco); text-decoration:none; font-weight:700; }
         @media(max-width:700px){ body{padding:18px;} h1{font-size:32px;} }
+    
+
+/* TEMA VISUAL · INDUSTRIAL / ESPORTS */
+html, body { background:#080a0b !important; color:#d7d7d7 !important; }
+body { position:relative; overflow-x:hidden; background:radial-gradient(circle at 50% 10%,rgba(112,21,43,.14),transparent 32%),linear-gradient(180deg,#0b0d0e,#111415 50%,#080a0b) !important; }
+body::before { content:""; position:fixed; inset:-35%; pointer-events:none; z-index:0; background:radial-gradient(circle at 20% 25%,rgba(148,27,58,.15),transparent 17%),radial-gradient(circle at 80% 70%,rgba(148,27,58,.09),transparent 18%),repeating-radial-gradient(circle at 0 0,rgba(255,255,255,.045) 0 2px,transparent 2px 24px); background-size:auto,auto,48px 48px; opacity:.5; animation:reglasFondo 30s linear infinite; }
+@keyframes reglasFondo { 0%,100%{transform:translate(-1%,-1%)} 50%{transform:translate(1%,1%)} }
+.contenedor { position:relative; z-index:1; }
+.cabecera, .bloque { position:relative; overflow:hidden; background:linear-gradient(145deg,rgba(29,32,33,.97),rgba(13,15,16,.98)) !important; border:1px solid rgba(126,130,130,.45) !important; border-radius:8px !important; box-shadow:0 18px 45px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.035) !important; }
+.cabecera { padding:26px 20px; }
+.cabecera::before, .bloque::before { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,#941b3a 0 50px,transparent 50px) top left/50px 2px no-repeat,linear-gradient(90deg,#941b3a 0 50px,transparent 50px) bottom right/50px 2px no-repeat,linear-gradient(#941b3a 0 22px,transparent 22px) top left/2px 22px no-repeat,linear-gradient(#941b3a 0 22px,transparent 22px) bottom right/2px 22px no-repeat; opacity:.85; }
+h1 { color:#e4e4e4 !important; }
+.subtitulo, .pendiente { color:#999 !important; }
+.bloque h2 { color:#d63b5c !important; }
+p { color:#c8c8c8; }
+.volver { background:#70152b !important; border:1px solid #941b3a; }
+
     </style>
 </head>
 <body>

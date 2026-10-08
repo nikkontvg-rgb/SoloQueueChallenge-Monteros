@@ -1379,6 +1379,241 @@
 
         }
 
+    
+
+/* =========================================================
+   TEMA VISUAL · INDUSTRIAL / ESPORTS
+   Solo modifica estética. No modifica la funcionalidad.
+========================================================= */
+
+html {
+    background: #080a0b !important;
+}
+
+body {
+    background:
+        radial-gradient(circle at 50% 12%, rgba(112,21,43,.13), transparent 30%),
+        linear-gradient(180deg, #0b0d0e 0%, #111415 45%, #080a0b 100%) !important;
+    color: #d7d7d7 !important;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: -35%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 25% 30%, rgba(148,27,58,.16), transparent 16%),
+        radial-gradient(circle at 78% 68%, rgba(148,27,58,.10), transparent 18%),
+        repeating-radial-gradient(circle at 0 0, rgba(255,255,255,.045) 0 2px, transparent 2px 24px),
+        linear-gradient(125deg, transparent 0 46%, rgba(148,27,58,.13) 47%, transparent 48% 100%);
+    background-size: auto, auto, 48px 48px, 900px 900px;
+    opacity: .52;
+    animation: fondoIndustrial 30s linear infinite;
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(115deg, transparent 0 18%, rgba(148,27,58,.08) 18.2%, transparent 18.5% 100%),
+        linear-gradient(295deg, transparent 0 74%, rgba(148,27,58,.07) 74.2%, transparent 74.5% 100%);
+    background-size: 850px 850px, 1000px 1000px;
+    animation: lineasIndustriales 38s ease-in-out infinite;
+}
+
+@keyframes fondoIndustrial {
+    0% { transform: translate3d(-1%, -1%, 0) rotate(0deg); }
+    50% { transform: translate3d(1.5%, 1%, 0) rotate(.35deg); }
+    100% { transform: translate3d(-1%, -1%, 0) rotate(0deg); }
+}
+
+@keyframes lineasIndustriales {
+    0%,100% { transform: translate(0,0); opacity:.65; }
+    50% { transform: translate(-1.5%,1%); opacity:1; }
+}
+
+.contenedor {
+    max-width: 900px !important;
+}
+
+.encabezado,
+.streamer-proximamente,
+.price-pool,
+.jugador,
+.ranking {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(145deg, rgba(28,31,32,.97), rgba(13,15,16,.98)) !important;
+    border: 1px solid rgba(126,130,130,.48) !important;
+    box-shadow: 0 18px 45px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+
+.encabezado::before,
+.streamer-proximamente::before,
+.price-pool::before,
+.jugador::before,
+.ranking::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(90deg, var(--rubí) 0 52px, transparent 52px) top left / 52px 2px no-repeat,
+        linear-gradient(90deg, var(--rubí) 0 52px, transparent 52px) bottom right / 52px 2px no-repeat,
+        linear-gradient(var(--rubí) 0 24px, transparent 24px) top left / 2px 24px no-repeat,
+        linear-gradient(var(--rubí) 0 24px, transparent 24px) bottom right / 2px 24px no-repeat;
+    opacity: .9;
+}
+
+.encabezado {
+    padding: 28px 34px !important;
+    border-radius: 8px !important;
+    margin-bottom: 34px !important;
+}
+
+.encabezado h1 {
+    color: #e1e1e1 !important;
+    text-shadow: 0 2px 12px rgba(0,0,0,.7);
+}
+
+.descripcion {
+    color: #c8b18a !important;
+}
+
+.streamers {
+    margin: 45px auto 78px !important;
+}
+
+.streamers h2 {
+    color: #d9d9d9 !important;
+    text-shadow: 0 2px 10px rgba(0,0,0,.8);
+    position: relative;
+}
+
+.streamers h2::before,
+.streamers h2::after {
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    width: 115px;
+    height: 2px;
+    margin: 0 22px;
+    background: linear-gradient(90deg, transparent, var(--rubí));
+    opacity: .8;
+}
+
+.streamers h2::after {
+    background: linear-gradient(90deg, var(--rubí), transparent);
+}
+
+.streamer-proximamente {
+    border-radius: 8px !important;
+    min-height: 300px !important;
+}
+
+.streamer-proximamente h3 {
+    color: var(--rojo-brillante) !important;
+}
+
+.streamer-proximamente p {
+    color: #c8b18a !important;
+}
+
+.price-pool {
+    margin: -40px auto 65px !important;
+    border-radius: 8px !important;
+    background: linear-gradient(145deg, rgba(48,17,25,.96), rgba(18,12,15,.98)) !important;
+}
+
+.price-pool-titulo { color: #d7d7d7 !important; }
+.price-pool-monto { color: #efefef !important; text-shadow: 0 2px 12px rgba(0,0,0,.7); }
+.price-pool-detalle { color: #c8b18a !important; }
+
+.jugador {
+    border-radius: 8px !important;
+    background: linear-gradient(145deg, rgba(31,34,35,.97), rgba(17,19,20,.98)) !important;
+}
+
+.jugador:hover {
+    border-color: var(--rubí) !important;
+    box-shadow: 0 12px 28px rgba(148,27,58,.13) !important;
+}
+
+.nombre { color: #f0f0f0 !important; }
+.riot { color: #aaa !important; }
+.estado { text-shadow: 0 0 10px rgba(0,0,0,.7); }
+.contador { color: #d3ad78 !important; }
+
+.ranking {
+    border-radius: 8px !important;
+    background: linear-gradient(145deg, rgba(27,30,31,.98), rgba(13,15,16,.98)) !important;
+}
+
+.ranking h2 { color: #e2e2e2 !important; }
+
+.ranking-item {
+    background: linear-gradient(90deg, rgba(52,24,31,.9), rgba(23,24,25,.9)) !important;
+    border: 1px solid rgba(112,21,43,.6) !important;
+    border-radius: 6px !important;
+}
+
+.ranking-rango { color: #d3ad78 !important; }
+.ranking-lp { color: #c8c8c8 !important; }
+.actualizacion { color: #777 !important; }
+
+.menu-lateral {
+    background: linear-gradient(180deg, #151819, #0a0c0d) !important;
+    border-right: 1px solid rgba(148,27,58,.7) !important;
+    box-shadow: 12px 0 35px rgba(0,0,0,.55) !important;
+}
+
+.menu-titulo {
+    color: #e0e0e0 !important;
+    border-bottom: 1px solid rgba(148,27,58,.55) !important;
+}
+
+.menu-contenido a {
+    color: #cfcfcf !important;
+    border-left: 2px solid transparent !important;
+}
+
+.menu-contenido a:hover {
+    color: #fff !important;
+    background: rgba(148,27,58,.15) !important;
+    border-left-color: var(--rubí) !important;
+}
+
+.menu-flecha {
+    background: var(--bordo) !important;
+    border-color: var(--rubí) !important;
+    box-shadow: 0 5px 18px rgba(0,0,0,.45);
+}
+
+.menu-overlay { background: rgba(0,0,0,.62) !important; }
+
+.registro-contenido {
+    background: linear-gradient(145deg, #202324, #0f1112) !important;
+    border: 1px solid rgba(148,27,58,.65) !important;
+    box-shadow: 0 25px 60px rgba(0,0,0,.65) !important;
+}
+
+.registro-contenido h2 { color: #e5e5e5 !important; }
+.registro-descripcion, .registro-ayuda { color: #b7b7b7 !important; }
+.registro-formulario input { background: #111415 !important; color: #eee !important; border-color: #4a4d4e !important; }
+.registro-formulario input:focus { border-color: var(--rubí-claro) !important; }
+
+@media (max-width: 700px) {
+    body { padding: 18px 14px !important; }
+    .encabezado { padding: 22px 18px !important; }
+    .streamers h2::before,
+    .streamers h2::after { width: 35px; margin: 0 8px; }
+}
+
     </style>
 
 </head>
