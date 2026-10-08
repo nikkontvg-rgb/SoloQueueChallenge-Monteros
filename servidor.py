@@ -1207,6 +1207,7 @@ def registrar_jugador():
     try:
 
         nombre = str(request.form.get("nombre", "")).strip()
+        email = str(request.form.get("email", "")).strip()
         riot_id = str(request.form.get("riot_id", "")).strip()
         riot_tag = str(request.form.get("riot_tag", "")).strip()
         stream_url = str(request.form.get("stream_url", "")).strip()
@@ -1214,6 +1215,12 @@ def registrar_jugador():
 
         if not nombre:
             return jsonify({"ok": False, "error": "Debes ingresar tu nombre."}), 400
+
+        if not email:
+            return jsonify({"ok": False, "error": "Debes ingresar tu Gmail."}), 400
+
+        if "@" not in email or "." not in email.rsplit("@", 1)[-1]:
+            return jsonify({"ok": False, "error": "Debes ingresar un Gmail válido."}), 400
 
         if not riot_id:
             return jsonify({"ok": False, "error": "Debes ingresar tu Riot ID."}), 400
@@ -1298,6 +1305,7 @@ def registrar_jugador():
 
         solicitudes.append({
             "nombre": nombre,
+            "email": email,
             "riot_id": riot_id,
             "riot_tag": riot_tag,
             "puuid": puuid,
@@ -1350,6 +1358,7 @@ def admin_jugadores():
         for nombre, jugador in jugadores.items():
             resultado.append({
                 "nombre": nombre,
+                "email": jugador.get("email", ""),
                 "riot_id": jugador.get("riot_id", ""),
                 "riot_tag": jugador.get("riot_tag", ""),
                 "stream_url": jugador.get("stream_url", "")
@@ -1456,6 +1465,7 @@ def admin_aprobar_solicitud():
             }), 400
 
         jugadores[nombre] = {
+            "email": solicitud_encontrada.get("email", ""),
             "riot_id": riot_id,
             "riot_tag": riot_tag,
             "puuid": puuid,

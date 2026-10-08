@@ -120,6 +120,11 @@
             color: var(--bordo-oscuro);
         }
 
+        .email {
+            margin-top: 5px;
+            color: #555;
+        }
+
         .riot {
             margin-top: 5px;
             color: #555;
@@ -261,6 +266,7 @@
             <div class="tarjeta">
                 <div class="datos">
                     <div class="nombre">${escapar(solicitud.nombre)}</div>
+                    <div class="email">📧 ${escapar(solicitud.email || "Sin Gmail")}</div>
                     <div class="riot">${escapar(solicitud.riot_id)} #${escapar(solicitud.riot_tag)}</div>
                     <div class="fecha">Solicitud: ${escapar(solicitud.fecha_solicitud || "Sin fecha")}</div>
                     ${solicitud.stream_url ? `<div class="stream">📺 <a href="${escapar(solicitud.stream_url)}" target="_blank" rel="noopener noreferrer">Ver stream</a></div>` : `<div class="stream">📺 Sin link de stream</div>`}
@@ -296,6 +302,7 @@
             <div class="tarjeta">
                 <div class="datos">
                     <div class="nombre">${escapar(jugador.nombre)}</div>
+                    <div class="email">📧 ${escapar(jugador.email || "Sin Gmail")}</div>
                     <div class="riot">${escapar(jugador.riot_id || "")} #${escapar(jugador.riot_tag || "")}</div>
                     ${jugador.stream_url ? `<div class="stream">📺 <a href="${escapar(jugador.stream_url)}" target="_blank" rel="noopener noreferrer">${escapar(jugador.stream_url)}</a></div>` : `<div class="stream">📺 Sin link de stream</div>`}
                 </div>

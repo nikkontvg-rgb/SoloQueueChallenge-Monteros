@@ -1149,8 +1149,6 @@
 
         .registro-contenido {
             width: min(460px, 100%);
-            max-height: calc(100vh - 40px);
-            overflow-y: auto;
             background: var(--rojo-oscuro);
             border: 1px solid var(--bordo);
             border-radius: 14px;
@@ -1590,6 +1588,24 @@
                     placeholder="Ej: Nico"
                     required
                 >
+
+                <label for="registroEmail">
+                    Gmail
+                </label>
+
+                <input
+                    type="email"
+                    id="registroEmail"
+                    name="email"
+                    maxlength="254"
+                    placeholder="Ej: tunombre@gmail.com"
+                    autocomplete="email"
+                    required
+                >
+
+                <div class="registro-ayuda">
+                    Usaremos este Gmail para enviarte el programa necesario para participar y llevar el contador de horas.
+                </div>
 
                 <label for="registroRiotId">
                     Riot ID
@@ -2446,6 +2462,11 @@
                         "registroNombre"
                     ).value.trim();
 
+                const email =
+                    document.getElementById(
+                        "registroEmail"
+                    ).value.trim();
+
                 const riotId =
                     document.getElementById(
                         "registroRiotId"
@@ -2473,7 +2494,7 @@
                 mensajeRegistro.textContent = "";
 
 
-                if (!nombre || !riotId || !riotTag || !comprobante) {
+                if (!nombre || !email || !riotId || !riotTag || !comprobante) {
 
                     mensajeRegistro.className =
                         "registro-mensaje visible error";
@@ -2503,6 +2524,7 @@
                                 body: (() => {
                                     const datos = new FormData();
                                     datos.append("nombre", nombre);
+                                    datos.append("email", email);
                                     datos.append("riot_id", riotId);
                                     datos.append("riot_tag", riotTag);
                                     datos.append("stream_url", streamUrl);
