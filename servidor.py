@@ -130,7 +130,24 @@ def inicializar_base_datos():
                     id SERIAL PRIMARY KEY,
                     nombre TEXT NOT NULL,
                     consulta TEXT NOT NULL,
-                    creada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    creada_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    acceso_token TEXT UNIQUE
+                )
+            """)
+
+            conexion.execute("""
+                ALTER TABLE consultas_registro
+                ADD COLUMN IF NOT EXISTS acceso_token TEXT UNIQUE
+            """)
+
+            conexion.execute("""
+                CREATE TABLE IF NOT EXISTS consultas_mensajes (
+                    id SERIAL PRIMARY KEY,
+                    consulta_id INTEGER NOT NULL REFERENCES consultas_registro(id) ON DELETE CASCADE,
+                    autor_tipo TEXT NOT NULL,
+                    autor_nombre TEXT NOT NULL,
+                    mensaje TEXT NOT NULL,
+                    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
 
@@ -1585,59 +1602,68 @@ def recibir_consulta():
         consulta = str(datos_recibidos.get("consulta", "")).strip()
 
         if not nombre:
-            return jsonify({
-                "ok": False,
-                "error": "Debes ingresar tu nombre."
-            }), 400
+            return jsonify({"ok": False, "error": "Debes ingresar tu nombre."}), 400
 
         if not consulta:
-            return jsonify({
-                "ok": False,
-                "error": "Debes escribir tu consulta."
-            }), 400
+            return jsonify({"ok": False, "error": "Debes escribir tu consulta."}), 400
 
         if len(nombre) > 100:
-            return jsonify({
-                "ok": False,
-                "error": "El nombre es demasiado largo."
-            }), 400
+            return jsonify({"ok": False, "error": "El nombre es demasiado largo."}), 400
 
         if len(consulta) > 2000:
-            return jsonify({
-                "ok": False,
-                "error": "La consulta no puede superar los 2000 caracteres."
-            }), 400
+            return jsonify({"ok": False, "error": "La consulta no puede superar los 2000 caracteres."}), 400
 
         if DATABASE_URL:
+
+            token = uuid.uuid4().hex
 
             with psycopg.connect(DATABASE_URL) as conexion:
                 fila = conexion.execute(
                     """
-                    INSERT INTO consultas_registro (nombre, consulta)
-                    VALUES (%s, %s)
-                    RETURNING id, creada_en
+                    INSERT INTO consultas_registro (nombre, consulta, acceso_token)
+                    VALUES (%s, %s, %s)
+                    RETURNING id, creada_en, acceso_token
                     """,
-                    (nombre, consulta)
+                    (nombre, consulta, token)
                 ).fetchone()
+
+                conexion.execute(
+                    """
+                    INSERT INTO consultas_mensajes
+                        (consulta_id, autor_tipo, autor_nombre, mensaje)
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (fila[0], "participante", nombre, consulta)
+                )
 
             return jsonify({
                 "ok": True,
                 "mensaje": "Consulta enviada correctamente.",
-                "id": fila[0]
+                "id": fila[0],
+                "token": fila[2]
             }), 201
 
         # Desarrollo local sin PostgreSQL.
         datos = cargar_datos()
         consultas = datos.get("consultas", [])
-
         if not isinstance(consultas, list):
             consultas = []
 
+        consulta_id = int(time.time() * 1000)
+        token = uuid.uuid4().hex
+
         consultas.append({
-            "id": int(time.time() * 1000),
+            "id": consulta_id,
             "nombre": nombre,
             "consulta": consulta,
-            "creada_en": time.strftime("%Y-%m-%d %H:%M:%S")
+            "creada_en": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "acceso_token": token,
+            "mensajes": [{
+                "autor_tipo": "participante",
+                "autor_nombre": nombre,
+                "mensaje": consulta,
+                "creado_en": time.strftime("%Y-%m-%d %H:%M:%S")
+            }]
         })
 
         datos["consultas"] = consultas
@@ -1645,17 +1671,116 @@ def recibir_consulta():
 
         return jsonify({
             "ok": True,
-            "mensaje": "Consulta enviada correctamente."
+            "mensaje": "Consulta enviada correctamente.",
+            "id": consulta_id,
+            "token": token
         }), 201
 
     except Exception as e:
-
         print("ERROR EN /api/consultas:", e)
+        return jsonify({"ok": False, "error": "No se pudo enviar la consulta."}), 500
+
+
+@app.route("/api/consultas/<int:consulta_id>", methods=["GET"])
+def obtener_chat_consulta(consulta_id):
+
+    try:
+
+        token = str(request.args.get("token", "")).strip()
+        if not token:
+            return jsonify({"ok": False, "error": "Falta el identificador de la conversación."}), 400
+
+        if DATABASE_URL:
+            with psycopg.connect(DATABASE_URL) as conexion:
+                consulta = conexion.execute(
+                    """
+                    SELECT id, nombre, consulta,
+                           TO_CHAR(creada_en, 'YYYY-MM-DD HH24:MI:SS')
+                    FROM consultas_registro
+                    WHERE id = %s AND acceso_token = %s
+                    """,
+                    (consulta_id, token)
+                ).fetchone()
+
+                if not consulta:
+                    return jsonify({"ok": False, "error": "Conversación no encontrada."}), 404
+
+                filas = conexion.execute(
+                    """
+                    SELECT id, autor_tipo, autor_nombre, mensaje,
+                           TO_CHAR(creado_en, 'YYYY-MM-DD HH24:MI:SS')
+                    FROM consultas_mensajes
+                    WHERE consulta_id = %s
+                    ORDER BY creado_en ASC, id ASC
+                    """,
+                    (consulta_id,)
+                ).fetchall()
+
+            mensajes = [
+                {
+                    "id": fila[0],
+                    "autor_tipo": fila[1],
+                    "autor_nombre": fila[2],
+                    "mensaje": fila[3],
+                    "creado_en": fila[4]
+                }
+                for fila in filas
+            ]
+
+            # Compatibilidad con consultas creadas antes del sistema de chat.
+            if not mensajes:
+                mensajes = [{
+                    "id": None,
+                    "autor_tipo": "participante",
+                    "autor_nombre": consulta[1],
+                    "mensaje": consulta[2],
+                    "creado_en": consulta[3]
+                }]
+
+            return jsonify({
+                "ok": True,
+                "consulta": {
+                    "id": consulta[0],
+                    "nombre": consulta[1],
+                    "mensajes": mensajes
+                }
+            })
+
+        datos = cargar_datos()
+        consultas = datos.get("consultas", [])
+        if not isinstance(consultas, list):
+            consultas = []
+
+        encontrada = None
+        for consulta in consultas:
+            if int(consulta.get("id", -1)) == consulta_id and consulta.get("acceso_token") == token:
+                encontrada = consulta
+                break
+
+        if not encontrada:
+            return jsonify({"ok": False, "error": "Conversación no encontrada."}), 404
+
+        mensajes = encontrada.get("mensajes", [])
+        if not mensajes:
+            mensajes = [{
+                "autor_tipo": "participante",
+                "autor_nombre": encontrada.get("nombre", ""),
+                "mensaje": encontrada.get("consulta", ""),
+                "creado_en": encontrada.get("creada_en", "")
+            }]
 
         return jsonify({
-            "ok": False,
-            "error": "No se pudo enviar la consulta."
-        }), 500
+            "ok": True,
+            "consulta": {
+                "id": encontrada.get("id"),
+                "nombre": encontrada.get("nombre", ""),
+                "mensajes": mensajes
+            }
+        })
+
+    except Exception as e:
+        print("ERROR EN /api/consultas/<id>:", e)
+        return jsonify({"ok": False, "error": "No se pudo cargar la conversación."}), 500
 
 
 @app.route("/api/admin/consultas", methods=["GET"])
@@ -1664,48 +1789,135 @@ def admin_consultas():
     try:
 
         if DATABASE_URL:
-
             with psycopg.connect(DATABASE_URL) as conexion:
                 filas = conexion.execute(
                     """
-                    SELECT id, nombre, consulta,
-                           TO_CHAR(creada_en, 'YYYY-MM-DD HH24:MI:SS')
-                    FROM consultas_registro
-                    ORDER BY creada_en DESC
+                    SELECT c.id, c.nombre, c.consulta,
+                           TO_CHAR(c.creada_en, 'YYYY-MM-DD HH24:MI:SS'),
+                           COUNT(m.id) AS cantidad_mensajes
+                    FROM consultas_registro c
+                    LEFT JOIN consultas_mensajes m ON m.consulta_id = c.id
+                    GROUP BY c.id
+                    ORDER BY c.creada_en DESC
                     """
                 ).fetchall()
 
-            consultas = [
-                {
-                    "id": fila[0],
-                    "nombre": fila[1],
-                    "consulta": fila[2],
-                    "creada_en": fila[3]
-                }
-                for fila in filas
-            ]
+                consultas = []
+                for fila in filas:
+                    mensajes = conexion.execute(
+                        """
+                        SELECT id, autor_tipo, autor_nombre, mensaje,
+                               TO_CHAR(creado_en, 'YYYY-MM-DD HH24:MI:SS')
+                        FROM consultas_mensajes
+                        WHERE consulta_id = %s
+                        ORDER BY creado_en ASC, id ASC
+                        """,
+                        (fila[0],)
+                    ).fetchall()
+
+                    lista_mensajes = [
+                        {
+                            "id": m[0],
+                            "autor_tipo": m[1],
+                            "autor_nombre": m[2],
+                            "mensaje": m[3],
+                            "creado_en": m[4]
+                        }
+                        for m in mensajes
+                    ]
+
+                    if not lista_mensajes:
+                        lista_mensajes = [{
+                            "id": None,
+                            "autor_tipo": "participante",
+                            "autor_nombre": fila[1],
+                            "mensaje": fila[2],
+                            "creado_en": fila[3]
+                        }]
+
+                    consultas.append({
+                        "id": fila[0],
+                        "nombre": fila[1],
+                        "consulta": fila[2],
+                        "creada_en": fila[3],
+                        "mensajes": lista_mensajes
+                    })
 
         else:
-
             datos = cargar_datos()
             consultas = datos.get("consultas", [])
-
             if not isinstance(consultas, list):
                 consultas = []
 
-        return jsonify({
-            "ok": True,
-            "consultas": consultas
-        })
+        return jsonify({"ok": True, "consultas": consultas})
 
     except Exception as e:
-
         print("ERROR EN /api/admin/consultas:", e)
+        return jsonify({"ok": False, "error": "No se pudieron cargar las consultas."}), 500
 
-        return jsonify({
-            "ok": False,
-            "error": "No se pudieron cargar las consultas."
-        }), 500
+
+@app.route("/api/admin/consultas/<int:consulta_id>/responder", methods=["POST"])
+def admin_responder_consulta(consulta_id):
+
+    try:
+
+        datos_recibidos = request.get_json(silent=True) or {}
+        respuesta = str(datos_recibidos.get("respuesta", "")).strip()
+        admin_nombre = str(datos_recibidos.get("admin_nombre", "Administrador")).strip() or "Administrador"
+
+        if not respuesta:
+            return jsonify({"ok": False, "error": "Escribí una respuesta."}), 400
+
+        if len(respuesta) > 2000:
+            return jsonify({"ok": False, "error": "La respuesta no puede superar los 2000 caracteres."}), 400
+
+        if len(admin_nombre) > 100:
+            admin_nombre = admin_nombre[:100]
+
+        if DATABASE_URL:
+            with psycopg.connect(DATABASE_URL) as conexion:
+                existe = conexion.execute(
+                    "SELECT id FROM consultas_registro WHERE id = %s",
+                    (consulta_id,)
+                ).fetchone()
+
+                if not existe:
+                    return jsonify({"ok": False, "error": "Conversación no encontrada."}), 404
+
+                conexion.execute(
+                    """
+                    INSERT INTO consultas_mensajes
+                        (consulta_id, autor_tipo, autor_nombre, mensaje)
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (consulta_id, "admin", admin_nombre, respuesta)
+                )
+
+            return jsonify({"ok": True, "mensaje": "Respuesta enviada correctamente."}), 201
+
+        datos = cargar_datos()
+        consultas = datos.get("consultas", [])
+        if not isinstance(consultas, list):
+            consultas = []
+
+        for consulta in consultas:
+            if int(consulta.get("id", -1)) == consulta_id:
+                mensajes = consulta.setdefault("mensajes", [])
+                mensajes.append({
+                    "autor_tipo": "admin",
+                    "autor_nombre": admin_nombre,
+                    "mensaje": respuesta,
+                    "creado_en": time.strftime("%Y-%m-%d %H:%M:%S")
+                })
+                datos["consultas"] = consultas
+                guardar_datos(datos)
+                return jsonify({"ok": True, "mensaje": "Respuesta enviada correctamente."}), 201
+
+        return jsonify({"ok": False, "error": "Conversación no encontrada."}), 404
+
+    except Exception as e:
+        print("ERROR EN /api/admin/consultas/<id>/responder:", e)
+        return jsonify({"ok": False, "error": "No se pudo enviar la respuesta."}), 500
 
 
 @app.route("/api/admin/consultas/<int:consulta_id>", methods=["DELETE"])
@@ -1714,55 +1926,37 @@ def admin_borrar_consulta(consulta_id):
     try:
 
         if DATABASE_URL:
-
             with psycopg.connect(DATABASE_URL) as conexion:
                 fila = conexion.execute(
                     "DELETE FROM consultas_registro WHERE id = %s RETURNING id",
                     (consulta_id,)
                 ).fetchone()
 
-            if not fila:
-                return jsonify({
-                    "ok": False,
-                    "error": "Consulta no encontrada."
-                }), 404
+                if not fila:
+                    return jsonify({"ok": False, "error": "Consulta no encontrada."}), 404
 
         else:
-
             datos = cargar_datos()
             consultas = datos.get("consultas", [])
-
             if not isinstance(consultas, list):
                 consultas = []
 
             nuevas_consultas = [
-                consulta
-                for consulta in consultas
+                consulta for consulta in consultas
                 if int(consulta.get("id", -1)) != consulta_id
             ]
 
             if len(nuevas_consultas) == len(consultas):
-                return jsonify({
-                    "ok": False,
-                    "error": "Consulta no encontrada."
-                }), 404
+                return jsonify({"ok": False, "error": "Consulta no encontrada."}), 404
 
             datos["consultas"] = nuevas_consultas
             guardar_datos(datos)
 
-        return jsonify({
-            "ok": True,
-            "mensaje": "Consulta eliminada correctamente."
-        })
+        return jsonify({"ok": True, "mensaje": "Conversación eliminada correctamente."})
 
     except Exception as e:
-
         print("ERROR EN /api/admin/consultas/<id>:", e)
-
-        return jsonify({
-            "ok": False,
-            "error": "No se pudo eliminar la consulta."
-        }), 500
+        return jsonify({"ok": False, "error": "No se pudo eliminar la conversación."}), 500
 
 
 @app.route("/api/admin/comprobantes/<int:comprobante_id>")

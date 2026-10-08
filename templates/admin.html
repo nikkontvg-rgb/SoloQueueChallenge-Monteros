@@ -513,26 +513,83 @@ body::after {
         const contenedor = document.getElementById("listaConsultas");
 
         if (!consultas.length) {
-            contenedor.innerHTML = '<div class="vacio">No hay consultas pendientes.</div>';
+            contenedor.innerHTML = '<div class="vacio">No hay consultas.</div>';
             return;
         }
 
-        contenedor.innerHTML = consultas.map(consulta => `
-            <div class="tarjeta">
-                <div class="datos">
-                    <div class="nombre">💬 ${escapar(consulta.nombre)}</div>
-                    <div class="fecha">Fecha: ${escapar(consulta.creada_en || "Sin fecha")}</div>
-                    <div class="stream" style="white-space:pre-wrap; margin-top:10px;">${escapar(consulta.consulta)}</div>
+        contenedor.innerHTML = consultas.map(consulta => {
+            const mensajes = consulta.mensajes || [];
+
+            const chat = mensajes.map(mensaje => {
+                const esAdmin = mensaje.autor_tipo === "admin";
+                return `
+                    <div style="margin-bottom:10px; padding:12px; border-radius:8px; background:${esAdmin ? "rgba(148,27,58,.18)" : "rgba(255,255,255,.045)"}; border-left:3px solid ${esAdmin ? "#d63b5c" : "#777"};">
+                        <div style="font-weight:800; color:${esAdmin ? "#e15b77" : "#ddd"};">${esAdmin ? "🛡️ " : "👤 "}${escapar(mensaje.autor_nombre)}</div>
+                        <div style="white-space:pre-wrap; margin-top:5px; line-height:1.5;">${escapar(mensaje.mensaje)}</div>
+                        <div style="font-size:12px; color:#888; margin-top:6px;">${escapar(mensaje.creado_en || "")}</div>
+                    </div>
+                `;
+            }).join("");
+
+            return `
+                <div class="tarjeta">
+                    <div class="datos" style="width:100%;">
+                        <div class="nombre">💬 ${escapar(consulta.nombre)}</div>
+                        <div class="fecha">Inicio: ${escapar(consulta.creada_en || "Sin fecha")}</div>
+
+                        <div style="margin-top:15px; padding:14px; border:1px solid rgba(148,27,58,.35); border-radius:8px; background:rgba(8,10,11,.35);">
+                            <div style="font-weight:800; color:#d63b5c; margin-bottom:10px;">CHAT</div>
+                            ${chat || '<div class="vacio">Sin mensajes.</div>'}
+                        </div>
+
+                        <div style="margin-top:14px;">
+                            <label style="display:block; margin-bottom:7px; font-weight:700;">Responder</label>
+                            <textarea id="respuestaConsulta_${Number(consulta.id)}" maxlength="2000" placeholder="Escribí la respuesta..." style="width:100%; min-height:100px; box-sizing:border-box; padding:12px; border-radius:7px; border:1px solid #555; background:#171a1b; color:#fff; resize:vertical;"></textarea>
+                            <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+                                <button class="aprobar" onclick="responderConsulta(${Number(consulta.id)})">↩ RESPONDER</button>
+                                <button class="borrar" onclick="borrarConsulta(${Number(consulta.id)})">🗑 ELIMINAR CHAT</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="acciones">
-                    <button class="borrar" onclick="borrarConsulta(${Number(consulta.id)})">🗑 ELIMINAR</button>
-                </div>
-            </div>
-        `).join("");
+            `;
+        }).join("");
+    }
+
+    async function responderConsulta(id) {
+        const campo = document.getElementById(`respuestaConsulta_${id}`);
+        const respuestaTexto = campo ? campo.value.trim() : "";
+
+        if (!respuestaTexto) {
+            mostrarMensaje("❌ Escribí una respuesta.");
+            return;
+        }
+
+        const nombreAdmin = prompt("Nombre del administrador:", "Administrador");
+        if (nombreAdmin === null) return;
+
+        const respuesta = await fetch(`/api/admin/consultas/${encodeURIComponent(id)}/responder`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                respuesta: respuestaTexto,
+                admin_nombre: nombreAdmin.trim() || "Administrador"
+            })
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok || !resultado.ok) {
+            mostrarMensaje("❌ " + (resultado.error || "No se pudo enviar la respuesta."));
+            return;
+        }
+
+        mostrarMensaje("✅ Respuesta enviada.");
+        await cargarConsultas();
     }
 
     async function borrarConsulta(id) {
-        if (!confirm("¿Eliminar esta consulta?")) return;
+        if (!confirm("¿Eliminar toda esta conversación? Se borrarán la pregunta y todas sus respuestas.")) return;
 
         const respuesta = await fetch(`/api/admin/consultas/${encodeURIComponent(id)}`, {
             method: "DELETE"
@@ -541,7 +598,7 @@ body::after {
         const resultado = await respuesta.json();
 
         if (!respuesta.ok || !resultado.ok) {
-            mostrarMensaje("❌ " + (resultado.error || "No se pudo eliminar la consulta."));
+            mostrarMensaje("❌ " + (resultado.error || "No se pudo eliminar la conversación."));
             return;
         }
 
