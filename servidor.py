@@ -11,6 +11,9 @@ import os
 import time
 import threading
 import uuid
+import secrets
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from io import BytesIO
 
 
@@ -54,6 +57,62 @@ INTERVALO_ESTADO = 15
 # Cuando Riot devuelve 429, esperamos 60 segundos
 # antes de volver a consultar.
 PAUSA_RATE_LIMIT = 60
+
+# Torneo: del 5 al 30 de noviembre de 2026, 100 horas totales.
+HORAS_MAXIMAS_TORNEO = 100
+SEGUNDOS_MAXIMOS_TORNEO = HORAS_MAXIMAS_TORNEO * 3600
+LATIDO_MAXIMO_SEGUNDOS = 45
+FECHA_INICIO_TORNEO = "2026-11-05"
+FECHA_FIN_TORNEO = "2026-11-30"
+ZONA_TORNEO = ZoneInfo("America/Argentina/Buenos_Aires")
+
+def torneo_en_fecha():
+    hoy = datetime.now(ZONA_TORNEO).date().isoformat()
+    return FECHA_INICIO_TORNEO <= hoy <= FECHA_FIN_TORNEO
+
+
+def inicializar_control_tiempo(jugador):
+    jugador.setdefault("segundos_torneo", 0)
+    jugador.setdefault("agente_token", secrets.token_urlsafe(32))
+    jugador.setdefault("agente_ultimo_latido", None)
+    jugador.setdefault("agente_sesion_activa", False)
+    jugador.setdefault("agente_ultima_actividad", None)
+    jugador.setdefault("completado", False)
+    jugador.setdefault("completado_en", None)
+    jugador.setdefault("estadisticas_finales", None)
+    try:
+        jugador["segundos_torneo"] = max(0, min(SEGUNDOS_MAXIMOS_TORNEO, int(jugador.get("segundos_torneo", 0))))
+    except (TypeError, ValueError):
+        jugador["segundos_torneo"] = 0
+    return jugador
+
+
+def finalizar_jugador_si_corresponde(nombre, jugador):
+    inicializar_control_tiempo(jugador)
+    if jugador.get("segundos_torneo", 0) >= SEGUNDOS_MAXIMOS_TORNEO and not jugador.get("estadisticas_finales"):
+        jugador["segundos_torneo"] = SEGUNDOS_MAXIMOS_TORNEO
+        jugador["completado"] = True
+        jugador["completado_en"] = jugador.get("completado_en") or datetime.now(timezone.utc).isoformat()
+        jugador["agente_sesion_activa"] = False
+        jugador["estadisticas_finales"] = {
+            "rango": jugador.get("rango"),
+            "partidas_riot": (jugador.get("partidas_riot") or [])[:5],
+            "ultima_partida": jugador.get("ultima_partida"),
+            "fecha": jugador["completado_en"]
+        }
+        print(f"{nombre}: completó las 100 horas del torneo.")
+
+
+def tiempo_torneo(jugador):
+    inicializar_control_tiempo(jugador)
+    segundos = min(SEGUNDOS_MAXIMOS_TORNEO, int(jugador.get("segundos_torneo", 0)))
+    return {
+        "segundos_torneo": segundos,
+        "horas_jugadas": round(segundos / 3600, 2),
+        "horas_restantes": round(max(0, SEGUNDOS_MAXIMOS_TORNEO - segundos) / 3600, 2),
+        "completado": bool(jugador.get("completado")),
+        "completado_en": jugador.get("completado_en")
+    }
 
 
 # ============================================================
@@ -594,6 +653,10 @@ def actualizar_datos_riot():
                 indice
             ]
 
+            inicializar_control_tiempo(jugador)
+            finalizar_jugador_si_corresponde(nombre, jugador)
+            if jugador.get("completado"):
+                continue
 
             print()
             print(
@@ -1194,6 +1257,12 @@ def actualizar_estados():
 
     for nombre, jugador in jugadores.items():
 
+        inicializar_control_tiempo(jugador)
+        if jugador.get("completado"):
+            with bloqueo_estados:
+                cache_estados[nombre] = {"estado": "completado", "game_start_time": None}
+            continue
+
         estado = obtener_estado_jugador(
             nombre,
             jugador
@@ -1359,6 +1428,64 @@ def registrar_jugador():
 
 
 # ============================================================
+# AGENTE DE WINDOWS: LATIDOS Y CONTROL DE LAS 100 HORAS
+# ============================================================
+
+@app.route("/api/agente/latido", methods=["POST"])
+def agente_latido():
+    datos_recibidos = request.get_json(silent=True) or {}
+    nombre = str(datos_recibidos.get("nombre", "")).strip()
+    token = str(datos_recibidos.get("token", "")).strip()
+    activo = bool(datos_recibidos.get("activo", False))
+    if not nombre or not token:
+        return jsonify({"ok": False, "error": "Faltan nombre y token del agente."}), 400
+
+    datos = cargar_datos()
+    jugadores = datos.get("jugadores", {})
+    jugador = jugadores.get(nombre)
+    if not jugador or not secrets.compare_digest(str(jugador.get("agente_token", "")), token):
+        return jsonify({"ok": False, "error": "Participante o token inválido."}), 403
+
+    inicializar_control_tiempo(jugador)
+    ahora = time.time()
+    if jugador.get("completado"):
+        return jsonify({"ok": True, "completado": True, **tiempo_torneo(jugador)})
+
+    ultimo = jugador.get("agente_ultimo_latido")
+    estaba_activo = bool(jugador.get("agente_sesion_activa"))
+    # Se acredita el intervalo desde el latido anterior también cuando el cliente
+    # acaba de cerrarse. Se limita el salto para no sumar tiempo durante cortes.
+    if estaba_activo and ultimo is not None and torneo_en_fecha():
+        try:
+            delta = max(0, min(LATIDO_MAXIMO_SEGUNDOS, ahora - float(ultimo)))
+        except (TypeError, ValueError):
+            delta = 0
+        jugador["segundos_torneo"] = min(SEGUNDOS_MAXIMOS_TORNEO, int(jugador.get("segundos_torneo", 0)) + int(delta))
+
+    # No se cuenta tiempo antes del 5 ni después del 30 de noviembre (hora argentina).
+    activo = activo and torneo_en_fecha()
+    jugador["agente_sesion_activa"] = activo
+    jugador["agente_ultimo_latido"] = ahora if activo else None
+    jugador["agente_ultima_actividad"] = datetime.now(timezone.utc).isoformat()
+    finalizar_jugador_si_corresponde(nombre, jugador)
+    guardar_datos(datos)
+    control = tiempo_torneo(jugador)
+    return jsonify({"ok": True, **control, "sesion_activa": bool(jugador.get("agente_sesion_activa"))})
+
+
+@app.route("/api/agente/estado", methods=["GET"])
+def agente_estado():
+    nombre = str(request.args.get("nombre", "")).strip()
+    token = str(request.args.get("token", "")).strip()
+    datos = cargar_datos()
+    jugador = datos.get("jugadores", {}).get(nombre)
+    if not jugador or not secrets.compare_digest(str(jugador.get("agente_token", "")), token):
+        return jsonify({"ok": False, "error": "Participante o token inválido."}), 403
+    inicializar_control_tiempo(jugador)
+    return jsonify({"ok": True, **tiempo_torneo(jugador)})
+
+
+# ============================================================
 # ADMINISTRACIÓN
 # ============================================================
 
@@ -1502,7 +1629,15 @@ def admin_aprobar_solicitud():
             "historial": [],
             "partidas_riot": [],
             "rango": None,
-            "ultima_partida": None
+            "ultima_partida": None,
+            "segundos_torneo": 0,
+            "agente_token": secrets.token_urlsafe(32),
+            "agente_ultimo_latido": None,
+            "agente_sesion_activa": False,
+            "agente_ultima_actividad": None,
+            "completado": False,
+            "completado_en": None,
+            "estadisticas_finales": None
         }
 
         solicitudes = [
@@ -1521,9 +1656,11 @@ def admin_aprobar_solicitud():
             cache_estados.pop(nombre, None)
             ultima_consulta_estado.pop(nombre, None)
 
+        token_agente = jugadores[nombre]["agente_token"]
         return jsonify({
             "ok": True,
-            "mensaje": f"{nombre} aprobado correctamente."
+            "mensaje": f"{nombre} aprobado correctamente. Código del agente (compartir en privado con el participante): {token_agente}",
+            "token_agente": token_agente
         })
 
     except Exception as e:
@@ -2140,9 +2277,10 @@ def historial_jugador(nombre):
     # HORAS
     # ========================================================
 
-    horas_jugadas = 0
-
-    horas_disponibles = 4
+    control_tiempo = tiempo_torneo(jugador)
+    horas_jugadas = control_tiempo["horas_jugadas"]
+    horas_disponibles = control_tiempo["horas_restantes"]
+    completado = control_tiempo["completado"]
 
 
     return render_template(
@@ -2156,7 +2294,8 @@ def historial_jugador(nombre):
         partidas_totales=partidas_totales,
         wr=wr,
         horas_jugadas=horas_jugadas,
-        horas_disponibles=horas_disponibles
+        horas_disponibles=horas_disponibles,
+        completado=completado
     )
 
 
@@ -2237,7 +2376,11 @@ def api_jugadores():
                 "partidas_riot": jugador.get(
                     "partidas_riot",
                     []
-                )
+                ),
+                "horas_jugadas": tiempo_torneo(jugador)["horas_jugadas"],
+                "horas_restantes": tiempo_torneo(jugador)["horas_restantes"],
+                "completado": tiempo_torneo(jugador)["completado"],
+                "completado_en": tiempo_torneo(jugador)["completado_en"]
             }
 
 
