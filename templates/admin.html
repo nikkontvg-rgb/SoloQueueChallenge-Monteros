@@ -333,6 +333,21 @@ body::after {
     }
 }
 
+
+
+        .entrega {
+            border: 1px solid rgba(148,27,58,.65);
+            background: linear-gradient(145deg, rgba(43,25,30,.98), rgba(17,19,20,.98));
+        }
+        .entrega p { color: #c7c7c7; line-height: 1.5; }
+        .entrega-campo { margin: 14px 0; }
+        .entrega-campo label { display:block; color:#d3ad78; font-weight:800; margin-bottom:7px; }
+        .entrega-fila { display:flex; gap:8px; align-items:stretch; }
+        .entrega-fila input { flex:1; min-width:0; padding:12px; border-radius:6px; border:1px solid #555; background:#090b0c; color:#f1f1f1; font-size:14px; }
+        .copiar { background:#70152b; color:#fff; white-space:nowrap; }
+        .entrega-nota { color:#aaa !important; font-size:13px; }
+        @media (max-width:600px) { .entrega-fila { flex-direction:column; } .entrega-fila button { width:100%; } }
+
     </style>
 </head>
 <body>
@@ -348,6 +363,27 @@ body::after {
     <section class="seccion">
         <h2>SOLICITUDES PENDIENTES <span class="cantidad" id="cantidadSolicitudes">0</span></h2>
         <div class="lista" id="listaSolicitudes"></div>
+    </section>
+
+    <section class="seccion entrega" id="panelEntrega" hidden>
+        <h2>DATOS PARA ENVIAR AL PARTICIPANTE</h2>
+        <p id="entregaDescripcion">Inscripción aprobada. Copiá el código y el enlace para enviárselos manualmente por correo.</p>
+        <div class="entrega-campo">
+            <label for="codigoAgente">CÓDIGO PRIVADO DEL AGENTE</label>
+            <div class="entrega-fila">
+                <input id="codigoAgente" type="text" readonly autocomplete="off">
+                <button class="copiar" type="button" onclick="copiarCampo('codigoAgente','Código copiado.')">COPIAR CÓDIGO</button>
+            </div>
+        </div>
+        <div class="entrega-campo">
+            <label for="enlaceInstalador">ENLACE DE DESCARGA DEL INSTALADOR</label>
+            <div class="entrega-fila">
+                <input id="enlaceInstalador" type="text" readonly value="https://github.com/nikkontvg-rgb/SoloQueueChallenge-Monteros/releases/latest/download/Instalador_SoloQChallenge_Monteros.exe">
+                <button class="copiar" type="button" onclick="copiarCampo('enlaceInstalador','Enlace copiado.')">COPIAR ENLACE</button>
+                <button class="copiar" type="button" onclick="abrirInstalador()">ABRIR</button>
+            </div>
+        </div>
+        <p class="entrega-nota">El código es privado: enviáselo únicamente al participante aprobado. Este panel conserva el código en esta vista hasta que cierres o recargues la página.</p>
     </section>
 
     <section class="seccion">
@@ -457,8 +493,36 @@ body::after {
             return;
         }
 
-        mostrarMensaje("✅ " + resultado.mensaje);
+        if (!resultado.token_agente) {
+            mostrarMensaje("⚠️ Inscripción aprobada, pero el servidor no devolvió el código. Revisá los logs antes de enviarlo.");
+            await cargarTodo();
+            return;
+        }
+
+        document.getElementById("codigoAgente").value = resultado.token_agente;
+        document.getElementById("entregaDescripcion").textContent = `Inscripción de ${nombre} aprobada. Copiá estos datos y envialos manualmente por correo.`;
+        document.getElementById("panelEntrega").hidden = false;
+        document.getElementById("panelEntrega").scrollIntoView({ behavior: "smooth", block: "center" });
+        mostrarMensaje("✅ Inscripción aprobada. Ya podés copiar el código y el enlace.");
         await cargarTodo();
+    }
+
+    async function copiarCampo(id, mensajeExito) {
+        const campo = document.getElementById(id);
+        const valor = campo.value;
+        try {
+            await navigator.clipboard.writeText(valor);
+            mostrarMensaje("✅ " + mensajeExito);
+        } catch (error) {
+            campo.focus();
+            campo.select();
+            const copiado = document.execCommand("copy");
+            mostrarMensaje(copiado ? "✅ " + mensajeExito : "Seleccioná el texto y copialo manualmente.");
+        }
+    }
+
+    function abrirInstalador() {
+        window.open(document.getElementById("enlaceInstalador").value, "_blank", "noopener,noreferrer");
     }
 
     async function rechazar(nombre) {
