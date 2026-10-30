@@ -45,7 +45,6 @@ class App:
         ttk.Label(root, text="SOLOQ CHALLENGE MONTEROS",
                   font=("Segoe UI", 15, "bold")).pack(pady=(18, 4))
         ttk.Label(root, text="Agente de seguimiento de las 100 horas").pack(pady=(0, 14))
-
         frame = ttk.Frame(root, padding=12)
         frame.pack(fill="x")
         ttk.Label(frame, text="Nombre exacto en el torneo").grid(row=0, column=0, sticky="w", pady=5)
@@ -63,7 +62,6 @@ class App:
         ttk.Label(root, textvariable=self.estado, wraplength=450, justify="center").pack(padx=15, pady=10)
         self.horas = tk.StringVar(value="Consumidas: —   |   Restantes: —")
         ttk.Label(root, textvariable=self.horas, font=("Segoe UI", 10, "bold")).pack(pady=2)
-
         botones = ttk.Frame(root)
         botones.pack(pady=10)
         self.boton_iniciar = ttk.Button(botones, text="Iniciar seguimiento", command=self.iniciar)
@@ -104,11 +102,11 @@ class App:
 
     def bucle(self):
         while not self.detener.is_set():
-            activo = riot_abierto()
+            riot_detectado = riot_abierto()
             try:
                 r = requests.post(
                     self.config["api"] + "/api/agente/latido",
-                    json={"nombre": self.config["nombre"], "token": self.config["token"], "activo": activo},
+                    json={"nombre": self.config["nombre"], "token": self.config["token"], "activo": riot_detectado},
                     timeout=8,
                 )
                 if r.status_code == 403:
@@ -117,11 +115,17 @@ class App:
                 r.raise_for_status()
                 data = r.json()
                 consumidas = float(data.get("horas_jugadas", 0))
-                restantes = float(data.get("horas_restantes", max(0, 100-consumidas)))
+                restantes = float(data.get("horas_restantes", max(0, 100 - consumidas)))
+                if data.get("completado"):
+                    estado = "Límite de 100 horas completado. Ya no se contabiliza más tiempo."
+                elif data.get("sesion_activa"):
+                    estado = "Cliente Riot detectado: seguimiento activo."
+                elif riot_detectado:
+                    estado = "Riot detectado, pero el servidor no confirmó la sesión."
+                else:
+                    estado = "Cliente Riot cerrado: tiempo pausado."
                 self.actualizar_ui(
-                    "Límite de 100 horas completado. Ya no se contabiliza más tiempo."
-                    if data.get("completado")
-                    else ("Cliente Riot detectado: seguimiento activo." if activo else "Cliente Riot cerrado: tiempo pausado."),
+                    estado,
                     f"Consumidas: {consumidas:.2f} h   |   Restantes: {restantes:.2f} h"
                 )
                 if data.get("completado"):

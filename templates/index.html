@@ -1711,6 +1711,15 @@ body::after {
     }
 }
 
+
+        /* CONTROL DE LAS 100 HORAS */
+        .horas-torneo { margin-top: 13px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.13); }
+        .horas-torneo-cabecera { display:flex; justify-content:space-between; gap:10px; color:#e8d8d3; font-size:12px; font-weight:700; letter-spacing:.5px; }
+        .horas-torneo-detalle { margin-top:5px; color:#d7a9b4; font-size:12px; }
+        .horas-torneo-barra { height:6px; margin-top:8px; overflow:hidden; border-radius:99px; background:rgba(255,255,255,.13); }
+        .horas-torneo-progreso { height:100%; border-radius:99px; background:linear-gradient(90deg,#70152b,#d3ad78); }
+        .horas-torneo-completo { color:#d3ad78; font-weight:700; }
+
     </style>
 
 </head>
@@ -2453,6 +2462,19 @@ body::after {
 
 
                                 ${contador}
+
+                                <div class="horas-torneo">
+                                    <div class="horas-torneo-cabecera">
+                                        <span>HORAS DEL TORNEO</span>
+                                        <span>${jugador.completado ? "COMPLETADO" : `${Number(jugador.horas_jugadas || 0).toFixed(2)} / 100 h`}</span>
+                                    </div>
+                                    <div class="horas-torneo-detalle">
+                                        ${Number(jugador.horas_restantes ?? 100).toFixed(2)} h restantes
+                                    </div>
+                                    <div class="horas-torneo-barra">
+                                        <div class="horas-torneo-progreso" style="width:${Math.min(100, Math.max(0, Number(jugador.horas_jugadas || 0)))}%"></div>
+                                    </div>
+                                </div>
 
                             </a>
 

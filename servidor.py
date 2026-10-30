@@ -67,8 +67,11 @@ FECHA_FIN_TORNEO = "2026-11-30"
 ZONA_TORNEO = ZoneInfo("America/Argentina/Buenos_Aires")
 
 def torneo_en_fecha():
+    # El seguimiento se habilita desde la etapa de pruebas previa al torneo.
+    # Las fechas oficiales siguen siendo 5 al 30 de noviembre de 2026.
+    # Se permite contabilizar desde ahora, pero nunca después del cierre.
     hoy = datetime.now(ZONA_TORNEO).date().isoformat()
-    return FECHA_INICIO_TORNEO <= hoy <= FECHA_FIN_TORNEO
+    return hoy <= FECHA_FIN_TORNEO
 
 
 def inicializar_control_tiempo(jugador):
@@ -1462,7 +1465,7 @@ def agente_latido():
             delta = 0
         jugador["segundos_torneo"] = min(SEGUNDOS_MAXIMOS_TORNEO, int(jugador.get("segundos_torneo", 0)) + int(delta))
 
-    # No se cuenta tiempo antes del 5 ni después del 30 de noviembre (hora argentina).
+    # El seguimiento de prueba está habilitado antes del inicio oficial; se detiene al finalizar el 30 de noviembre.
     activo = activo and torneo_en_fecha()
     jugador["agente_sesion_activa"] = activo
     jugador["agente_ultimo_latido"] = ahora if activo else None
@@ -2346,6 +2349,21 @@ def api_jugadores():
                 )
 
 
+            # El agente confirma que Riot está abierto incluso en menú/cola.
+            # Si Riot detecta una partida, EN PARTIDA siempre tiene prioridad.
+            inicializar_control_tiempo(jugador)
+            ultimo_latido = jugador.get("agente_ultimo_latido")
+            agente_reciente = False
+            if jugador.get("agente_sesion_activa") and ultimo_latido is not None:
+                try:
+                    agente_reciente = (time.time() - float(ultimo_latido)) <= LATIDO_MAXIMO_SEGUNDOS
+                except (TypeError, ValueError):
+                    agente_reciente = False
+            estado_publico = estado.get("estado", "offline")
+            if estado_publico != "in_game":
+                estado_publico = "online" if agente_reciente and not jugador.get("completado") else estado_publico
+
+            control = tiempo_torneo(jugador)
             respuesta[nombre] = {
 
                 "riot_id": jugador.get(
@@ -2356,10 +2374,8 @@ def api_jugadores():
                     "riot_tag"
                 ),
 
-                "estado": estado.get(
-                    "estado",
-                    "offline"
-                ),
+                "estado": estado_publico,
+                "sesion_activa": bool(agente_reciente),
 
                 "game_start_time": estado.get(
                     "game_start_time"
@@ -2377,10 +2393,10 @@ def api_jugadores():
                     "partidas_riot",
                     []
                 ),
-                "horas_jugadas": tiempo_torneo(jugador)["horas_jugadas"],
-                "horas_restantes": tiempo_torneo(jugador)["horas_restantes"],
-                "completado": tiempo_torneo(jugador)["completado"],
-                "completado_en": tiempo_torneo(jugador)["completado_en"]
+                "horas_jugadas": control["horas_jugadas"],
+                "horas_restantes": control["horas_restantes"],
+                "completado": control["completado"],
+                "completado_en": control["completado_en"]
             }
 
 
