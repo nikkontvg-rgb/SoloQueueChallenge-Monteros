@@ -21,6 +21,13 @@ CONFIG_DIR = Path(os.environ.get("APPDATA", str(Path.home()))) / "SoloQChallenge
 CONFIG_PATH = CONFIG_DIR / "config.json"
 
 
+def formatear_horas(horas):
+    """Convierte horas decimales a H:MM, con minutos en base 60."""
+    total_minutos = max(0, round(float(horas) * 60))
+    horas_enteras, minutos = divmod(total_minutos, 60)
+    return f"{horas_enteras}:{minutos:02d}"
+
+
 def riot_abierto():
     try:
         for proc in psutil.process_iter(["name"]):
@@ -30,12 +37,6 @@ def riot_abierto():
         pass
     return False
 
-
-
-def formatear_horas(horas):
-    total_minutos = max(0, round(float(horas) * 60))
-    horas_enteras, minutos = divmod(total_minutos, 60)
-    return f"{horas_enteras}:{minutos:02d}"
 
 class App:
     def __init__(self, root):
@@ -132,7 +133,7 @@ class App:
                     estado = "Cliente Riot cerrado: tiempo pausado."
                 self.actualizar_ui(
                     estado,
-                    f"Consumidas: {formatear_horas(consumidas)} h   |   Restantes: {formatear_horas(restantes)} h"
+                    f"Consumidas: {formatear_horas(consumidas)}   |   Restantes: {formatear_horas(restantes)}"
                 )
                 if data.get("completado"):
                     break
