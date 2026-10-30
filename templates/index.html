@@ -2183,6 +2183,13 @@ body::after {
 
         }
 
+        function formatearHoras(horas) {
+            const totalMinutos = Math.max(0, Math.round(Number(horas || 0) * 60));
+            const horasEnteras = Math.floor(totalMinutos / 60);
+            const minutos = totalMinutos % 60;
+            return `${horasEnteras}:${String(minutos).padStart(2, "0")}`;
+        }
+
 
         /* =========================================================
            FECHA ÚLTIMA PARTIDA
@@ -2466,10 +2473,10 @@ body::after {
                                 <div class="horas-torneo">
                                     <div class="horas-torneo-cabecera">
                                         <span>HORAS DEL TORNEO</span>
-                                        <span>${jugador.completado ? "COMPLETADO" : `${Number(jugador.horas_jugadas || 0).toFixed(2)} / 100 h`}</span>
+                                        <span>${jugador.completado ? "COMPLETADO" : `${formatearHoras(jugador.horas_jugadas)} / 100:00 h`}</span>
                                     </div>
                                     <div class="horas-torneo-detalle">
-                                        ${Number(jugador.horas_restantes ?? 100).toFixed(2)} h restantes
+                                        ${formatearHoras(jugador.horas_restantes ?? 100)} h restantes
                                     </div>
                                     <div class="horas-torneo-barra">
                                         <div class="horas-torneo-progreso" style="width:${Math.min(100, Math.max(0, Number(jugador.horas_jugadas || 0)))}%"></div>

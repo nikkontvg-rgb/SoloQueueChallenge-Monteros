@@ -31,6 +31,12 @@ def riot_abierto():
     return False
 
 
+
+def formatear_horas(horas):
+    total_minutos = max(0, round(float(horas) * 60))
+    horas_enteras, minutos = divmod(total_minutos, 60)
+    return f"{horas_enteras}:{minutos:02d}"
+
 class App:
     def __init__(self, root):
         self.root = root
@@ -126,7 +132,7 @@ class App:
                     estado = "Cliente Riot cerrado: tiempo pausado."
                 self.actualizar_ui(
                     estado,
-                    f"Consumidas: {consumidas:.2f} h   |   Restantes: {restantes:.2f} h"
+                    f"Consumidas: {formatear_horas(consumidas)} h   |   Restantes: {formatear_horas(restantes)} h"
                 )
                 if data.get("completado"):
                     break
