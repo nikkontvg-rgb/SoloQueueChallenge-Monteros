@@ -2,9 +2,12 @@
 """Agente gráfico del SoloQ Challenge Monteros para Windows."""
 import json
 import os
+import re
 import threading
 import time
+import warnings
 from pathlib import Path
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -13,37 +16,71 @@ import requests
 
 API_DEFAULT = "https://soloqueuechallenge-monteros.onrender.com"
 INTERVALO = 10
-PROCESOS_RIOT = {
-    "riotclientservices.exe", "riotclientux.exe", "riotclientuxrender.exe",
-    "leagueclient.exe", "leagueclientux.exe", "leagueclientuxrender.exe",
-}
+PROCESO_LOL = "leagueclient.exe"
 CONFIG_DIR = Path(os.environ.get("APPDATA", str(Path.home()))) / "SoloQChallenge"
 CONFIG_PATH = CONFIG_DIR / "config.json"
 
-
-def formatear_horas(horas):
-    """Convierte horas decimales a H:MM, con minutos en base 60."""
-    total_minutos = max(0, round(float(horas) * 60))
-    horas_enteras, minutos = divmod(total_minutos, 60)
-    return f"{horas_enteras}:{minutos:02d}"
+# El certificado local del League Client es autofirmado. La consulta queda
+# limitada a 127.0.0.1 y usa el token temporal del propio proceso.
+warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 
-def riot_abierto():
+def obtener_sesion_lol():
+    """Devuelve el PUUID de la cuenta conectada en LoL, o None.
+
+    No considera Riot Client, Valorant ni Legends of Runeterra: exige
+    LeagueClient.exe y consulta /lol-summoner/v1/current-summoner.
+    """
     try:
-        for proc in psutil.process_iter(["name"]):
-            if (proc.info.get("name") or "").lower() in PROCESOS_RIOT:
-                return True
+        for proc in psutil.process_iter(["name", "cmdline"]):
+            try:
+                nombre = (proc.info.get("name") or "").lower()
+                if nombre != PROCESO_LOL:
+                    continue
+
+                cmdline = proc.info.get("cmdline") or []
+                argumentos = " ".join(str(x) for x in cmdline)
+                puerto = re.search(r"--app-port=(\d+)", argumentos)
+                token = re.search(r"--remoting-auth-token=([^\s]+)", argumentos)
+                if not puerto or not token:
+                    continue
+
+                url = f"https://127.0.0.1:{puerto.group(1)}/lol-summoner/v1/current-summoner"
+                respuesta = requests.get(
+                    url,
+                    auth=("riot", token.group(1)),
+                    verify=False,
+                    timeout=3,
+                )
+                if respuesta.status_code != 200:
+                    continue
+
+                datos = respuesta.json()
+                puuid = str(datos.get("puuid") or "").strip()
+                if puuid:
+                    return puuid
+            except (psutil.Error, requests.RequestException, ValueError, OSError):
+                continue
     except (psutil.Error, OSError):
         pass
-    return False
+    return None
+
+
+def formatear_horas(horas):
+    try:
+        total_minutos = max(0, int(round(float(horas) * 60)))
+    except (TypeError, ValueError):
+        total_minutos = 0
+    h, m = divmod(total_minutos, 60)
+    return f"{h}:{m:02d}"
 
 
 class App:
     def __init__(self, root):
         self.root = root
         self.root.title("SoloQ Challenge Monteros")
-        self.root.geometry("490x410")
-        self.root.minsize(450, 390)
+        self.root.geometry("500x420")
+        self.root.minsize(460, 400)
         self.root.protocol("WM_DELETE_WINDOW", self.cerrar)
         self.detener = threading.Event()
         self.hilo = None
@@ -66,7 +103,7 @@ class App:
         frame.columnconfigure(0, weight=1)
 
         self.estado = tk.StringVar(value="Ingresá tus datos y presioná Iniciar.")
-        ttk.Label(root, textvariable=self.estado, wraplength=450, justify="center").pack(padx=15, pady=10)
+        ttk.Label(root, textvariable=self.estado, wraplength=460, justify="center").pack(padx=15, pady=10)
         self.horas = tk.StringVar(value="Consumidas: —   |   Restantes: —")
         ttk.Label(root, textvariable=self.horas, font=("Segoe UI", 10, "bold")).pack(pady=2)
         botones = ttk.Frame(root)
@@ -109,11 +146,16 @@ class App:
 
     def bucle(self):
         while not self.detener.is_set():
-            riot_detectado = riot_abierto()
+            puuid = obtener_sesion_lol()
             try:
                 r = requests.post(
                     self.config["api"] + "/api/agente/latido",
-                    json={"nombre": self.config["nombre"], "token": self.config["token"], "activo": riot_detectado},
+                    json={
+                        "nombre": self.config["nombre"],
+                        "token": self.config["token"],
+                        "activo": bool(puuid),
+                        "puuid": puuid or "",
+                    },
                     timeout=8,
                 )
                 if r.status_code == 403:
@@ -121,24 +163,28 @@ class App:
                     break
                 r.raise_for_status()
                 data = r.json()
-                consumidas = float(data.get("horas_jugadas", 0))
-                restantes = float(data.get("horas_restantes", max(0, 100 - consumidas)))
+                consumidas = data.get("horas_jugadas", 0)
+                restantes = data.get("horas_restantes", max(0, 100 - float(consumidas)))
+
                 if data.get("completado"):
                     estado = "Límite de 100 horas completado. Ya no se contabiliza más tiempo."
+                elif not puuid:
+                    estado = "League of Legends sin sesión iniciada. Tiempo pausado."
+                elif not data.get("cuenta_validada"):
+                    estado = "Cuenta de LoL no registrada para este participante. Tiempo pausado."
                 elif data.get("sesion_activa"):
-                    estado = "Cliente Riot detectado: seguimiento activo."
-                elif riot_detectado:
-                    estado = "Riot detectado, pero el servidor no confirmó la sesión."
+                    estado = "Cuenta registrada verificada. Tiempo en seguimiento."
                 else:
-                    estado = "Cliente Riot cerrado: tiempo pausado."
+                    estado = "Cuenta detectada, pero el servidor no confirmó el seguimiento. Tiempo pausado."
+
                 self.actualizar_ui(
                     estado,
-                    f"Consumidas: {formatear_horas(consumidas)}   |   Restantes: {formatear_horas(restantes)}"
+                    f"Consumidas: {formatear_horas(consumidas)}   |   Restantes: {formatear_horas(restantes)}",
                 )
                 if data.get("completado"):
                     break
             except requests.RequestException:
-                self.actualizar_ui("Sin conexión con el servidor. Se reintentará automáticamente.")
+                self.actualizar_ui("Sin conexión con el servidor. Tiempo pausado; se reintentará.")
             if self.detener.wait(INTERVALO):
                 break
         self.root.after(0, lambda: self.boton_iniciar.configure(state="normal"))

@@ -1439,7 +1439,8 @@ def agente_latido():
     datos_recibidos = request.get_json(silent=True) or {}
     nombre = str(datos_recibidos.get("nombre", "")).strip()
     token = str(datos_recibidos.get("token", "")).strip()
-    activo = bool(datos_recibidos.get("activo", False))
+    activo_solicitado = bool(datos_recibidos.get("activo", False))
+    puuid_reportado = str(datos_recibidos.get("puuid", "")).strip()
     if not nombre or not token:
         return jsonify({"ok": False, "error": "Faltan nombre y token del agente."}), 400
 
@@ -1450,6 +1451,18 @@ def agente_latido():
         return jsonify({"ok": False, "error": "Participante o token inválido."}), 403
 
     inicializar_control_tiempo(jugador)
+
+    # El agente solo puede activar el contador si la cuenta actualmente
+    # conectada en League of Legends coincide con el PUUID registrado.
+    puuid_registrado = str(jugador.get("puuid", "")).strip()
+    cuenta_validada = bool(
+        activo_solicitado
+        and puuid_reportado
+        and puuid_registrado
+        and secrets.compare_digest(puuid_reportado, puuid_registrado)
+    )
+    activo = cuenta_validada
+
     ahora = time.time()
     if jugador.get("completado"):
         return jsonify({"ok": True, "completado": True, **tiempo_torneo(jugador)})
@@ -1473,7 +1486,17 @@ def agente_latido():
     finalizar_jugador_si_corresponde(nombre, jugador)
     guardar_datos(datos)
     control = tiempo_torneo(jugador)
-    return jsonify({"ok": True, **control, "sesion_activa": bool(jugador.get("agente_sesion_activa"))})
+    return jsonify({
+        "ok": True,
+        **control,
+        "sesion_activa": bool(jugador.get("agente_sesion_activa")),
+        "cuenta_validada": cuenta_validada,
+        "mensaje_cuenta": (
+            "Cuenta de League of Legends validada."
+            if cuenta_validada
+            else "La cuenta activa de League of Legends no coincide con la cuenta registrada."
+        )
+    })
 
 
 @app.route("/api/agente/estado", methods=["GET"])
