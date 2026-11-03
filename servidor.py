@@ -58,17 +58,16 @@ INTERVALO_ESTADO = 15
 # antes de volver a consultar.
 PAUSA_RATE_LIMIT = 60
 
-# Torneo: del 5 al 30 de noviembre de 2026, 100 horas totales.
+# Torneo: seguimiento habilitado desde ahora y hasta el 30 de noviembre de 2026.
 HORAS_MAXIMAS_TORNEO = 100
 SEGUNDOS_MAXIMOS_TORNEO = HORAS_MAXIMAS_TORNEO * 3600
 LATIDO_MAXIMO_SEGUNDOS = 45
-FECHA_INICIO_TORNEO = "2026-11-05"
 FECHA_FIN_TORNEO = "2026-11-30"
 ZONA_TORNEO = ZoneInfo("America/Argentina/Buenos_Aires")
 
 def torneo_en_fecha():
     hoy = datetime.now(ZONA_TORNEO).date().isoformat()
-    return FECHA_INICIO_TORNEO <= hoy <= FECHA_FIN_TORNEO
+    return hoy <= FECHA_FIN_TORNEO
 
 
 def inicializar_control_tiempo(jugador):
