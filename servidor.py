@@ -67,11 +67,8 @@ FECHA_FIN_TORNEO = "2026-11-30"
 ZONA_TORNEO = ZoneInfo("America/Argentina/Buenos_Aires")
 
 def torneo_en_fecha():
-    # El seguimiento se habilita desde la etapa de pruebas previa al torneo.
-    # Las fechas oficiales siguen siendo 5 al 30 de noviembre de 2026.
-    # Se permite contabilizar desde ahora, pero nunca después del cierre.
     hoy = datetime.now(ZONA_TORNEO).date().isoformat()
-    return hoy <= FECHA_FIN_TORNEO
+    return FECHA_INICIO_TORNEO <= hoy <= FECHA_FIN_TORNEO
 
 
 def inicializar_control_tiempo(jugador):
@@ -123,6 +120,12 @@ def tiempo_torneo(jugador):
 # ============================================================
 
 ultima_actualizacion = 0
+
+# Cache de validación de cuentas para evitar consultar Riot en cada latido.
+# La API KEY permanece exclusivamente en Render.
+CACHE_VALIDACION_CUENTAS = {}
+TTL_VALIDACION_CUENTA = 300  # 5 minutos
+bloqueo_validacion_cuentas = threading.Lock()
 
 bloqueo_actualizacion = threading.Lock()
 
@@ -1440,7 +1443,9 @@ def agente_latido():
     nombre = str(datos_recibidos.get("nombre", "")).strip()
     token = str(datos_recibidos.get("token", "")).strip()
     activo_solicitado = bool(datos_recibidos.get("activo", False))
-    puuid_reportado = str(datos_recibidos.get("puuid", "")).strip()
+    game_name_reportado = str(datos_recibidos.get("gameName", "")).strip()
+    tag_line_reportado = str(datos_recibidos.get("tagLine", "")).strip()
+
     if not nombre or not token:
         return jsonify({"ok": False, "error": "Faltan nombre y token del agente."}), 400
 
@@ -1451,26 +1456,60 @@ def agente_latido():
         return jsonify({"ok": False, "error": "Participante o token inválido."}), 403
 
     inicializar_control_tiempo(jugador)
-
-    # El agente solo puede activar el contador si la cuenta actualmente
-    # conectada en League of Legends coincide con el PUUID registrado.
     puuid_registrado = str(jugador.get("puuid", "")).strip()
-    cuenta_validada = bool(
-        activo_solicitado
-        and puuid_reportado
-        and puuid_registrado
-        and secrets.compare_digest(puuid_reportado, puuid_registrado)
-    )
-    activo = cuenta_validada
+    riot_id_registrado = str(jugador.get("riot_id", "")).strip()
+    riot_tag_registrado = str(jugador.get("riot_tag", "")).strip()
 
+    cuenta_validada = False
+    motivo_validacion = "No se pudo verificar la cuenta activa."
+
+    if activo_solicitado and game_name_reportado and tag_line_reportado:
+        # Primero comprobamos Riot ID + Tag contra los datos del participante.
+        identidad_coincide = (
+            game_name_reportado.casefold() == riot_id_registrado.casefold()
+            and tag_line_reportado.casefold() == riot_tag_registrado.casefold()
+        )
+        if identidad_coincide and puuid_registrado:
+            clave_cache = (nombre.casefold(), game_name_reportado.casefold(), tag_line_reportado.casefold())
+            ahora_validacion = time.time()
+            puuid_oficial = None
+            with bloqueo_validacion_cuentas:
+                entrada = CACHE_VALIDACION_CUENTAS.get(clave_cache)
+                if entrada and ahora_validacion - entrada[0] < TTL_VALIDACION_CUENTA:
+                    puuid_oficial = entrada[1]
+                else:
+                    CACHE_VALIDACION_CUENTAS.pop(clave_cache, None)
+
+            if puuid_oficial is None:
+                try:
+                    puuid_oficial = obtener_puuid_por_riot_id(game_name_reportado, tag_line_reportado)
+                    codigo_riot = obtener_ultimo_codigo_http()
+                    if codigo_riot == 429:
+                        motivo_validacion = "Riot está limitando temporalmente las consultas."
+                    elif puuid_oficial:
+                        with bloqueo_validacion_cuentas:
+                            CACHE_VALIDACION_CUENTAS[clave_cache] = (time.time(), str(puuid_oficial).strip())
+                    else:
+                        motivo_validacion = "Riot no pudo verificar el Riot ID y Tag de la cuenta activa."
+                except Exception as e:
+                    print(f"Error validando cuenta de {nombre} con Riot:", e)
+                    motivo_validacion = "No se pudo consultar la API de Riot."
+
+            if puuid_oficial:
+                cuenta_validada = secrets.compare_digest(str(puuid_oficial).strip(), puuid_registrado)
+                motivo_validacion = "Cuenta validada." if cuenta_validada else "El PUUID oficial no coincide con el registrado."
+        else:
+            motivo_validacion = "El Riot ID o Tag activo no coincide con el registrado para este participante."
+    elif not activo_solicitado:
+        motivo_validacion = "League of Legends no está conectado."
+
+    activo = cuenta_validada
     ahora = time.time()
     if jugador.get("completado"):
         return jsonify({"ok": True, "completado": True, **tiempo_torneo(jugador)})
 
     ultimo = jugador.get("agente_ultimo_latido")
     estaba_activo = bool(jugador.get("agente_sesion_activa"))
-    # Se acredita el intervalo desde el latido anterior también cuando el cliente
-    # acaba de cerrarse. Se limita el salto para no sumar tiempo durante cortes.
     if estaba_activo and ultimo is not None and torneo_en_fecha():
         try:
             delta = max(0, min(LATIDO_MAXIMO_SEGUNDOS, ahora - float(ultimo)))
@@ -1478,7 +1517,6 @@ def agente_latido():
             delta = 0
         jugador["segundos_torneo"] = min(SEGUNDOS_MAXIMOS_TORNEO, int(jugador.get("segundos_torneo", 0)) + int(delta))
 
-    # El seguimiento de prueba está habilitado antes del inicio oficial; se detiene al finalizar el 30 de noviembre.
     activo = activo and torneo_en_fecha()
     jugador["agente_sesion_activa"] = activo
     jugador["agente_ultimo_latido"] = ahora if activo else None
@@ -1491,13 +1529,8 @@ def agente_latido():
         **control,
         "sesion_activa": bool(jugador.get("agente_sesion_activa")),
         "cuenta_validada": cuenta_validada,
-        "mensaje_cuenta": (
-            "Cuenta de League of Legends validada."
-            if cuenta_validada
-            else "La cuenta activa de League of Legends no coincide con la cuenta registrada."
-        )
+        "mensaje_cuenta": "Cuenta de League of Legends validada." if cuenta_validada else motivo_validacion
     })
-
 
 @app.route("/api/agente/estado", methods=["GET"])
 def agente_estado():
@@ -2372,21 +2405,6 @@ def api_jugadores():
                 )
 
 
-            # El agente confirma que Riot está abierto incluso en menú/cola.
-            # Si Riot detecta una partida, EN PARTIDA siempre tiene prioridad.
-            inicializar_control_tiempo(jugador)
-            ultimo_latido = jugador.get("agente_ultimo_latido")
-            agente_reciente = False
-            if jugador.get("agente_sesion_activa") and ultimo_latido is not None:
-                try:
-                    agente_reciente = (time.time() - float(ultimo_latido)) <= LATIDO_MAXIMO_SEGUNDOS
-                except (TypeError, ValueError):
-                    agente_reciente = False
-            estado_publico = estado.get("estado", "offline")
-            if estado_publico != "in_game":
-                estado_publico = "online" if agente_reciente and not jugador.get("completado") else estado_publico
-
-            control = tiempo_torneo(jugador)
             respuesta[nombre] = {
 
                 "riot_id": jugador.get(
@@ -2397,8 +2415,10 @@ def api_jugadores():
                     "riot_tag"
                 ),
 
-                "estado": estado_publico,
-                "sesion_activa": bool(agente_reciente),
+                "estado": estado.get(
+                    "estado",
+                    "offline"
+                ),
 
                 "game_start_time": estado.get(
                     "game_start_time"
@@ -2416,10 +2436,10 @@ def api_jugadores():
                     "partidas_riot",
                     []
                 ),
-                "horas_jugadas": control["horas_jugadas"],
-                "horas_restantes": control["horas_restantes"],
-                "completado": control["completado"],
-                "completado_en": control["completado_en"]
+                "horas_jugadas": tiempo_torneo(jugador)["horas_jugadas"],
+                "horas_restantes": tiempo_torneo(jugador)["horas_restantes"],
+                "completado": tiempo_torneo(jugador)["completado"],
+                "completado_en": tiempo_torneo(jugador)["completado_en"]
             }
 
 

@@ -30,62 +30,37 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 
 def obtener_sesion_lol():
-    """Devuelve el PUUID de la cuenta conectada en LoL, o None.
-
-    Busca LeagueClientUx.exe y consulta la API local de League of Legends.
-    No considera Riot Client, Valorant ni Legends of Runeterra.
-    """
+    """Devuelve (gameName, tagLine) de la cuenta conectada en LoL, o None."""
     try:
         for proc in psutil.process_iter(["name", "cmdline"]):
             try:
                 nombre = (proc.info.get("name") or "").lower()
-
                 if nombre != PROCESO_LOL:
                     continue
 
-                cmdline = proc.info.get("cmdline") or []
-                argumentos = " ".join(str(x) for x in cmdline)
-
+                argumentos = " ".join(str(x) for x in (proc.info.get("cmdline") or []))
                 puerto = re.search(r"--app-port=(\d+)", argumentos)
                 token = re.search(r"--remoting-auth-token=([^\s]+)", argumentos)
-
                 if not puerto or not token:
                     continue
 
-                url = (
-                    f"https://127.0.0.1:{puerto.group(1)}"
-                    "/lol-summoner/v1/current-summoner"
-                )
-
+                url = f"https://127.0.0.1:{puerto.group(1)}/lol-summoner/v1/current-summoner"
                 respuesta = requests.get(
-                    url,
-                    auth=("riot", token.group(1)),
-                    verify=False,
-                    timeout=3,
+                    url, auth=("riot", token.group(1)), verify=False, timeout=3
                 )
-
                 if respuesta.status_code != 200:
                     continue
 
                 datos = respuesta.json()
-                puuid = str(datos.get("puuid") or "").strip()
-
-                if puuid:
-                    return puuid
-
-            except (
-                psutil.Error,
-                requests.RequestException,
-                ValueError,
-                OSError,
-            ):
+                game_name = str(datos.get("gameName") or "").strip()
+                tag_line = str(datos.get("tagLine") or "").strip()
+                if game_name and tag_line:
+                    return game_name, tag_line
+            except (psutil.Error, requests.RequestException, ValueError, OSError):
                 continue
-
     except (psutil.Error, OSError):
         pass
-
     return None
-
 
 def formatear_horas(horas):
     try:
@@ -272,7 +247,8 @@ class App:
     def bucle(self):
         while not self.detener.is_set():
 
-            puuid = obtener_sesion_lol()
+            cuenta_lol = obtener_sesion_lol()
+            game_name, tag_line = cuenta_lol if cuenta_lol else ("", "")
 
             try:
                 r = requests.post(
@@ -280,8 +256,9 @@ class App:
                     json={
                         "nombre": self.config["nombre"],
                         "token": self.config["token"],
-                        "activo": bool(puuid),
-                        "puuid": puuid or "",
+                        "activo": bool(cuenta_lol),
+                        "gameName": game_name,
+                        "tagLine": tag_line,
                     },
                     timeout=8,
                 )
@@ -309,7 +286,7 @@ class App:
                         "Ya no se contabiliza más tiempo."
                     )
 
-                elif not puuid:
+                elif not cuenta_lol:
                     estado = (
                         "League of Legends sin sesión iniciada. "
                         "Tiempo pausado."
@@ -317,8 +294,7 @@ class App:
 
                 elif not data.get("cuenta_validada"):
                     estado = (
-                        "Cuenta de LoL no registrada para este participante. "
-                        "Tiempo pausado."
+                        data.get("mensaje_cuenta", "La cuenta activa no coincide con la registrada.") + " Tiempo pausado."
                     )
 
                 elif data.get("sesion_activa"):
