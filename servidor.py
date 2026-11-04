@@ -2404,6 +2404,20 @@ def api_jugadores():
                 )
 
 
+            # Si el agente confirmó la cuenta registrada recientemente,
+            # el jugador está ONLINE aunque no esté dentro de una partida.
+            # EN PARTIDA conserva prioridad cuando Spectator detecta una partida.
+            estado_actual = estado.get("estado", "offline")
+            agente_conectado = False
+            if jugador.get("agente_sesion_activa") and jugador.get("agente_ultimo_latido") is not None:
+                try:
+                    agente_conectado = (time.time() - float(jugador["agente_ultimo_latido"])) <= LATIDO_MAXIMO_SEGUNDOS
+                except (TypeError, ValueError):
+                    agente_conectado = False
+
+            if estado_actual != "in_game" and agente_conectado:
+                estado_actual = "online"
+
             respuesta[nombre] = {
 
                 "riot_id": jugador.get(
@@ -2414,10 +2428,7 @@ def api_jugadores():
                     "riot_tag"
                 ),
 
-                "estado": estado.get(
-                    "estado",
-                    "offline"
-                ),
+                "estado": estado_actual,
 
                 "game_start_time": estado.get(
                     "game_start_time"
