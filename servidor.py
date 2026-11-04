@@ -2513,10 +2513,17 @@ def consultar_streams_twitch(logins):
                     method="GET"
                 )
 
-                with urlopen(solicitud, timeout=15) as respuesta:
-                    datos = json.loads(respuesta.read().decode("utf-8"))
+                try:
+                    with urlopen(solicitud, timeout=15) as respuesta:
+                        datos = json.loads(respuesta.read().decode("utf-8"))
+                except HTTPError as error:
+                    cuerpo = error.read().decode("utf-8", errors="replace")
+                    print("ERROR TWITCH OAUTH:", error.code, cuerpo)
+                    raise
 
             else:
+                cuerpo = error.read().decode("utf-8", errors="replace")
+                print("ERROR TWITCH HELIX:", error.code, cuerpo)
                 raise
 
         for stream in datos.get("data", []):
