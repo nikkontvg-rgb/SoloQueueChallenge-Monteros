@@ -2639,7 +2639,7 @@ def obtener_streams_activos():
 def api_streams():
 
     try:
-
+        print("DIAGNOSTICO TWITCH V2: ejecutando nueva version", flush=True)
         streams = obtener_streams_activos()
 
         return jsonify({
@@ -2648,9 +2648,9 @@ def api_streams():
         })
 
     except Exception as e:
-
-        print("ERROR EN /api/streams:", e)
-
+        import traceback
+        print("ERROR EN /api/streams:", repr(e), flush=True)
+        traceback.print_exc()
         return jsonify({
             "ok": False,
             "error": "No se pudieron consultar los streams de Twitch."
