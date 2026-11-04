@@ -2066,11 +2066,11 @@ body::after {
                     id="registroStream"
                     name="stream_url"
                     maxlength="300"
-                    placeholder="https://twitch.tv/... o https://kick.com/..."
+                    placeholder="https://twitch.tv/tu_canal"
                 >
 
                 <div class="registro-ayuda">
-                    Si transmitís tus partidas, podés dejar tu link. Solo será visible para los administradores.
+                    Si transmitís tus partidas en Twitch, podés dejar tu link. Solo será visible para los administradores.
                 </div>
 
                 <div style="margin-top:18px; padding:15px; border:1px solid #6d3441; border-radius:8px; background:#241016;">
@@ -2269,122 +2269,162 @@ body::after {
         TWITCH - CARGAR TRANSMISIONES ACTIVAS
         ========================================================= */
 
-        async function cargarStreams() {
+/* =========================================================
+   TWITCH - CARGAR TRANSMISIONES ACTIVAS
+========================================================= */
 
-            const estado = document.getElementById("streamsEstado");
-            const contenedor = document.getElementById("streamsGrid");
+async function cargarStreams() {
 
-            try {
+    const estado = document.getElementById("streamsEstado");
+    const contenedor = document.getElementById("streamsGrid");
 
-                const respuesta = await fetch("/api/streams", {
-                    cache: "no-store"
-                });
+    if (!estado || !contenedor) return;
 
-                if (!respuesta.ok) {
-                    throw new Error("No se pudieron consultar los streams.");
-                }
+    try {
 
-                const resultado = await respuesta.json();
+        const respuesta = await fetch("/api/streams", {
+            cache: "no-store"
+        });
 
-                if (!resultado.ok) {
-                    throw new Error("Error al consultar Twitch.");
-                }
+        const resultado = await respuesta.json();
 
-                const streams = resultado.streams || [];
+        if (!respuesta.ok || !resultado.ok) {
+            throw new Error(
+                resultado.error || "No se pudieron consultar los streams."
+            );
+        }
 
-                contenedor.innerHTML = "";
+        const streams = Array.isArray(resultado.streams)
+            ? resultado.streams
+            : [];
 
-                if (streams.length === 0) {
+        const tarjetas = [];
 
-                    estado.textContent = "🔴 Actualmente no hay jugadores transmitiendo en vivo.";
+        streams.forEach(stream => {
 
-                    return;
-                }
+            const login = String(
+                stream.login || stream.user_login || ""
+            ).trim().toLowerCase();
 
-                estado.textContent = `🟢 ${streams.length} transmisión(es) activa(s)`;
-
-                streams.forEach(stream => {
-
-                    const login = String(stream.login || "").toLowerCase();
-
-                    // Evitar nombres de canal inválidos.
-                    if (!/^[a-z0-9_]{1,25}$/.test(login)) {
-                        return;
-                    }
-
-                    const nombre = escaparHTML(stream.nombre || login);
-                    const juego = escaparHTML(stream.juego || "Transmitiendo");
-                    const titulo = escaparHTML(stream.titulo || "En vivo");
-                    const canal = escaparHTML(stream.user_name || login);
-
-                    const tarjeta = document.createElement("div");
-
-                    tarjeta.className = "stream-card";
-
-                    tarjeta.innerHTML = `
-
-                        <div class="stream-card-cabecera">
-
-                            <div class="stream-card-nombre">
-                                ${nombre} · ${canal}
-                            </div>
-
-                            <div class="stream-card-juego">
-                                ${juego}
-                            </div>
-
-                            <div class="stream-card-en-vivo">
-                                ● EN VIVO
-                            </div>
-
-                            <div class="stream-card-juego">
-                                ${titulo}
-                            </div>
-
-                        </div>
-
-                        <div class="stream-player">
-
-                            <iframe
-                                src="https://player.twitch.tv/?channel=${encodeURIComponent(login)}&parent=soloqueuechallenge-monteros.onrender.com&muted=true"
-                                allowfullscreen="true"
-                                loading="lazy"
-                                title="Stream de ${canal}"
-                            ></iframe>
-
-                        </div>
-
-                        <div class="stream-card-pie">
-
-                            <a
-                                href="https://www.twitch.tv/${encodeURIComponent(login)}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                VER EN TWITCH ↗
-                            </a>
-
-                        </div>
-
-                    `;
-
-                    contenedor.appendChild(tarjeta);
-
-                });
-
-                if (contenedor.children.length === 0) {
-                    estado.textContent = "🔴 No hay transmisiones válidas disponibles.";
-                }
-
-            } catch (error) {
-
-                console.error("Error cargando Twitch:", error);
-
-                estado.textContent = "⚠️ No se pudieron cargar las transmisiones.";
-
+            // Evitar nombres de canal inválidos.
+            if (!/^[a-z0-9_]{1,25}$/.test(login)) {
+                return;
             }
 
+            const nombre = escaparHTML(
+                stream.nombre || stream.user_name || login
+            );
+
+            const canal = escaparHTML(
+                stream.user_name || login
+            );
+
+            const juego = escaparHTML(
+                stream.juego || "Transmitiendo"
+            );
+
+            const titulo = escaparHTML(
+                stream.titulo || "En vivo"
+            );
+
+            const espectadores = Number(
+                stream.viewers ?? stream.viewer_count ?? 0
+            ).toLocaleString("es-AR");
+
+            // Dominio actual donde se está mostrando la página.
+            const parent = window.location.hostname;
+
+            const iframeURL =
+                `https://player.twitch.tv/?channel=${encodeURIComponent(login)}` +
+                `&parent=${encodeURIComponent(parent)}&muted=true`;
+
+            const tarjeta = document.createElement("article");
+
+            tarjeta.className = "stream-card";
+
+            tarjeta.innerHTML = `
+
+                <div class="stream-card-cabecera">
+
+                    <div class="stream-card-nombre">
+                        ${nombre}
+                    </div>
+
+                    <div class="stream-card-juego">
+                        @${canal} · ${juego}
+                    </div>
+
+                    <div class="stream-card-en-vivo">
+                        ● EN VIVO
+                    </div>
+
+                    <div class="stream-card-juego">
+                        ${titulo}
+                    </div>
+
+                </div>
+
+                <div class="stream-player">
+
+                    <iframe
+                        src="${iframeURL}"
+                        allowfullscreen
+                        loading="lazy"
+                        title="Stream de Twitch de ${canal}"
+                        referrerpolicy="origin"
+                    ></iframe>
+
+                </div>
+
+                <div class="stream-card-pie">
+
+                    <span style="color:#c8b18a; margin-right:12px;">
+                        👁 ${espectadores} espectadores
+                    </span>
+
+                    <a
+                        href="https://www.twitch.tv/${encodeURIComponent(login)}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        VER EN TWITCH ↗
+                    </a>
+
+                </div>
+
+            `;
+
+            tarjetas.push(tarjeta);
+
+        });
+
+        // Reemplazar las tarjetas anteriores.
+        contenedor.replaceChildren(...tarjetas);
+
+        if (tarjetas.length === 0) {
+
+            estado.textContent =
+                "🔴 Actualmente no hay jugadores transmitiendo en vivo.";
+
+        } else {
+
+            estado.textContent =
+                `🟢 ${tarjetas.length} transmisión(es) activa(s)`;
+
         }
+
+    } catch (error) {
+
+        console.error("Error cargando Twitch:", error);
+
+        contenedor.innerHTML = "";
+
+        estado.textContent =
+            "⚠️ No se pudieron cargar las transmisiones.";
+
+    }
+
+}
 
 
                 /* =========================================================
