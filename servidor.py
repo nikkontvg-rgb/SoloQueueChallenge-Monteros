@@ -15,6 +15,10 @@ import secrets
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 from io import BytesIO
+import json
+from urllib.parse import urlparse, urlencode
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
 
 from riot_api import (
@@ -149,6 +153,22 @@ indice_proximo_jugador = 0
 
 # Momento hasta el cual debemos esperar después de un 429.
 pausa_hasta = 0
+
+# ============================================================
+# TWITCH: AUTENTICACIÓN Y CACHÉ
+# ============================================================
+
+TWITCH_CLIENT_ID = os.environ.get("TWITCH_CLIENT_ID", "")
+TWITCH_CLIENT_SECRET = os.environ.get("TWITCH_CLIENT_SECRET", "")
+
+TWITCH_TOKEN = None
+TWITCH_TOKEN_EXPIRA = 0
+bloqueo_twitch_token = threading.Lock()
+
+CACHE_STREAMS = []
+CACHE_STREAMS_ACTUALIZADO = 0
+TTL_CACHE_STREAMS = 60
+bloqueo_cache_streams = threading.Lock()
 
 
 # ============================================================
@@ -2356,7 +2376,279 @@ def historial_jugador(nombre):
         completado=completado
     )
 
+# ============================================================
+# TWITCH: OBTENER TOKEN
+# ============================================================
 
+def obtener_token_twitch():
+
+    global TWITCH_TOKEN
+    global TWITCH_TOKEN_EXPIRA
+
+    with bloqueo_twitch_token:
+
+        if TWITCH_TOKEN and time.time() < TWITCH_TOKEN_EXPIRA - 60:
+            return TWITCH_TOKEN
+
+        if not TWITCH_CLIENT_ID or not TWITCH_CLIENT_SECRET:
+            raise RuntimeError("Faltan las credenciales de Twitch en Render.")
+
+        url = "https://id.twitch.tv/oauth2/token"
+
+        parametros = urlencode({
+            "client_id": TWITCH_CLIENT_ID,
+            "client_secret": TWITCH_CLIENT_SECRET,
+            "grant_type": "client_credentials"
+        }).encode("utf-8")
+
+        solicitud = Request(
+            url,
+            data=parametros,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            method="POST"
+        )
+
+        with urlopen(solicitud, timeout=15) as respuesta:
+            datos = json.loads(respuesta.read().decode("utf-8"))
+
+        TWITCH_TOKEN = datos["access_token"]
+        TWITCH_TOKEN_EXPIRA = time.time() + int(datos["expires_in"])
+
+        print("Token de Twitch obtenido correctamente.")
+
+        return TWITCH_TOKEN
+
+
+# ============================================================
+# TWITCH: EXTRAER NOMBRE DEL CANAL
+# ============================================================
+
+def obtener_login_twitch(stream_url):
+
+    if not stream_url:
+        return None
+
+    try:
+
+        partes = urlparse(stream_url.strip())
+
+        dominio = (partes.hostname or "").lower()
+
+        if dominio not in (
+            "twitch.tv",
+            "www.twitch.tv",
+            "m.twitch.tv"
+        ):
+            return None
+
+        login = partes.path.strip("/").split("/")[0].strip().lower()
+
+        return login or None
+
+    except Exception:
+        return None
+
+
+# ============================================================
+# TWITCH: CONSULTAR CANALES EN VIVO
+# ============================================================
+
+def consultar_streams_twitch(logins):
+
+    if not logins:
+        return {}
+
+    token = obtener_token_twitch()
+
+    streams_en_vivo = {}
+
+    # Twitch permite consultar hasta 100 canales por petición.
+    for inicio in range(0, len(logins), 100):
+
+        lote = logins[inicio:inicio + 100]
+
+        parametros = urlencode([
+            ("user_login", login)
+            for login in lote
+        ])
+
+        url = "https://api.twitch.tv/helix/streams?" + parametros
+
+        solicitud = Request(
+            url,
+            headers={
+                "Client-Id": TWITCH_CLIENT_ID,
+                "Authorization": f"Bearer {token}"
+            },
+            method="GET"
+        )
+
+        try:
+
+            with urlopen(solicitud, timeout=15) as respuesta:
+                datos = json.loads(respuesta.read().decode("utf-8"))
+
+        except HTTPError as error:
+
+            # Si Twitch rechaza el token, renovarlo y reintentar una vez.
+            if error.code == 401:
+
+                global TWITCH_TOKEN
+                global TWITCH_TOKEN_EXPIRA
+
+                with bloqueo_twitch_token:
+                    TWITCH_TOKEN = None
+                    TWITCH_TOKEN_EXPIRA = 0
+
+                token = obtener_token_twitch()
+
+                solicitud = Request(
+                    url,
+                    headers={
+                        "Client-Id": TWITCH_CLIENT_ID,
+                        "Authorization": f"Bearer {token}"
+                    },
+                    method="GET"
+                )
+
+                with urlopen(solicitud, timeout=15) as respuesta:
+                    datos = json.loads(respuesta.read().decode("utf-8"))
+
+            else:
+                raise
+
+        for stream in datos.get("data", []):
+
+            login = str(stream.get("user_login", "")).lower()
+
+            if login:
+                streams_en_vivo[login] = stream
+
+    return streams_en_vivo
+
+
+# ============================================================
+# TWITCH: CONSTRUIR LISTA DE STREAMS ACTIVOS
+# ============================================================
+
+def obtener_streams_activos():
+
+    global CACHE_STREAMS
+    global CACHE_STREAMS_ACTUALIZADO
+
+    with bloqueo_cache_streams:
+
+        ahora = time.time()
+
+        # Utilizar caché si todavía está vigente.
+        if ahora - CACHE_STREAMS_ACTUALIZADO < TTL_CACHE_STREAMS:
+            return CACHE_STREAMS
+
+        datos = cargar_datos()
+        jugadores = datos.get("jugadores", {})
+
+        jugadores_con_stream = []
+
+        logins = set()
+
+        for nombre, jugador in jugadores.items():
+
+            login = obtener_login_twitch(
+                jugador.get("stream_url", "")
+            )
+
+            if not login:
+                continue
+
+            jugadores_con_stream.append({
+                "nombre": nombre,
+                "login": login
+            })
+
+            logins.add(login)
+
+        if not logins:
+
+            CACHE_STREAMS = []
+            CACHE_STREAMS_ACTUALIZADO = ahora
+
+            return CACHE_STREAMS
+
+        streams_twitch = consultar_streams_twitch(
+            sorted(logins)
+        )
+
+        resultado = []
+
+        for jugador in jugadores_con_stream:
+
+            login = jugador["login"]
+
+            stream = streams_twitch.get(login)
+
+            # Twitch no devuelve los canales que están offline.
+            if not stream:
+                continue
+
+            resultado.append({
+
+                "nombre": jugador["nombre"],
+
+                "login": login,
+
+                "user_name": stream.get("user_name", login),
+
+                "titulo": stream.get("title", ""),
+
+                "juego": stream.get("game_name", ""),
+
+                "viewers": stream.get("viewer_count", 0),
+
+                "started_at": stream.get("started_at"),
+
+                "thumbnail_url": stream.get("thumbnail_url", ""),
+
+                "url": f"https://www.twitch.tv/{login}"
+
+            })
+
+        CACHE_STREAMS = resultado
+        CACHE_STREAMS_ACTUALIZADO = time.time()
+
+        print(
+            f"Twitch actualizado: {len(resultado)} stream(s) en vivo."
+        )
+
+        return CACHE_STREAMS
+
+
+# ============================================================
+# API STREAMS
+# ============================================================
+
+@app.route("/api/streams", methods=["GET"])
+def api_streams():
+
+    try:
+
+        streams = obtener_streams_activos()
+
+        return jsonify({
+            "ok": True,
+            "streams": streams
+        })
+
+    except Exception as e:
+
+        print("ERROR EN /api/streams:", e)
+
+        return jsonify({
+            "ok": False,
+            "error": "No se pudieron consultar los streams de Twitch."
+        }), 502
+    
 # ============================================================
 # API JUGADORES
 # ============================================================
