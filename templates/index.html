@@ -1720,6 +1720,97 @@ body::after {
         .horas-torneo-progreso { height:100%; border-radius:99px; background:linear-gradient(90deg,#70152b,#d3ad78); }
         .horas-torneo-completo { color:#d3ad78; font-weight:700; }
 
+        /* =========================================================
+        TWITCH - TRANSMISIONES EN VIVO
+        ========================================================= */
+
+        .streams-estado {
+            text-align: center;
+            color: #c8b18a;
+            font-size: 17px;
+            margin: 20px 0;
+        }
+
+        .streams-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .stream-card {
+            min-width: 0;
+            overflow: hidden;
+            background: linear-gradient(145deg, #1c1f20, #0d0f10);
+            border: 1px solid rgba(126,130,130,.48);
+            border-radius: 8px;
+            box-shadow: 0 12px 30px rgba(0,0,0,.35);
+        }
+
+        .stream-card-cabecera {
+            padding: 13px 15px;
+            border-bottom: 1px solid rgba(148,27,58,.5);
+        }
+
+        .stream-card-nombre {
+            color: #eee;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .stream-card-juego {
+            margin-top: 5px;
+            color: #c8b18a;
+            font-size: 14px;
+        }
+
+        .stream-card-en-vivo {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(214,59,92,.18);
+            color: #ff718b;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .stream-player {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+        }
+
+        .stream-player iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .stream-card-pie {
+            padding: 10px 15px;
+            text-align: right;
+        }
+
+        .stream-card-pie a {
+            color: #d3ad78;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .stream-card-pie a:hover {
+            color: #fff;
+        }
+
+        @media (max-width: 700px) {
+            .streams-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
     </style>
 
 </head>
@@ -1820,27 +1911,11 @@ body::after {
                 📺 Streamers en vivo
             </h2>
 
-
-            <div class="streamer-proximamente">
-
-                <div class="icono">
-                    🎥
-                </div>
-
-
-                <h3>
-                    Próximamente
-                </h3>
-
-
-                <p>
-
-                    Próximamente podrás ver aquí a los participantes
-                    que estén transmitiendo sus partidas en Twitch o Kick.
-
-                </p>
-
+            <div id="streamsEstado" class="streams-estado">
+                Buscando transmisiones activas...
             </div>
+
+            <div id="streamsGrid" class="streams-grid"></div>
 
         </div>
 
