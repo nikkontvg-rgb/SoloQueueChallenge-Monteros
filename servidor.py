@@ -2391,7 +2391,9 @@ def obtener_token_twitch():
             return TWITCH_TOKEN
 
         if not TWITCH_CLIENT_ID or not TWITCH_CLIENT_SECRET:
-            raise RuntimeError("Faltan las credenciales de Twitch en Render.")
+            raise RuntimeError(
+                "Faltan las credenciales de Twitch en Render."
+            )
 
         url = "https://id.twitch.tv/oauth2/token"
 
@@ -2410,13 +2412,39 @@ def obtener_token_twitch():
             method="POST"
         )
 
-        with urlopen(solicitud, timeout=15) as respuesta:
-            datos = json.loads(respuesta.read().decode("utf-8"))
+        try:
+
+            with urlopen(solicitud, timeout=15) as respuesta:
+                datos = json.loads(
+                    respuesta.read().decode("utf-8")
+                )
+
+        except HTTPError as error:
+
+            cuerpo = error.read().decode(
+                "utf-8",
+                errors="replace"
+            )
+
+            print(
+                "ERROR TWITCH OAUTH:",
+                error.code,
+                cuerpo,
+                flush=True
+            )
+
+            raise
 
         TWITCH_TOKEN = datos["access_token"]
-        TWITCH_TOKEN_EXPIRA = time.time() + int(datos["expires_in"])
 
-        print("Token de Twitch obtenido correctamente.")
+        TWITCH_TOKEN_EXPIRA = (
+            time.time() + int(datos["expires_in"])
+        )
+
+        print(
+            "Token de Twitch obtenido correctamente.",
+            flush=True
+        )
 
         return TWITCH_TOKEN
 
