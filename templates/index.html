@@ -2265,6 +2265,150 @@ body::after {
             return `${horasEnteras}:${String(minutos).padStart(2, "0")}`;
         }
 
+        /* =========================================================
+        TWITCH - CARGAR TRANSMISIONES ACTIVAS
+        ========================================================= */
+
+        async function cargarStreams() {
+
+            const estado = document.getElementById("streamsEstado");
+            const contenedor = document.getElementById("streamsGrid");
+
+            try {
+
+                const respuesta = await fetch("/api/streams", {
+                    cache: "no-store"
+                });
+
+                if (!respuesta.ok) {
+                    throw new Error("No se pudieron consultar los streams.");
+                }
+
+                const resultado = await respuesta.json();
+
+                if (!resultado.ok) {
+                    throw new Error("Error al consultar Twitch.");
+                }
+
+                const streams = resultado.streams || [];
+
+                contenedor.innerHTML = "";
+
+                if (streams.length === 0) {
+
+                    estado.textContent = "🔴 Actualmente no hay jugadores transmitiendo en vivo.";
+
+                    return;
+                }
+
+                estado.textContent = `🟢 ${streams.length} transmisión(es) activa(s)`;
+
+                streams.forEach(stream => {
+
+                    const login = String(stream.login || "").toLowerCase();
+
+                    // Evitar nombres de canal inválidos.
+                    if (!/^[a-z0-9_]{1,25}$/.test(login)) {
+                        return;
+                    }
+
+                    const nombre = escaparHTML(stream.nombre || login);
+                    const juego = escaparHTML(stream.juego || "Transmitiendo");
+                    const titulo = escaparHTML(stream.titulo || "En vivo");
+                    const canal = escaparHTML(stream.user_name || login);
+
+                    const tarjeta = document.createElement("div");
+
+                    tarjeta.className = "stream-card";
+
+                    tarjeta.innerHTML = `
+
+                        <div class="stream-card-cabecera">
+
+                            <div class="stream-card-nombre">
+                                ${nombre} · ${canal}
+                            </div>
+
+                            <div class="stream-card-juego">
+                                ${juego}
+                            </div>
+
+                            <div class="stream-card-en-vivo">
+                                ● EN VIVO
+                            </div>
+
+                            <div class="stream-card-juego">
+                                ${titulo}
+                            </div>
+
+                        </div>
+
+                        <div class="stream-player">
+
+                            <iframe
+                                src="https://player.twitch.tv/?channel=${encodeURIComponent(login)}&parent=soloqueuechallenge-monteros.onrender.com&muted=true"
+                                allowfullscreen="true"
+                                loading="lazy"
+                                title="Stream de ${canal}"
+                            ></iframe>
+
+                        </div>
+
+                        <div class="stream-card-pie">
+
+                            <a
+                                href="https://www.twitch.tv/${encodeURIComponent(login)}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                VER EN TWITCH ↗
+                            </a>
+
+                        </div>
+
+                    `;
+
+                    contenedor.appendChild(tarjeta);
+
+                });
+
+                if (contenedor.children.length === 0) {
+                    estado.textContent = "🔴 No hay transmisiones válidas disponibles.";
+                }
+
+            } catch (error) {
+
+                console.error("Error cargando Twitch:", error);
+
+                estado.textContent = "⚠️ No se pudieron cargar las transmisiones.";
+
+            }
+
+        }
+
+
+                /* =========================================================
+                ESCAPAR TEXTO HTML
+                ========================================================= */
+
+                function escaparHTML(texto) {
+
+                    return String(texto).replace(/[&<>"']/g, caracter => {
+
+                        const caracteres = {
+                            "&": "&amp;",
+                            "<": "&lt;",
+                            ">": "&gt;",
+                            '"': "&quot;",
+                            "'": "&#039;"
+                        };
+
+                        return caracteres[caracter];
+
+                    });
+
+                }
+
 
         /* =========================================================
            FECHA ÚLTIMA PARTIDA
@@ -3035,6 +3179,7 @@ body::after {
         ========================================================= */
 
         cargarJugadores();
+        cargarStreams();
 
 
         /* =========================================================
@@ -3046,6 +3191,12 @@ body::after {
             15000
         );
 
+        /* ACTUALIZAR STREAMS CADA 60 SEGUNDOS */
+
+        setInterval(
+            cargarStreams,
+            60000
+        );
 
         /* =========================================================
            ACTUALIZAR CONTADORES CADA SEGUNDO
